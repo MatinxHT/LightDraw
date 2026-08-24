@@ -111,6 +111,16 @@ public sealed class OpticalCanvas : Control
     public void SetScene(OpticalScene scene)
     {
         ArgumentNullException.ThrowIfNull(scene);
+        if (ReferenceEquals(_scene, scene))
+        {
+            // Guards against re-entrant sets caused by the two-way Scene binding
+            // echoing back the exact same instance we just pushed via UpdateScene
+            // (e.g. while dragging with the Move tool). Without this guard, the
+            // echo would reset the in-progress drag state below and the item
+            // would only move by a single pointer-move delta.
+            return;
+        }
+
         var normalized = scene with
         {
             LightSources = scene.LightSources ?? [],
@@ -767,12 +777,26 @@ public sealed class OpticalCanvas : Control
         {
             var tangent = (lens.End - lens.Start).Normalized();
             var normal = tangent.Perpendicular();
-            var amount = lens.Kind == LensKind.Convex ? 9 / zoom : -9 / zoom;
+            var amount = 9 / zoom;
+            var isConvex = lens.Kind == LensKind.Convex;
             foreach (var endpoint in new[] { lens.Start, lens.End })
             {
                 var inward = endpoint == lens.Start ? tangent : -tangent;
-                canvas.DrawLine(ToScreen(endpoint), ToScreen(endpoint + inward * (12 / zoom) + normal * amount), paint);
-                canvas.DrawLine(ToScreen(endpoint), ToScreen(endpoint + inward * (12 / zoom) - normal * amount), paint);
+                var innerPoint = endpoint + inward * (12 / zoom);
+                var wingA = endpoint + normal * amount;
+                var wingB = endpoint - normal * amount;
+                if (isConvex)
+                {
+                    // Convex (converging) lens: arrowhead vertex sits at the endpoint, wings splay inward.
+                    canvas.DrawLine(ToScreen(endpoint), ToScreen(innerPoint + normal * amount), paint);
+                    canvas.DrawLine(ToScreen(endpoint), ToScreen(innerPoint - normal * amount), paint);
+                }
+                else
+                {
+                    // Concave (diverging) lens: arrowhead vertex sits inward, wings splay out to the endpoint.
+                    canvas.DrawLine(ToScreen(innerPoint), ToScreen(wingA), paint);
+                    canvas.DrawLine(ToScreen(innerPoint), ToScreen(wingB), paint);
+                }
             }
         }
 
