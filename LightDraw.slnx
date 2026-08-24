@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LightDraw.Core/LightDraw.Core.csproj" />
+    <Project Path="src/LightDraw.Rendering.Skia/LightDraw.Rendering.Skia.csproj" />
+    <Project Path="src/LightDraw.Desktop/LightDraw.Desktop.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>LightDraw platform-neutral geometric optics core.</Description>
+  </PropertyGroup>
+</Project>

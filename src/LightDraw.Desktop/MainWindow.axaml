@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:skia="using:LightDraw.Rendering.Skia"
+        xmlns:vm="using:LightDraw.Desktop.ViewModels"
+        x:Class="LightDraw.Desktop.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="光绘课堂 (LightDraw)"
+        Width="1280"
+        Height="800"
+        MinWidth="920"
+        MinHeight="600"
+        Background="#0B1220">
+  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,*,Auto">
+    <Border Grid.ColumnSpan="2" Padding="18,12" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Border Width="34" Height="34" CornerRadius="8" Background="#194B68">
+            <TextBlock Text="◈" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#7DE3FF" />
+          </Border>
+          <StackPanel>
+            <TextBlock Text="光绘课堂 (LightDraw)" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="几何光学教学与绘图" FontSize="11" Foreground="#91A4C2" />
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Grid.Column="2" Text=".NET 10 · Avalonia · SkiaSharp" Foreground="#7F93B2" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0" Padding="16">
+      <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+        <TextBlock Text="场景工具" FontSize="14" FontWeight="SemiBold" Margin="2,2,0,14" />
+        <StackPanel Grid.Row="1" Spacing="2">
+          <Button Classes="toolbar" Content="✥ 平移/浏览" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
+          <Button Classes="toolbar" Content="✣ 移动/调整" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
+          <Button Classes="toolbar" Content="× 删除元件" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
+          <TextBlock Text="光源" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+          <Button Classes="toolbar" Content="● 点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" />
+          <Button Classes="toolbar" Content="▥ 线平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" />
+          <TextBlock Text="光学元件" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+          <Button Classes="toolbar" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
+          <Button Classes="toolbar" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" />
+          <Button Classes="toolbar" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Margin="0,18,0,0">
+          <TextBlock Text="统一模拟配置" FontSize="13" FontWeight="SemiBold" />
+          <TextBlock Text="每个光源的光线数量" Foreground="#7F93B2" FontSize="11" Margin="0,4,0,0" />
+          <Grid ColumnDefinitions="*,42" Margin="0,8,0,0">
+            <Slider Minimum="1" Maximum="1000" Value="{Binding RayDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="10" IsSnapToTickEnabled="True" />
+            <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#7DE3FF" />
+          </Grid>
+        </StackPanel>
+
+        <StackPanel Grid.Row="4">
+          <Separator Margin="0,0,0,14" />
+          <Button Classes="toolbar" Content="⌂ 重置演示场景" Command="{Binding ResetSceneCommand}" />
+          <Button Classes="toolbar" Content="◎ 适合窗口" Command="{Binding ResetViewCommand}" />
+          <Button Classes="toolbar" Content="打开场景…" Command="{Binding OpenSceneCommand}" />
+          <Button Classes="toolbar" Content="保存场景…" Command="{Binding SaveSceneCommand}" />
+          <TextBlock Text="移动主体：整体平移&#x0a;移动端点：拉伸并旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,6,0,0" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <skia:OpticalCanvas x:Name="Canvas"
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Scene="{Binding CurrentScene, Mode=TwoWay}"
+                        RaysPerSource="{Binding AppliedRaysPerSource}"
+                        ActiveTool="{Binding ActiveTool, Mode=TwoWay}" />
+
+    <Border Grid.Row="2" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding StatusText}" Foreground="#9EB0CA" FontSize="12" />
+        <TextBlock Grid.Column="1" Text="PolyForm Noncommercial 1.0.0 · 仅限非商业使用" Foreground="#687D9D" FontSize="12" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>
