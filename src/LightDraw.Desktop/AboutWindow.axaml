@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="LightDraw.Desktop.AboutWindow"
+        Title="关于光绘课堂"
+        Width="480"
+        SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="#0B1220">
+  <StackPanel Margin="28" Spacing="16">
+    <StackPanel Orientation="Horizontal" Spacing="14">
+      <Border Width="48" Height="48" CornerRadius="11" Background="#194B68">
+        <TextBlock Text="◈" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#7DE3FF" />
+      </Border>
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="光绘课堂 (LightDraw)" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock x:Name="VersionText" Foreground="#7DE3FF" />
+      </StackPanel>
+    </StackPanel>
+
+    <TextBlock Text="面向物理课堂、实验演示和几何光学学习的二维光学绘图与模拟工具。"
+               Foreground="#B7C5DA" TextWrapping="Wrap" />
+
+    <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+      <StackPanel Spacing="7">
+        <TextBlock Text="授权许可" FontWeight="SemiBold" />
+        <TextBlock Text="PolyForm Noncommercial License 1.0.0" Foreground="#7DE3FF" />
+        <TextBlock Text="本软件仅授权用于非商业用途。许可条款：&#x0a;https://polyformproject.org/licenses/noncommercial/1.0.0"
+                   Foreground="#9EB0CA" TextWrapping="Wrap" />
+        <TextBlock Text="Required Notice: Copyright 2026 LightDraw contributors"
+                   Foreground="#7F93B2" FontSize="12" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+      <StackPanel Spacing="9">
+        <TextBlock Text="鸣谢" FontWeight="SemiBold" />
+        <TextBlock Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源系"
+                   Foreground="#9EB0CA" LineHeight="22" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+
+    <TextBlock Text="基于 .NET 10、Avalonia 和 SkiaSharp 构建" HorizontalAlignment="Center" Foreground="#687D9D" FontSize="12" />
+    <Button Content="关闭" HorizontalAlignment="Right" MinWidth="88" IsDefault="True" IsCancel="True" Click="OnCloseClicked" />
+  </StackPanel>
+</Window>

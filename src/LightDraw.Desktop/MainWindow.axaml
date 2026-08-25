@@ -10,7 +10,7 @@
 		MinWidth="920"
 		MinHeight="600"
 		Background="#0B1220">
-  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,*,Auto">
+  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,*,Auto">
 	<Border Grid.ColumnSpan="2" Padding="18,12" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
 	  <Grid ColumnDefinitions="Auto,*,Auto">
 		<StackPanel Orientation="Horizontal" Spacing="10">
@@ -27,31 +27,78 @@
 	</Border>
 
 	<Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,10" Background="#0F1A2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
-	  <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
-		<TextBlock Text="统一模拟配置" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
-		<TextBlock Grid.Column="1" Text="每个光源的光线数量" Foreground="#7F93B2" FontSize="11" VerticalAlignment="Center" Margin="14,0,14,0" />
-		<Grid Grid.Column="2" ColumnDefinitions="*,42" VerticalAlignment="Center">
+	  <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto">
+		<StackPanel Orientation="Horizontal" Spacing="6">
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="✥ 平移界面" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="✣ 移动/编辑" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="× 删除" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
+		</StackPanel>
+		<Border Grid.Column="1" Width="1" Margin="14,4" Background="#26344C" />
+		<TextBlock Grid.Column="2" Text="统一模拟配置" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+		<TextBlock Grid.Column="3" Text="每个光源的光线数量" Foreground="#7F93B2" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
+		<Grid Grid.Column="4" ColumnDefinitions="*,42" MinWidth="120" VerticalAlignment="Center">
 		  <Slider Minimum="1" Maximum="1000" Value="{Binding RayDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
 		  <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#7DE3FF" />
 		</Grid>
-		<Border Grid.Column="3" Width="1" Margin="18,4" Background="#26344C" />
-		<StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8">
+		<Border Grid.Column="5" Width="1" Margin="14,4" Background="#26344C" />
+		<StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
 		  <Button Classes="toolbar-inline" Content="⌂ 重置场景" Command="{Binding ResetSceneCommand}" />
 		  <Button Classes="toolbar-inline" Content="◎ 适合窗口" Command="{Binding ResetViewCommand}" />
 		  <Button Classes="toolbar-inline" Content="打开场景…" Command="{Binding OpenSceneCommand}" />
 		  <Button Classes="toolbar-inline" Content="保存场景…" Command="{Binding SaveSceneCommand}" />
+		  <Button Classes="toolbar-inline" Content="关于程序" Command="{Binding ShowAboutCommand}" />
 		</StackPanel>
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="2" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
+	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+	  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+		<StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,18,2" VerticalAlignment="Center">
+		  <TextBlock Text="元件设置" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+		  <Border Width="1" Height="24" Margin="4,0" Background="#26344C" />
+		  <TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" />
+		</StackPanel>
+		<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLength}">
+			<TextBlock Text="长度" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点到任一端点的距离 × 2" />
+			<TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
+			<TextBlock Text="p" Foreground="#7F93B2" VerticalAlignment="Center" />
+		</StackPanel>
+		<StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedElement}">
+		  <TextBlock Text="原点" Foreground="#9EB0CA" VerticalAlignment="Center" />
+		  <TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+		  <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
+		  <TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+		  <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
+		  <TextBlock Text="p" Foreground="#7F93B2" VerticalAlignment="Center" />
+		</StackPanel>
+		<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
+			<TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
+			<TextBlock Text="p" Foreground="#7F93B2" VerticalAlignment="Center" />
+		</StackPanel>
+		<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" VerticalAlignment="Center" IsEnabled="{Binding CanRotateSelectedElement}">
+			<TextBlock Text="旋转步进" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
+			<TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<Button Classes="setting-inline" Content="↶ 逆时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
+			<Button Classes="setting-inline" Content="↷ 顺时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
+			<TextBlock Text="{Binding SelectedAngleText}" MinWidth="98" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="2,0" />
+			<ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
+			  <ComboBoxItem Content="非标" IsEnabled="False" />
+			  <ComboBoxItem Content="0°" />
+			  <ComboBoxItem Content="90°" />
+			  <ComboBoxItem Content="180°" />
+			  <ComboBoxItem Content="270°" />
+			</ComboBox>
+		</StackPanel>
+	  </WrapPanel>
+	</Border>
+
+	<Border Grid.Row="3" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
 	  <Grid RowDefinitions="Auto,*">
-		<TextBlock Text="场景工具" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
+		<TextBlock Text="创建工具" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
 		  <StackPanel Spacing="2">
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="✥ 平移/浏览" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="✣ 移动/调整" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="× 删除元件" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
 			<TextBlock Text="光源" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="● 点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 线平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" />
@@ -68,13 +115,13 @@
 	</Border>
 
 	<skia:OpticalCanvas x:Name="Canvas"
-						Grid.Row="2"
+						Grid.Row="3"
 						Grid.Column="1"
 						Scene="{Binding CurrentScene, Mode=TwoWay}"
 						RaysPerSource="{Binding AppliedRaysPerSource}"
 						ActiveTool="{Binding ActiveTool, Mode=TwoWay}" />
 
-	<Border Grid.Row="3" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
+	<Border Grid.Row="4" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
 	  <Grid ColumnDefinitions="*,Auto">
 		<TextBlock Text="{Binding StatusText}" Foreground="#9EB0CA" FontSize="12" />
 		<TextBlock Grid.Column="1" Text="PolyForm Noncommercial 1.0.0 · 仅限非商业使用" Foreground="#687D9D" FontSize="12" />

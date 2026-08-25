@@ -40,6 +40,12 @@ public sealed record OpticalScene(
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
 
+    public static OpticalScene CreateEmpty() => new(
+        "空白场景",
+        [],
+        [],
+        []);
+
     public static OpticalScene CreateDemo() => new(
         "双镜面反射演示",
         [new LightSource(new Vector2D(-300, 20), -8, 38, 589)],

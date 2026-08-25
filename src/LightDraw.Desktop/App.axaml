@@ -30,5 +30,20 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="BorderBrush" Value="#26344C" />
     </Style>
+    <Style Selector="Button.toolbar-inline.selected">
+      <Setter Property="Background" Value="#1F6FEB33" />
+      <Setter Property="BorderBrush" Value="#7DE3FF" />
+      <Setter Property="Foreground" Value="#7DE3FF" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.setting-inline">
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Padding" Value="7,5" />
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="#26344C" />
+    </Style>
   </Application.Styles>
 </Application>

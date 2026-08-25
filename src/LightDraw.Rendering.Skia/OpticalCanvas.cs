@@ -6,6 +6,7 @@ using Avalonia.Media;
 using Avalonia.Rendering.SceneGraph;
 using Avalonia.Skia;
 using System.Diagnostics;
+using System.Globalization;
 using LightDraw.Core.Geometry;
 using LightDraw.Core.Scene;
 using LightDraw.Core.Simulation;
@@ -24,6 +25,25 @@ public enum CanvasTool
     ConvexLens,
     ConcaveLens
 }
+
+public enum CanvasSelectionKind
+{
+    PointLight,
+    ParallelLight,
+    Mirror,
+    ConvexLens,
+    ConcaveLens
+}
+
+public sealed record CanvasSelection(
+    CanvasSelectionKind Kind,
+    string DisplayName,
+    bool CanRotate,
+    double OriginX,
+    double OriginY,
+    double AngleDegrees,
+    double? FocalLength,
+    double? Length);
 
 internal enum SceneItemKind
 {
@@ -59,7 +79,7 @@ public sealed class OpticalCanvas : Control
             (canvas, value) => canvas.SelectTool(value), defaultBindingMode: BindingMode.TwoWay);
 
     private readonly RayTracer _rayTracer = new();
-    private OpticalScene _scene = OpticalScene.CreateDemo();
+    private OpticalScene _scene = OpticalScene.CreateEmpty();
     private SimulationResult _result = new([], 0, 0, 0, TimeSpan.Zero);
     private Vector2D _pan = new(520, 360);
     private double _zoom = 1;
@@ -76,6 +96,8 @@ public sealed class OpticalCanvas : Control
     private bool _moveChanged;
     private bool _moveSimulationDirty;
     private long _lastMoveSimulationTimestamp;
+    private SceneItemKind _selectedKind;
+    private int _selectedIndex = -1;
 
     public OpticalCanvas()
     {
@@ -103,10 +125,12 @@ public sealed class OpticalCanvas : Control
         set => SelectTool(value);
     }
     public bool IsPlacing => _placementStart is not null;
+    public CanvasSelection? Selection => CreateSelection();
 
     public event EventHandler? SceneChanged;
     public event EventHandler? SimulationCompleted;
     public event EventHandler? ToolStateChanged;
+    public event EventHandler? SelectionChanged;
 
     public void SetScene(OpticalScene scene)
     {
@@ -134,6 +158,7 @@ public sealed class OpticalCanvas : Control
         _movingIndex = -1;
         _moveChanged = false;
         _moveSimulationDirty = false;
+        ClearSelection();
         CancelPlacement();
         Recalculate();
         SceneChanged?.Invoke(this, EventArgs.Empty);
@@ -154,6 +179,10 @@ public sealed class OpticalCanvas : Control
     public void SelectTool(CanvasTool tool)
     {
         SetAndRaise(ActiveToolProperty, ref _tool, tool);
+        if (tool != CanvasTool.Move)
+        {
+            ClearSelection();
+        }
         CancelPlacement(false);
         ToolStateChanged?.Invoke(this, EventArgs.Empty);
         InvalidateVisual();
@@ -177,11 +206,206 @@ public sealed class OpticalCanvas : Control
         InvalidateVisual();
     }
 
+    public void RotateSelectedBy(double degrees)
+    {
+        var selection = CreateSelection();
+        if (selection is null || !selection.CanRotate)
+        {
+            return;
+        }
+
+        SetSelectedAngle(selection.AngleDegrees + degrees);
+    }
+
+    public void SetSelectedAngle(double degrees)
+    {
+        if (!double.IsFinite(degrees))
+        {
+            return;
+        }
+
+        var radians = NormalizeDegrees(degrees) * Math.PI / 180;
+        switch (_selectedKind)
+        {
+            case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
+                var sources = (LightSource[])_scene.LightSources.Clone();
+                var source = sources[_selectedIndex];
+                if (source.Kind != LightSourceKind.ParallelLine || source.End is not { } sourceEnd)
+                {
+                    return;
+                }
+                var rotatedSource = RotateSegment(source.Position, sourceEnd, radians);
+                sources[_selectedIndex] = source with
+                {
+                    Position = rotatedSource.Start,
+                    End = rotatedSource.End,
+                    DirectionDegrees = DirectionDegrees((rotatedSource.End - rotatedSource.Start)
+                        .Normalized().Perpendicular())
+                };
+                UpdateScene(_scene with { LightSources = sources });
+                break;
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                var mirrors = (MirrorSegment[])_scene.Mirrors.Clone();
+                var mirror = mirrors[_selectedIndex];
+                var rotatedMirror = RotateSegment(mirror.Start, mirror.End, radians);
+                mirrors[_selectedIndex] = mirror with
+                {
+                    Start = rotatedMirror.Start,
+                    End = rotatedMirror.End
+                };
+                UpdateScene(_scene with { Mirrors = mirrors });
+                break;
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                var lenses = (LensSegment[])_scene.LensElements.Clone();
+                var lens = lenses[_selectedIndex];
+                var rotatedLens = RotateSegment(lens.Start, lens.End, radians);
+                lenses[_selectedIndex] = lens with
+                {
+                    Start = rotatedLens.Start,
+                    End = rotatedLens.End
+                };
+                UpdateScene(_scene with { Lenses = lenses });
+                break;
+            default:
+                return;
+        }
+
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedFocalLength(double focalLength)
+    {
+        if (_selectedKind != SceneItemKind.Lens ||
+            !IsValidIndex(_selectedIndex, _scene.LensElements) ||
+            !double.IsFinite(focalLength))
+        {
+            return;
+        }
+
+        var lenses = (LensSegment[])_scene.LensElements.Clone();
+        var lens = lenses[_selectedIndex];
+        var clamped = Math.Clamp(Math.Abs(focalLength), 1, 10000);
+        if (Math.Abs(lens.FocalLength - clamped) <= 1e-9)
+        {
+            return;
+        }
+
+        lenses[_selectedIndex] = lens with { FocalLength = clamped };
+        UpdateScene(_scene with { Lenses = lenses });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedLength(double length)
+    {
+        if (!double.IsFinite(length))
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(Math.Abs(length), 1, 10000);
+        switch (_selectedKind)
+        {
+            case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
+                var sources = (LightSource[])_scene.LightSources.Clone();
+                var source = sources[_selectedIndex];
+                if (source.Kind != LightSourceKind.ParallelLine || source.End is not { } sourceEnd)
+                {
+                    return;
+                }
+                var resizedSource = ResizeSegment(source.Position, sourceEnd, clamped);
+                sources[_selectedIndex] = source with
+                {
+                    Position = resizedSource.Start,
+                    End = resizedSource.End
+                };
+                UpdateScene(_scene with { LightSources = sources });
+                break;
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                var mirrors = (MirrorSegment[])_scene.Mirrors.Clone();
+                var mirror = mirrors[_selectedIndex];
+                var resizedMirror = ResizeSegment(mirror.Start, mirror.End, clamped);
+                mirrors[_selectedIndex] = mirror with
+                {
+                    Start = resizedMirror.Start,
+                    End = resizedMirror.End
+                };
+                UpdateScene(_scene with { Mirrors = mirrors });
+                break;
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                var lenses = (LensSegment[])_scene.LensElements.Clone();
+                var lens = lenses[_selectedIndex];
+                var resizedLens = ResizeSegment(lens.Start, lens.End, clamped);
+                lenses[_selectedIndex] = lens with
+                {
+                    Start = resizedLens.Start,
+                    End = resizedLens.End
+                };
+                UpdateScene(_scene with { Lenses = lenses });
+                break;
+            default:
+                return;
+        }
+
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedOrigin(double x, double y)
+    {
+        if (!double.IsFinite(x) || !double.IsFinite(y) || CreateSelection() is not { } selection)
+        {
+            return;
+        }
+
+        var delta = new Vector2D(x - selection.OriginX, y - selection.OriginY);
+        if (delta.LengthSquared <= 1e-12)
+        {
+            return;
+        }
+
+        switch (_selectedKind)
+        {
+            case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
+                var sources = (LightSource[])_scene.LightSources.Clone();
+                var source = sources[_selectedIndex];
+                sources[_selectedIndex] = source with
+                {
+                    Position = source.Position + delta,
+                    End = source.End is { } sourceEnd ? sourceEnd + delta : null
+                };
+                UpdateScene(_scene with { LightSources = sources });
+                break;
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                var mirrors = (MirrorSegment[])_scene.Mirrors.Clone();
+                var mirror = mirrors[_selectedIndex];
+                mirrors[_selectedIndex] = mirror with
+                {
+                    Start = mirror.Start + delta,
+                    End = mirror.End + delta
+                };
+                UpdateScene(_scene with { Mirrors = mirrors });
+                break;
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                var lenses = (LensSegment[])_scene.LensElements.Clone();
+                var lens = lenses[_selectedIndex];
+                lenses[_selectedIndex] = lens with
+                {
+                    Start = lens.Start + delta,
+                    End = lens.End + delta
+                };
+                UpdateScene(_scene with { Lenses = lenses });
+                break;
+            default:
+                return;
+        }
+
+        CommitSelectedEdit();
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
         context.Custom(new SkiaDrawOperation(new Rect(Bounds.Size), _scene, _result, _pan, _zoom,
-            _raysPerSource, _tool, _placementStart, _placementPreview));
+            _raysPerSource, _tool, _placementStart, _placementPreview, _selectedKind, _selectedIndex));
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -402,13 +626,17 @@ public sealed class OpticalCanvas : Control
 
         if (_movingKind == SceneItemKind.None)
         {
+            ClearSelection();
             return false;
         }
 
+        _selectedKind = _movingKind;
+        _selectedIndex = _movingIndex;
         _lastMoveWorld = world;
         _moveChanged = false;
         _moveSimulationDirty = false;
         _lastMoveSimulationTimestamp = 0;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
         ToolStateChanged?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -605,6 +833,7 @@ public sealed class OpticalCanvas : Control
 
         _moveChanged = true;
         _moveSimulationDirty = true;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
         RecalculateDuringMoveIfDue();
     }
 
@@ -613,6 +842,96 @@ public sealed class OpticalCanvas : Control
 
     private void UpdateScene(OpticalScene scene) =>
         SetAndRaise(SceneProperty, ref _scene, scene);
+
+    private void CommitSelectedEdit()
+    {
+        Recalculate();
+        SceneChanged?.Invoke(this, EventArgs.Empty);
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private CanvasSelection? CreateSelection()
+    {
+        switch (_selectedKind)
+        {
+            case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
+                var source = _scene.LightSources[_selectedIndex];
+                if (source.Kind == LightSourceKind.ParallelLine && source.End is { } sourceEnd)
+                {
+                    var sourceOrigin = (source.Position + sourceEnd) / 2;
+                    return new CanvasSelection(CanvasSelectionKind.ParallelLight, "线平行光源", true,
+                        sourceOrigin.X, sourceOrigin.Y,
+                        SegmentAngleDegrees(source.Position, sourceEnd), null,
+                        (sourceEnd - sourceOrigin).Length * 2);
+                }
+                return new CanvasSelection(CanvasSelectionKind.PointLight, "点光源", false,
+                    source.Position.X, source.Position.Y, 0, null, null);
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                var mirror = _scene.Mirrors[_selectedIndex];
+                var mirrorOrigin = (mirror.Start + mirror.End) / 2;
+                return new CanvasSelection(CanvasSelectionKind.Mirror, "平面反光镜", true,
+                    mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
+                    (mirror.End - mirrorOrigin).Length * 2);
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                var lens = _scene.LensElements[_selectedIndex];
+                var lensOrigin = (lens.Start + lens.End) / 2;
+                var selectionKind = lens.Kind == LensKind.Convex
+                    ? CanvasSelectionKind.ConvexLens
+                    : CanvasSelectionKind.ConcaveLens;
+                var displayName = lens.Kind == LensKind.Convex ? "凸透镜" : "凹透镜";
+                return new CanvasSelection(selectionKind, displayName, true,
+                    lensOrigin.X, lensOrigin.Y, SegmentAngleDegrees(lens.Start, lens.End), lens.FocalLength,
+                    (lens.End - lensOrigin).Length * 2);
+            default:
+                return null;
+        }
+    }
+
+    private void ClearSelection()
+    {
+        if (_selectedKind == SceneItemKind.None && _selectedIndex < 0)
+        {
+            return;
+        }
+
+        _selectedKind = SceneItemKind.None;
+        _selectedIndex = -1;
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+        InvalidateVisual();
+    }
+
+    private static bool IsValidIndex<T>(int index, T[] items) =>
+        index >= 0 && index < items.Length;
+
+    private static (Vector2D Start, Vector2D End) RotateSegment(
+        Vector2D start,
+        Vector2D end,
+        double radians)
+    {
+        var midpoint = (start + end) / 2;
+        var halfLength = (end - start).Length / 2;
+        var offset = Vector2D.FromAngle(radians) * halfLength;
+        return (midpoint - offset, midpoint + offset);
+    }
+
+    private static (Vector2D Start, Vector2D End) ResizeSegment(
+        Vector2D start,
+        Vector2D end,
+        double length)
+    {
+        var midpoint = (start + end) / 2;
+        var offset = (end - start).Normalized() * (length / 2);
+        return (midpoint - offset, midpoint + offset);
+    }
+
+    private static double SegmentAngleDegrees(Vector2D start, Vector2D end) =>
+        NormalizeDegrees(Math.Atan2(end.Y - start.Y, end.X - start.X) * 180 / Math.PI);
+
+    private static double NormalizeDegrees(double degrees)
+    {
+        var normalized = degrees % 360;
+        return normalized < 0 ? normalized + 360 : normalized;
+    }
 
     private void RecalculateDuringMoveIfDue()
     {
@@ -666,8 +985,12 @@ public sealed class OpticalCanvas : Control
         int raysPerSource,
         CanvasTool tool,
         Vector2D? placementStart,
-        Vector2D? placementPreview) : ICustomDrawOperation
+        Vector2D? placementPreview,
+        SceneItemKind selectedKind,
+        int selectedIndex) : ICustomDrawOperation
     {
+        private const string CoordinateUnit = "p";
+
         public Rect Bounds { get; } = bounds;
         public void Dispose() { }
         public bool Equals(ICustomDrawOperation? other) => false;
@@ -709,10 +1032,121 @@ public sealed class OpticalCanvas : Control
 
         private void DrawAxis(SKCanvas canvas)
         {
-            using var paint = new SKPaint { Color = new SKColor(93, 112, 142, 150), StrokeWidth = 1.2f, IsAntialias = true };
-            canvas.DrawLine(0, (float)pan.Y, (float)Bounds.Width, (float)pan.Y, paint);
-            canvas.DrawLine((float)pan.X, 0, (float)pan.X, (float)Bounds.Height, paint);
+            var step = SelectGridStep(zoom);
+            var horizontalAxisVisible = pan.Y >= 0 && pan.Y <= Bounds.Height;
+            var verticalAxisVisible = pan.X >= 0 && pan.X <= Bounds.Width;
+            using var axisPaint = new SKPaint
+            {
+                Color = new SKColor(122, 145, 180, 210),
+                StrokeWidth = 1.2f,
+                IsAntialias = true
+            };
+            using var tickPaint = new SKPaint
+            {
+                Color = new SKColor(150, 170, 201, 225),
+                StrokeWidth = 1,
+                IsAntialias = true
+            };
+            using var textPaint = new SKPaint
+            {
+                Color = new SKColor(184, 201, 226, 235),
+                IsAntialias = true
+            };
+            using var font = new SKFont(SKTypeface.Default, 11);
+
+            if (horizontalAxisVisible)
+            {
+                canvas.DrawLine(0, (float)pan.Y, (float)Bounds.Width, (float)pan.Y, axisPaint);
+                DrawHorizontalTicks(canvas, step, font, textPaint, tickPaint);
+            }
+
+            if (verticalAxisVisible)
+            {
+                canvas.DrawLine((float)pan.X, 0, (float)pan.X, (float)Bounds.Height, axisPaint);
+                DrawVerticalTicks(canvas, step, font, textPaint, tickPaint, horizontalAxisVisible);
+            }
         }
+
+        private void DrawHorizontalTicks(
+            SKCanvas canvas,
+            double step,
+            SKFont font,
+            SKPaint textPaint,
+            SKPaint tickPaint)
+        {
+            var minimum = -pan.X / zoom;
+            var maximum = (Bounds.Width - pan.X) / zoom;
+            var firstTick = Math.Ceiling(minimum / step) * step;
+            var labelsBelowAxis = pan.Y <= Bounds.Height - 18;
+            var labelBaseline = (float)(labelsBelowAxis ? pan.Y + 15 : pan.Y - 6);
+            var previousLabelRight = double.NegativeInfinity;
+
+            for (var coordinate = firstTick; coordinate <= maximum + step * 1e-9; coordinate += step)
+            {
+                var x = (float)(pan.X + coordinate * zoom);
+                canvas.DrawLine(x, (float)pan.Y - 4, x, (float)pan.Y + 4, tickPaint);
+                if (Math.Abs(coordinate) < step * 1e-9)
+                {
+                    continue;
+                }
+
+                var label = FormatCoordinate(coordinate);
+                var labelWidth = font.MeasureText(label, textPaint);
+                var labelLeft = x - labelWidth / 2;
+                var labelRight = x + labelWidth / 2;
+                if (labelLeft < 2 || labelRight > Bounds.Width - 2 || labelLeft < previousLabelRight + 6)
+                {
+                    continue;
+                }
+
+                canvas.DrawText(label, x, labelBaseline, SKTextAlign.Center, font, textPaint);
+                previousLabelRight = labelRight;
+            }
+        }
+
+        private void DrawVerticalTicks(
+            SKCanvas canvas,
+            double step,
+            SKFont font,
+            SKPaint textPaint,
+            SKPaint tickPaint,
+            bool horizontalAxisVisible)
+        {
+            var minimum = -pan.Y / zoom;
+            var maximum = (Bounds.Height - pan.Y) / zoom;
+            var firstTick = Math.Ceiling(minimum / step) * step;
+            var labelsRightOfAxis = pan.X <= Bounds.Width - 48;
+            var labelX = (float)(labelsRightOfAxis ? pan.X + 7 : pan.X - 7);
+            var alignment = labelsRightOfAxis ? SKTextAlign.Left : SKTextAlign.Right;
+
+            for (var coordinate = firstTick; coordinate <= maximum + step * 1e-9; coordinate += step)
+            {
+                var y = (float)(pan.Y + coordinate * zoom);
+                canvas.DrawLine((float)pan.X - 4, y, (float)pan.X + 4, y, tickPaint);
+                if (Math.Abs(coordinate) < step * 1e-9)
+                {
+                    continue;
+                }
+
+                if (y < 12 || y > Bounds.Height - 2)
+                {
+                    continue;
+                }
+
+                var label = FormatCoordinate(coordinate);
+                canvas.DrawText(label, labelX, y - 3, alignment, font, textPaint);
+            }
+
+            if (horizontalAxisVisible)
+            {
+                var originX = (float)Math.Clamp(pan.X + 6, 2, Bounds.Width - 24);
+                var originY = (float)Math.Clamp(pan.Y - 6, 11, Bounds.Height - 3);
+                canvas.DrawText($"0{CoordinateUnit}", originX, originY, SKTextAlign.Left, font, textPaint);
+            }
+        }
+
+        private static string FormatCoordinate(double coordinate) =>
+            $"{Math.Round(coordinate).ToString(CultureInfo.InvariantCulture)}{CoordinateUnit}";
 
         private void DrawRays(SKCanvas canvas)
         {
@@ -751,44 +1185,58 @@ public sealed class OpticalCanvas : Control
         {
             using var glow = SegmentPaint(new SKColor(47, 213, 255, 50), 9);
             using var paint = SegmentPaint(new SKColor(117, 225, 255), 3);
-            foreach (var mirror in scene.Mirrors)
+            for (var index = 0; index < scene.Mirrors.Length; index++)
             {
+                var mirror = scene.Mirrors[index];
                 canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), glow);
                 canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), paint);
                 if (tool == CanvasTool.Move)
                 {
                     DrawHandles(canvas, mirror.Start, mirror.End, paint);
+                    DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
+                        selectedKind == SceneItemKind.Mirror && selectedIndex == index);
                 }
             }
         }
 
         private void DrawLenses(SKCanvas canvas)
         {
-            foreach (var lens in scene.LensElements)
+            for (var index = 0; index < scene.LensElements.Length; index++)
             {
+                var lens = scene.LensElements[index];
                 var color = lens.Kind == LensKind.Convex ? new SKColor(101, 238, 196) : new SKColor(183, 142, 255);
                 using var glow = SegmentPaint(color.WithAlpha(45), 11);
                 using var paint = SegmentPaint(color, 3);
-                canvas.DrawLine(ToScreen(lens.Start), ToScreen(lens.End), glow);
-                canvas.DrawLine(ToScreen(lens.Start), ToScreen(lens.End), paint);
+                var tangent = (lens.End - lens.Start).Normalized();
+                var arrowInset = Math.Min(12 / zoom, (lens.End - lens.Start).Length * 0.3);
+                var bodyStart = lens.Kind == LensKind.Concave
+                    ? lens.Start + tangent * arrowInset
+                    : lens.Start;
+                var bodyEnd = lens.Kind == LensKind.Concave
+                    ? lens.End - tangent * arrowInset
+                    : lens.End;
+                canvas.DrawLine(ToScreen(bodyStart), ToScreen(bodyEnd), glow);
+                canvas.DrawLine(ToScreen(bodyStart), ToScreen(bodyEnd), paint);
+                DrawLensArrows(canvas, lens, paint, arrowInset);
                 if (tool == CanvasTool.Move)
                 {
                     DrawHandles(canvas, lens.Start, lens.End, paint);
+                    DrawOrigin(canvas, (lens.Start + lens.End) / 2,
+                        selectedKind == SceneItemKind.Lens && selectedIndex == index);
                 }
-                DrawLensArrows(canvas, lens, paint);
             }
         }
 
-        private void DrawLensArrows(SKCanvas canvas, LensSegment lens, SKPaint paint)
+        private void DrawLensArrows(SKCanvas canvas, LensSegment lens, SKPaint paint, double arrowInset)
         {
             var tangent = (lens.End - lens.Start).Normalized();
             var normal = tangent.Perpendicular();
-            var amount = 9 / zoom;
+            var amount = Math.Min(9 / zoom, (lens.End - lens.Start).Length * 0.22);
             var isConvex = lens.Kind == LensKind.Convex;
             foreach (var endpoint in new[] { lens.Start, lens.End })
             {
                 var inward = endpoint == lens.Start ? tangent : -tangent;
-                var innerPoint = endpoint + inward * (12 / zoom);
+                var innerPoint = endpoint + inward * arrowInset;
                 var wingA = endpoint + normal * amount;
                 var wingB = endpoint - normal * amount;
                 if (isConvex)
@@ -810,8 +1258,9 @@ public sealed class OpticalCanvas : Control
         {
             using var fill = new SKPaint { Color = new SKColor(255, 208, 62), Style = SKPaintStyle.Fill, IsAntialias = true };
             using var outline = new SKPaint { Color = new SKColor(255, 245, 188), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
-            foreach (var source in scene.LightSources)
+            for (var index = 0; index < scene.LightSources.Length; index++)
             {
+                var source = scene.LightSources[index];
                 if (source.Kind == LightSourceKind.ParallelLine && source.End is { } end)
                 {
                     canvas.DrawLine(ToScreen(source.Position), ToScreen(end), outline);
@@ -820,12 +1269,22 @@ public sealed class OpticalCanvas : Control
                     var middle = (source.Position + end) / 2;
                     var direction = Vector2D.FromAngle(source.DirectionDegrees * Math.PI / 180);
                     DrawArrow(canvas, middle, middle + direction * (34 / zoom), outline);
+                    if (tool == CanvasTool.Move)
+                    {
+                        DrawOrigin(canvas, middle,
+                            selectedKind == SceneItemKind.LightSource && selectedIndex == index);
+                    }
                 }
                 else
                 {
                     var position = ToScreen(source.Position);
                     canvas.DrawCircle(position, 8, fill);
                     canvas.DrawCircle(position, 12, outline);
+                    if (tool == CanvasTool.Move)
+                    {
+                        DrawOrigin(canvas, source.Position,
+                            selectedKind == SceneItemKind.LightSource && selectedIndex == index);
+                    }
                 }
             }
         }
@@ -865,6 +1324,21 @@ public sealed class OpticalCanvas : Control
         {
             canvas.DrawCircle(ToScreen(start), 4.5f, paint);
             canvas.DrawCircle(ToScreen(end), 4.5f, paint);
+        }
+
+        private void DrawOrigin(SKCanvas canvas, Vector2D origin, bool isSelected)
+        {
+            var point = ToScreen(origin);
+            using var paint = new SKPaint
+            {
+                Color = isSelected ? new SKColor(255, 255, 255) : new SKColor(151, 190, 220, 175),
+                StrokeWidth = isSelected ? 1.8f : 1.2f,
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true
+            };
+            canvas.DrawCircle(point, isSelected ? 5.5f : 4.5f, paint);
+            canvas.DrawLine(point.X - 8, point.Y, point.X + 8, point.Y, paint);
+            canvas.DrawLine(point.X, point.Y - 8, point.X, point.Y + 8, paint);
         }
 
         private void DrawArrow(SKCanvas canvas, Vector2D start, Vector2D end, SKPaint paint)
