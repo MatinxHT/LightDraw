@@ -5,7 +5,7 @@
 		x:Class="LightDraw.Desktop.MainWindow"
 		x:DataType="vm:MainWindowViewModel"
 		Title="光绘课堂 (LightDraw)"
-		Width="1280"
+		Width="1480"
 		Height="800"
 		MinWidth="920"
 		MinHeight="600"
@@ -60,11 +60,19 @@
 			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedElement}">
-			<TextBlock Text="原点" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBlock Text="第一原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点；凹球面镜上圆弧的中点" />
 			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
 			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
+			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+		  </StackPanel>
+		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSecondOrigin}">
+			<TextBlock Text="第二原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="凹球面镜的球心坐标" />
+			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
+			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay}" />
 			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" VerticalAlignment="Center" IsEnabled="{Binding CanRotateSelectedElement}">
@@ -102,9 +110,19 @@
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
-			  <TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			  <TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="球面镜焦距始终等于半径的一半" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			</StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
+			  <TextBlock Text="半径" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="曲率半径；修改后焦距自动更新为 R/2" />
+			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay}" />
+			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			</StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
+			  <TextBlock Text="圆心角" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="决定镜面圆弧大小；默认 180°" />
+			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorArcAngle, Mode=TwoWay}" />
+			  <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedReflectionGrating}">
 			  <TextBlock Text="刻线密度" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="反射光栅每毫米的刻线数量" />
@@ -121,20 +139,23 @@
 		<TextBlock Text="创建工具" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
 		  <StackPanel Spacing="2">
-			<TextBlock Text="光源" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+			<TextBlock Text="光源类" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="● 点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 线平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" />
-			<TextBlock Text="光学元件" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="／ 平面分光镜" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="透射与反射光强各为入射光的 50%" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="┃ ┃ 光阑" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="≋ 反射光栅" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="衍射强度：0级 7/8，正负1级各 6/8，之后每级递减 1/8" />
+			<TextBlock Text="透镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="┃ ┃ 光阑" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
+			<TextBlock Text="反射镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="◖ 理想凹球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="◗ 理想凸球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="／ 平面分光镜" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="透射与反射光强各为入射光的 50%" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="≋ 反射光栅" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="衍射强度：0级 7/8，正负1级各 6/8，之后每级递减 1/8" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />
-			<TextBlock Text="移动主体：整体平移&#x0a;移动端点：拉伸并旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			<TextBlock Text="移动主体：整体平移&#x0a;一般端点：拉伸并旋转&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>

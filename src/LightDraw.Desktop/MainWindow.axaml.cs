@@ -22,11 +22,14 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
+            _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
             _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
+            _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
         }
 
         _viewModel = viewModel;
@@ -36,11 +39,14 @@ public sealed partial class MainWindow : Window
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
+        _viewModel.SetSelectedSphericalMirrorRadiusRequested += OnSetSelectedSphericalMirrorRadiusRequested;
+        _viewModel.SetSelectedSphericalMirrorArcAngleRequested += OnSetSelectedSphericalMirrorArcAngleRequested;
         _viewModel.SetSelectedApertureOpeningRequested += OnSetSelectedApertureOpeningRequested;
         _viewModel.SetSelectedGrooveDensityRequested += OnSetSelectedGrooveDensityRequested;
         _viewModel.SetSelectedWavelengthRequested += OnSetSelectedWavelengthRequested;
         _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
+        _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
         Canvas.SimulationCompleted += OnSimulationCompleted;
         Canvas.ToolStateChanged += OnToolStateChanged;
         Canvas.SceneChanged += OnSceneChanged;
@@ -58,11 +64,14 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
+            _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
             _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
+            _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
         }
 
         Canvas.SimulationCompleted -= OnSimulationCompleted;
@@ -95,6 +104,12 @@ public sealed partial class MainWindow : Window
     private void OnSetSelectedFocalLengthRequested(double focalLength) =>
         Canvas.SetSelectedFocalLength(focalLength);
 
+    private void OnSetSelectedSphericalMirrorRadiusRequested(double radius) =>
+        Canvas.SetSelectedSphericalMirrorRadius(radius);
+
+    private void OnSetSelectedSphericalMirrorArcAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedSphericalMirrorArcAngle(angleDegrees);
+
     private void OnSetSelectedApertureOpeningRequested(double openingSize) =>
         Canvas.SetSelectedApertureOpening(openingSize);
 
@@ -109,6 +124,9 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedOriginRequested(double x, double y) =>
         Canvas.SetSelectedOrigin(x, y);
+
+    private void OnSetSelectedSecondOriginRequested(double x, double y) =>
+        Canvas.SetSelectedSecondOrigin(x, y);
 
     private void OnSceneChanged(object? sender, EventArgs e)
     {

@@ -6,7 +6,7 @@ namespace LightDraw.Core.Persistence;
 
 public static class SceneSerializer
 {
-    public const int CurrentDataVersion = 6;
+    public const int CurrentDataVersion = 8;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -33,7 +33,7 @@ public static class SceneSerializer
         var document = await JsonSerializer.DeserializeAsync<SceneDocument>(stream, Options, cancellationToken)
             ?? throw new InvalidDataException("场景文件为空或格式无效。");
 
-        if (document.DataVersion is not (1 or 2 or 3 or 4 or 5 or CurrentDataVersion))
+        if (document.DataVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or CurrentDataVersion))
         {
             throw new InvalidDataException($"暂不支持场景数据版本 {document.DataVersion}。");
         }

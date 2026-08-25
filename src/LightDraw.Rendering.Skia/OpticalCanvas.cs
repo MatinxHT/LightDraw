@@ -22,6 +22,8 @@ public enum CanvasTool
     PointLight,
     ParallelLight,
     Mirror,
+    ConcaveSphericalMirror,
+    ConvexSphericalMirror,
     BeamSplitter,
     Screen,
     Aperture,
@@ -35,6 +37,8 @@ public enum CanvasSelectionKind
     PointLight,
     ParallelLight,
     Mirror,
+    ConcaveSphericalMirror,
+    ConvexSphericalMirror,
     BeamSplitter,
     Screen,
     Aperture,
@@ -54,13 +58,19 @@ public sealed record CanvasSelection(
     double? Length,
     double? ApertureOpening = null,
     double? GrooveDensity = null,
-    double? WavelengthNanometers = null);
+    double? WavelengthNanometers = null,
+    double? Radius = null,
+    double? ArcAngleDegrees = null,
+    double? SecondOriginX = null,
+    double? SecondOriginY = null);
 
 internal enum SceneItemKind
 {
     None,
     LightSource,
     Mirror,
+    ConcaveSphericalMirror,
+    ConvexSphericalMirror,
     BeamSplitter,
     Screen,
     Aperture,
@@ -73,7 +83,8 @@ internal enum MoveDragMode
     None,
     Translate,
     StartEndpoint,
-    EndEndpoint
+    EndEndpoint,
+    DirectionHandle
 }
 
 public sealed class OpticalCanvas : Control
@@ -164,6 +175,8 @@ public sealed class OpticalCanvas : Control
         {
             LightSources = scene.LightSources ?? [],
             Mirrors = scene.Mirrors ?? [],
+            ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements,
+            ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements,
             Lenses = scene.LensElements,
             Screens = scene.ScreenElements,
             Apertures = scene.ApertureElements,
@@ -274,6 +287,27 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConcaveSphericalMirrorElements):
+                var sphericalMirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+                var sphericalMirror = sphericalMirrors[_selectedIndex];
+                sphericalMirrors[_selectedIndex] = sphericalMirror with
+                {
+                    CenterOfCurvature = sphericalMirror.Vertex + Vector2D.FromAngle(radians) * sphericalMirror.Radius
+                };
+                UpdateScene(_scene with { ConcaveSphericalMirrors = sphericalMirrors });
+                break;
+            case SceneItemKind.ConvexSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConvexSphericalMirrorElements):
+                var convexSphericalMirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+                var convexSphericalMirror = convexSphericalMirrors[_selectedIndex];
+                convexSphericalMirrors[_selectedIndex] = convexSphericalMirror with
+                {
+                    CenterOfCurvature = convexSphericalMirror.Vertex +
+                                        Vector2D.FromAngle(radians) * convexSphericalMirror.Radius
+                };
+                UpdateScene(_scene with { ConvexSphericalMirrors = convexSphericalMirrors });
+                break;
             case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
                 var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
                 var beamSplitter = beamSplitters[_selectedIndex];
@@ -338,23 +372,127 @@ public sealed class OpticalCanvas : Control
 
     public void SetSelectedFocalLength(double focalLength)
     {
-        if (_selectedKind != SceneItemKind.Lens ||
-            !IsValidIndex(_selectedIndex, _scene.LensElements) ||
-            !double.IsFinite(focalLength))
+        if (!double.IsFinite(focalLength))
         {
             return;
         }
 
-        var lenses = (LensSegment[])_scene.LensElements.Clone();
-        var lens = lenses[_selectedIndex];
         var clamped = Math.Clamp(Math.Abs(focalLength), 1, 10000);
-        if (Math.Abs(lens.FocalLength - clamped) <= 1e-9)
+        if (_selectedKind == SceneItemKind.Lens && IsValidIndex(_selectedIndex, _scene.LensElements))
+        {
+            var lenses = (LensSegment[])_scene.LensElements.Clone();
+            var lens = lenses[_selectedIndex];
+            if (Math.Abs(lens.FocalLength - clamped) <= 1e-9)
+            {
+                return;
+            }
+
+            lenses[_selectedIndex] = lens with { FocalLength = clamped };
+            UpdateScene(_scene with { Lenses = lenses });
+        }
+        else if (_selectedKind == SceneItemKind.ConcaveSphericalMirror &&
+                 IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements))
+        {
+            SetSelectedSphericalMirrorRadius(clamped * 2);
+            return;
+        }
+        else if (_selectedKind == SceneItemKind.ConvexSphericalMirror &&
+                 IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements))
+        {
+            SetSelectedSphericalMirrorRadius(clamped * 2);
+            return;
+        }
+        else
         {
             return;
         }
 
-        lenses[_selectedIndex] = lens with { FocalLength = clamped };
-        UpdateScene(_scene with { Lenses = lenses });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedSphericalMirrorRadius(double radius)
+    {
+        if (!double.IsFinite(radius))
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(Math.Abs(radius), 2, 20000);
+        if (_selectedKind == SceneItemKind.ConcaveSphericalMirror &&
+            IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements))
+        {
+            var mirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if (Math.Abs(mirror.Radius - clamped) <= 1e-9)
+            {
+                return;
+            }
+            var direction = (mirror.CenterOfCurvature - mirror.Vertex).Normalized();
+            mirrors[_selectedIndex] = mirror with
+            {
+                CenterOfCurvature = mirror.Vertex + direction * clamped
+            };
+            UpdateScene(_scene with { ConcaveSphericalMirrors = mirrors });
+        }
+        else if (_selectedKind == SceneItemKind.ConvexSphericalMirror &&
+                 IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements))
+        {
+            var mirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if (Math.Abs(mirror.Radius - clamped) <= 1e-9)
+            {
+                return;
+            }
+            var direction = (mirror.CenterOfCurvature - mirror.Vertex).Normalized();
+            mirrors[_selectedIndex] = mirror with
+            {
+                CenterOfCurvature = mirror.Vertex + direction * clamped
+            };
+            UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
+        }
+        else
+        {
+            return;
+        }
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedSphericalMirrorArcAngle(double angleDegrees)
+    {
+        if (!double.IsFinite(angleDegrees))
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(Math.Abs(angleDegrees), 1, 359.9);
+        if (_selectedKind == SceneItemKind.ConcaveSphericalMirror &&
+            IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements))
+        {
+            var mirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if (Math.Abs(mirror.ArcAngleDegrees - clamped) <= 1e-9)
+            {
+                return;
+            }
+            mirrors[_selectedIndex] = mirror with { ArcAngleDegrees = clamped };
+            UpdateScene(_scene with { ConcaveSphericalMirrors = mirrors });
+        }
+        else if (_selectedKind == SceneItemKind.ConvexSphericalMirror &&
+                 IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements))
+        {
+            var mirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if (Math.Abs(mirror.ArcAngleDegrees - clamped) <= 1e-9)
+            {
+                return;
+            }
+            mirrors[_selectedIndex] = mirror with { ArcAngleDegrees = clamped };
+            UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
+        }
+        else
+        {
+            return;
+        }
         CommitSelectedEdit();
     }
 
@@ -559,6 +697,28 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConcaveSphericalMirrorElements):
+                var sphericalMirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+                var sphericalMirror = sphericalMirrors[_selectedIndex];
+                sphericalMirrors[_selectedIndex] = sphericalMirror with
+                {
+                    Vertex = sphericalMirror.Vertex + delta,
+                    CenterOfCurvature = sphericalMirror.CenterOfCurvature + delta
+                };
+                UpdateScene(_scene with { ConcaveSphericalMirrors = sphericalMirrors });
+                break;
+            case SceneItemKind.ConvexSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConvexSphericalMirrorElements):
+                var convexSphericalMirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+                var convexSphericalMirror = convexSphericalMirrors[_selectedIndex];
+                convexSphericalMirrors[_selectedIndex] = convexSphericalMirror with
+                {
+                    Vertex = convexSphericalMirror.Vertex + delta,
+                    CenterOfCurvature = convexSphericalMirror.CenterOfCurvature + delta
+                };
+                UpdateScene(_scene with { ConvexSphericalMirrors = convexSphericalMirrors });
+                break;
             case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
                 var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
                 var beamSplitter = beamSplitters[_selectedIndex];
@@ -613,6 +773,47 @@ public sealed class OpticalCanvas : Control
                 return;
         }
 
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedSecondOrigin(double x, double y)
+    {
+        if (!double.IsFinite(x) || !double.IsFinite(y))
+        {
+            return;
+        }
+
+        var center = new Vector2D(x, y);
+        if (_selectedKind == SceneItemKind.ConcaveSphericalMirror &&
+            IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements))
+        {
+            var mirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if ((center - mirror.Vertex).Length < 2 ||
+                (center - mirror.CenterOfCurvature).LengthSquared <= 1e-12)
+            {
+                return;
+            }
+            mirrors[_selectedIndex] = mirror with { CenterOfCurvature = center };
+            UpdateScene(_scene with { ConcaveSphericalMirrors = mirrors });
+        }
+        else if (_selectedKind == SceneItemKind.ConvexSphericalMirror &&
+                 IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements))
+        {
+            var mirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+            var mirror = mirrors[_selectedIndex];
+            if ((center - mirror.Vertex).Length < 2 ||
+                (center - mirror.CenterOfCurvature).LengthSquared <= 1e-12)
+            {
+                return;
+            }
+            mirrors[_selectedIndex] = mirror with { CenterOfCurvature = center };
+            UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
+        }
+        else
+        {
+            return;
+        }
         CommitSelectedEdit();
     }
 
@@ -759,6 +960,20 @@ public sealed class OpticalCanvas : Control
             case CanvasTool.Mirror:
                 UpdateScene(_scene with { Mirrors = [.. _scene.Mirrors, new MirrorSegment(start, end)] });
                 break;
+            case CanvasTool.ConcaveSphericalMirror:
+                UpdateScene(_scene with
+                {
+                    ConcaveSphericalMirrors =
+                    [.. _scene.ConcaveSphericalMirrorElements, new ConcaveSphericalMirror(start, end)]
+                });
+                break;
+            case CanvasTool.ConvexSphericalMirror:
+                UpdateScene(_scene with
+                {
+                    ConvexSphericalMirrors =
+                    [.. _scene.ConvexSphericalMirrorElements, new ConvexSphericalMirror(start, end)]
+                });
+                break;
             case CanvasTool.BeamSplitter:
                 UpdateScene(_scene with
                 {
@@ -845,6 +1060,26 @@ public sealed class OpticalCanvas : Control
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - mirror.End).Length, SceneItemKind.Mirror, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ConcaveSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConcaveSphericalMirrorElements[index];
+            SelectIfCloser((world - mirror.Vertex).Length, SceneItemKind.ConcaveSphericalMirror,
+                index, MoveDragMode.Translate, ref bestDistance);
+            SelectIfCloser((world - mirror.CenterOfCurvature).Length,
+                SceneItemKind.ConcaveSphericalMirror, index, MoveDragMode.DirectionHandle,
+                ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ConvexSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConvexSphericalMirrorElements[index];
+            SelectIfCloser((world - mirror.Vertex).Length, SceneItemKind.ConvexSphericalMirror,
+                index, MoveDragMode.Translate, ref bestDistance);
+            SelectIfCloser((world - mirror.CenterOfCurvature).Length,
+                SceneItemKind.ConvexSphericalMirror, index, MoveDragMode.DirectionHandle,
+                ref bestDistance);
         }
 
         for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
@@ -948,6 +1183,19 @@ public sealed class OpticalCanvas : Control
             Consider(DistanceToSegment(world, mirror.Start, mirror.End), SceneItemKind.Mirror, index);
         }
 
+        for (var index = 0; index < _scene.ConcaveSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConcaveSphericalMirrorElements[index];
+            Consider(DistanceToArc(world, mirror), SceneItemKind.ConcaveSphericalMirror, index);
+        }
+
+        for (var index = 0; index < _scene.ConvexSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConvexSphericalMirrorElements[index];
+            Consider(DistanceToArc(world, mirror.Vertex, mirror.CenterOfCurvature,
+                mirror.ArcAngleDegrees), SceneItemKind.ConvexSphericalMirror, index);
+        }
+
         for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
         {
             var beamSplitter = _scene.BeamSplitterElements[index];
@@ -987,6 +1235,18 @@ public sealed class OpticalCanvas : Control
                 break;
             case SceneItemKind.Mirror:
                 UpdateScene(_scene with { Mirrors = RemoveAt(_scene.Mirrors, itemIndex) });
+                break;
+            case SceneItemKind.ConcaveSphericalMirror:
+                UpdateScene(_scene with
+                {
+                    ConcaveSphericalMirrors = RemoveAt(_scene.ConcaveSphericalMirrorElements, itemIndex)
+                });
+                break;
+            case SceneItemKind.ConvexSphericalMirror:
+                UpdateScene(_scene with
+                {
+                    ConvexSphericalMirrors = RemoveAt(_scene.ConvexSphericalMirrorElements, itemIndex)
+                });
                 break;
             case SceneItemKind.BeamSplitter:
                 UpdateScene(_scene with
@@ -1039,6 +1299,21 @@ public sealed class OpticalCanvas : Control
         {
             var mirror = _scene.Mirrors[index];
             SelectIfCloser(DistanceToSegment(world, mirror.Start, mirror.End), SceneItemKind.Mirror,
+                index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ConcaveSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConcaveSphericalMirrorElements[index];
+            SelectIfCloser(DistanceToArc(world, mirror), SceneItemKind.ConcaveSphericalMirror,
+                index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ConvexSphericalMirrorElements.Length; index++)
+        {
+            var mirror = _scene.ConvexSphericalMirrorElements[index];
+            SelectIfCloser(DistanceToArc(world, mirror.Vertex, mirror.CenterOfCurvature,
+                    mirror.ArcAngleDegrees), SceneItemKind.ConvexSphericalMirror,
                 index, MoveDragMode.Translate, ref bestDistance);
         }
 
@@ -1150,6 +1425,59 @@ public sealed class OpticalCanvas : Control
                 }
                 mirrors[_movingIndex] = mirror with { Start = mirrorStart, End = mirrorEnd };
                 UpdateScene(_scene with { Mirrors = mirrors });
+                updated = true;
+                break;
+            case SceneItemKind.ConcaveSphericalMirror:
+                var sphericalMirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
+                var sphericalMirror = sphericalMirrors[_movingIndex];
+                if (_moveDragMode == MoveDragMode.DirectionHandle)
+                {
+                    var direction = (world - sphericalMirror.Vertex).Normalized();
+                    if (direction.LengthSquared <= 1e-12)
+                    {
+                        return;
+                    }
+                    sphericalMirrors[_movingIndex] = sphericalMirror with
+                    {
+                        CenterOfCurvature = sphericalMirror.Vertex + direction * sphericalMirror.Radius
+                    };
+                }
+                else
+                {
+                    sphericalMirrors[_movingIndex] = sphericalMirror with
+                    {
+                        Vertex = sphericalMirror.Vertex + delta,
+                        CenterOfCurvature = sphericalMirror.CenterOfCurvature + delta
+                    };
+                }
+                UpdateScene(_scene with { ConcaveSphericalMirrors = sphericalMirrors });
+                updated = true;
+                break;
+            case SceneItemKind.ConvexSphericalMirror:
+                var convexSphericalMirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
+                var convexSphericalMirror = convexSphericalMirrors[_movingIndex];
+                if (_moveDragMode == MoveDragMode.DirectionHandle)
+                {
+                    var direction = (world - convexSphericalMirror.Vertex).Normalized();
+                    if (direction.LengthSquared <= 1e-12)
+                    {
+                        return;
+                    }
+                    convexSphericalMirrors[_movingIndex] = convexSphericalMirror with
+                    {
+                        CenterOfCurvature = convexSphericalMirror.Vertex +
+                                            direction * convexSphericalMirror.Radius
+                    };
+                }
+                else
+                {
+                    convexSphericalMirrors[_movingIndex] = convexSphericalMirror with
+                    {
+                        Vertex = convexSphericalMirror.Vertex + delta,
+                        CenterOfCurvature = convexSphericalMirror.CenterOfCurvature + delta
+                    };
+                }
+                UpdateScene(_scene with { ConvexSphericalMirrors = convexSphericalMirrors });
                 updated = true;
                 break;
             case SceneItemKind.BeamSplitter:
@@ -1302,6 +1630,39 @@ public sealed class OpticalCanvas : Control
                 return new CanvasSelection(CanvasSelectionKind.Mirror, "平面反光镜", true,
                     mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
                     (mirror.End - mirrorOrigin).Length * 2);
+            case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConcaveSphericalMirrorElements):
+                var sphericalMirror = _scene.ConcaveSphericalMirrorElements[_selectedIndex];
+                return new CanvasSelection(
+                    CanvasSelectionKind.ConcaveSphericalMirror,
+                    "理想凹球面镜",
+                    true,
+                    sphericalMirror.Vertex.X,
+                    sphericalMirror.Vertex.Y,
+                    SegmentAngleDegrees(sphericalMirror.Vertex, sphericalMirror.CenterOfCurvature),
+                    sphericalMirror.FocalLength,
+                    null,
+                    Radius: sphericalMirror.Radius,
+                    ArcAngleDegrees: sphericalMirror.ArcAngleDegrees,
+                    SecondOriginX: sphericalMirror.CenterOfCurvature.X,
+                    SecondOriginY: sphericalMirror.CenterOfCurvature.Y);
+            case SceneItemKind.ConvexSphericalMirror when IsValidIndex(
+                _selectedIndex, _scene.ConvexSphericalMirrorElements):
+                var convexSphericalMirror = _scene.ConvexSphericalMirrorElements[_selectedIndex];
+                return new CanvasSelection(
+                    CanvasSelectionKind.ConvexSphericalMirror,
+                    "理想凸球面镜",
+                    true,
+                    convexSphericalMirror.Vertex.X,
+                    convexSphericalMirror.Vertex.Y,
+                    SegmentAngleDegrees(convexSphericalMirror.Vertex,
+                        convexSphericalMirror.CenterOfCurvature),
+                    convexSphericalMirror.FocalLength,
+                    null,
+                    Radius: convexSphericalMirror.Radius,
+                    ArcAngleDegrees: convexSphericalMirror.ArcAngleDegrees,
+                    SecondOriginX: convexSphericalMirror.CenterOfCurvature.X,
+                    SecondOriginY: convexSphericalMirror.CenterOfCurvature.Y);
             case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
                 var beamSplitter = _scene.BeamSplitterElements[_selectedIndex];
                 var beamSplitterOrigin = (beamSplitter.Start + beamSplitter.End) / 2;
@@ -1419,6 +1780,39 @@ public sealed class OpticalCanvas : Control
         return (point - (start + edge * ratio)).Length;
     }
 
+    private static double DistanceToArc(Vector2D point, ConcaveSphericalMirror mirror) =>
+        DistanceToArc(point, mirror.Vertex, mirror.CenterOfCurvature, mirror.ArcAngleDegrees);
+
+    private static double DistanceToArc(
+        Vector2D point,
+        Vector2D vertex,
+        Vector2D centerOfCurvature,
+        double arcAngleDegrees)
+    {
+        var radius = (centerOfCurvature - vertex).Length;
+        if (radius <= 1e-12)
+        {
+            return (point - vertex).Length;
+        }
+
+        var centerAngle = Math.Atan2(
+            vertex.Y - centerOfCurvature.Y,
+            vertex.X - centerOfCurvature.X);
+        var pointAngle = Math.Atan2(
+            point.Y - centerOfCurvature.Y,
+            point.X - centerOfCurvature.X);
+        var difference = Math.Atan2(Math.Sin(pointAngle - centerAngle), Math.Cos(pointAngle - centerAngle));
+        var halfAngle = Math.Clamp(Math.Abs(arcAngleDegrees), 1, 359.9) * Math.PI / 360;
+        if (Math.Abs(difference) <= halfAngle)
+        {
+            return Math.Abs((point - centerOfCurvature).Length - radius);
+        }
+
+        var endpointA = centerOfCurvature + Vector2D.FromAngle(centerAngle - halfAngle) * radius;
+        var endpointB = centerOfCurvature + Vector2D.FromAngle(centerAngle + halfAngle) * radius;
+        return Math.Min((point - endpointA).Length, (point - endpointB).Length);
+    }
+
     private Vector2D ScreenToWorld(Point point) =>
         new((point.X - _pan.X) / _zoom, (point.Y - _pan.Y) / _zoom);
 
@@ -1465,6 +1859,8 @@ public sealed class OpticalCanvas : Control
             DrawAxis(canvas);
             DrawRays(canvas);
             DrawMirrors(canvas);
+            DrawConcaveSphericalMirrors(canvas);
+            DrawConvexSphericalMirrors(canvas);
             DrawBeamSplitters(canvas);
             DrawScreens(canvas);
             DrawApertures(canvas);
@@ -1672,6 +2068,96 @@ public sealed class OpticalCanvas : Control
                     DrawHandles(canvas, mirror.Start, mirror.End, paint);
                     DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
                         selectedKind == SceneItemKind.Mirror && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawConcaveSphericalMirrors(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(64, 198, 255, 55), 10);
+            using var paint = SegmentPaint(new SKColor(91, 212, 255), 3.2);
+            using var guide = new SKPaint
+            {
+                Color = new SKColor(151, 190, 220, 110),
+                StrokeWidth = 1.2f,
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true,
+                PathEffect = SKPathEffect.CreateDash([5, 5], 0)
+            };
+
+            for (var index = 0; index < scene.ConcaveSphericalMirrorElements.Length; index++)
+            {
+                var mirror = scene.ConcaveSphericalMirrorElements[index];
+                var radius = mirror.Radius;
+                if (radius <= 1e-12)
+                {
+                    continue;
+                }
+
+                var center = ToScreen(mirror.CenterOfCurvature);
+                var screenRadius = (float)(radius * zoom);
+                var oval = new SKRect(center.X - screenRadius, center.Y - screenRadius,
+                    center.X + screenRadius, center.Y + screenRadius);
+                var middleAngle = Math.Atan2(
+                    mirror.Vertex.Y - mirror.CenterOfCurvature.Y,
+                    mirror.Vertex.X - mirror.CenterOfCurvature.X) * 180 / Math.PI;
+                var sweep = (float)Math.Clamp(Math.Abs(mirror.ArcAngleDegrees), 1, 359.9);
+                var startAngle = (float)(middleAngle - sweep / 2);
+                canvas.DrawArc(oval, startAngle, sweep, false, glow);
+                canvas.DrawArc(oval, startAngle, sweep, false, paint);
+
+                if (tool == CanvasTool.Move)
+                {
+                    canvas.DrawLine(ToScreen(mirror.Vertex), center, guide);
+                    canvas.DrawCircle(ToScreen(mirror.Vertex), 4.5f, paint);
+                    canvas.DrawCircle(center, 4.5f, paint);
+                    DrawOrigin(canvas, mirror.Vertex,
+                        selectedKind == SceneItemKind.ConcaveSphericalMirror && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawConvexSphericalMirrors(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(255, 166, 72, 55), 10);
+            using var paint = SegmentPaint(new SKColor(255, 184, 92), 3.2);
+            using var guide = new SKPaint
+            {
+                Color = new SKColor(255, 201, 138, 110),
+                StrokeWidth = 1.2f,
+                Style = SKPaintStyle.Stroke,
+                IsAntialias = true,
+                PathEffect = SKPathEffect.CreateDash([5, 5], 0)
+            };
+
+            for (var index = 0; index < scene.ConvexSphericalMirrorElements.Length; index++)
+            {
+                var mirror = scene.ConvexSphericalMirrorElements[index];
+                var radius = mirror.Radius;
+                if (radius <= 1e-12)
+                {
+                    continue;
+                }
+
+                var center = ToScreen(mirror.CenterOfCurvature);
+                var screenRadius = (float)(radius * zoom);
+                var oval = new SKRect(center.X - screenRadius, center.Y - screenRadius,
+                    center.X + screenRadius, center.Y + screenRadius);
+                var middleAngle = Math.Atan2(
+                    mirror.Vertex.Y - mirror.CenterOfCurvature.Y,
+                    mirror.Vertex.X - mirror.CenterOfCurvature.X) * 180 / Math.PI;
+                var sweep = (float)Math.Clamp(Math.Abs(mirror.ArcAngleDegrees), 1, 359.9);
+                var startAngle = (float)(middleAngle - sweep / 2);
+                canvas.DrawArc(oval, startAngle, sweep, false, glow);
+                canvas.DrawArc(oval, startAngle, sweep, false, paint);
+
+                if (tool == CanvasTool.Move)
+                {
+                    canvas.DrawLine(ToScreen(mirror.Vertex), center, guide);
+                    canvas.DrawCircle(ToScreen(mirror.Vertex), 4.5f, paint);
+                    canvas.DrawCircle(center, 4.5f, paint);
+                    DrawOrigin(canvas, mirror.Vertex,
+                        selectedKind == SceneItemKind.ConvexSphericalMirror && selectedIndex == index);
                 }
             }
         }
@@ -1886,6 +2372,19 @@ public sealed class OpticalCanvas : Control
             canvas.DrawLine(ToScreen(start), ToScreen(end), preview);
             canvas.DrawCircle(ToScreen(start), 5, preview);
             canvas.DrawCircle(ToScreen(end), 5, preview);
+            if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror)
+            {
+                var radius = (end - start).Length;
+                if (radius > 1e-12)
+                {
+                    var center = ToScreen(end);
+                    var screenRadius = (float)(radius * zoom);
+                    var oval = new SKRect(center.X - screenRadius, center.Y - screenRadius,
+                        center.X + screenRadius, center.Y + screenRadius);
+                    var middleAngle = Math.Atan2(start.Y - end.Y, start.X - end.X) * 180 / Math.PI;
+                    canvas.DrawArc(oval, (float)(middleAngle - 90), 180, false, preview);
+                }
+            }
             if (tool == CanvasTool.ParallelLight)
             {
                 var middle = (start + end) / 2;
@@ -1906,6 +2405,7 @@ public sealed class OpticalCanvas : Control
         {
             Color = color,
             StrokeWidth = (float)Math.Clamp(width * Math.Sqrt(zoom), 2, width * 2),
+            Style = SKPaintStyle.Stroke,
             StrokeCap = SKStrokeCap.Round,
             IsAntialias = true
         };

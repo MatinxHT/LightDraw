@@ -40,6 +40,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedLens;
 
     [ObservableProperty]
+    private bool _hasSelectedSphericalMirror;
+
+    [ObservableProperty]
+    private bool _hasSelectedSecondOrigin;
+
+    [ObservableProperty]
     private bool _hasSelectedAperture;
 
     [ObservableProperty]
@@ -56,6 +62,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private decimal _selectedFocalLength = 100;
+
+    [ObservableProperty]
+    private decimal _selectedSphericalMirrorRadius = 200;
+
+    [ObservableProperty]
+    private decimal _selectedSphericalMirrorArcAngle = 180;
 
     [ObservableProperty]
     private decimal _selectedApertureOpening = 30;
@@ -79,6 +91,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private decimal _selectedOriginY;
 
     [ObservableProperty]
+    private decimal _selectedSecondOriginX;
+
+    [ObservableProperty]
+    private decimal _selectedSecondOriginY;
+
+    [ObservableProperty]
     private int _selectedStandardAngleIndex;
 
     public event EventHandler? ResetViewRequested;
@@ -86,11 +104,14 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? RotateSelectedRequested;
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double>? SetSelectedFocalLengthRequested;
+    public event Action<double>? SetSelectedSphericalMirrorRadiusRequested;
+    public event Action<double>? SetSelectedSphericalMirrorArcAngleRequested;
     public event Action<double>? SetSelectedApertureOpeningRequested;
     public event Action<double>? SetSelectedGrooveDensityRequested;
     public event Action<double>? SetSelectedWavelengthRequested;
     public event Action<double>? SetSelectedLengthRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
+    public event Action<double, double>? SetSelectedSecondOriginRequested;
 
     partial void OnRayDensityChanged(int value)
     {
@@ -119,6 +140,36 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         if (!_updatingSelection && HasSelectedLens)
         {
             SetSelectedFocalLengthRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedSphericalMirrorRadiusChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 2, 20000);
+        if (clamped != value)
+        {
+            SelectedSphericalMirrorRadius = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedSphericalMirror)
+        {
+            SetSelectedSphericalMirrorRadiusRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedSphericalMirrorArcAngleChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 1, 359.9m);
+        if (clamped != value)
+        {
+            SelectedSphericalMirrorArcAngle = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedSphericalMirror)
+        {
+            SetSelectedSphericalMirrorArcAngleRequested?.Invoke((double)clamped);
         }
     }
 
@@ -194,6 +245,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     partial void OnSelectedOriginXChanged(decimal value) => ApplySelectedOrigin(value, SelectedOriginY);
 
     partial void OnSelectedOriginYChanged(decimal value) => ApplySelectedOrigin(SelectedOriginX, value);
+
+    partial void OnSelectedSecondOriginXChanged(decimal value) =>
+        ApplySelectedSecondOrigin(value, SelectedSecondOriginY);
+
+    partial void OnSelectedSecondOriginYChanged(decimal value) =>
+        ApplySelectedSecondOrigin(SelectedSecondOriginX, value);
 
     partial void OnSelectedStandardAngleIndexChanged(int value)
     {
@@ -309,8 +366,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         StatusText = tool switch
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 拖动主体平移；拖动端点可拉伸和旋转；光路实时刷新",
-            CanvasTool.Delete => "删除元件 · 单击光源、镜面、分光镜、光屏、光阑、光栅或透镜即可删除，随后自动返回平移工具",
+            CanvasTool.Move => "移动或调整元件 · 拖动主体平移；凹球面镜圆心控制点只旋转、不改变半径；光路实时刷新",
+            CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };
     }
@@ -324,6 +381,9 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             HasSelectedLightSource = selection?.WavelengthNanometers is not null;
             CanRotateSelectedElement = selection?.CanRotate == true;
             HasSelectedLens = selection?.FocalLength is not null;
+            HasSelectedSphericalMirror = selection?.Kind is CanvasSelectionKind.ConcaveSphericalMirror
+                or CanvasSelectionKind.ConvexSphericalMirror;
+            HasSelectedSecondOrigin = selection?.SecondOriginX is not null && selection.SecondOriginY is not null;
             HasSelectedAperture = selection?.ApertureOpening is not null;
             HasSelectedReflectionGrating = selection?.GrooveDensity is not null;
             HasSelectedLength = selection?.Length is not null;
@@ -339,9 +399,23 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
                 SelectedOriginX = (decimal)Math.Round(selection.OriginX, 2);
                 SelectedOriginY = (decimal)Math.Round(selection.OriginY, 2);
             }
+            if (selection?.SecondOriginX is { } secondOriginX &&
+                selection.SecondOriginY is { } secondOriginY)
+            {
+                SelectedSecondOriginX = (decimal)Math.Round(secondOriginX, 2);
+                SelectedSecondOriginY = (decimal)Math.Round(secondOriginY, 2);
+            }
             if (selection?.FocalLength is { } focalLength)
             {
                 SelectedFocalLength = (decimal)focalLength;
+            }
+            if (selection?.Radius is { } radius)
+            {
+                SelectedSphericalMirrorRadius = (decimal)Math.Round(radius, 2);
+            }
+            if (selection?.ArcAngleDegrees is { } arcAngle)
+            {
+                SelectedSphericalMirrorArcAngle = (decimal)Math.Round(arcAngle, 2);
             }
             if (selection?.ApertureOpening is { } apertureOpening)
             {
@@ -371,6 +445,14 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         if (!_updatingSelection && HasSelectedElement)
         {
             SetSelectedOriginRequested?.Invoke((double)x, (double)y);
+        }
+    }
+
+    private void ApplySelectedSecondOrigin(decimal x, decimal y)
+    {
+        if (!_updatingSelection && HasSelectedSecondOrigin)
+        {
+            SetSelectedSecondOriginRequested?.Invoke((double)x, (double)y);
         }
     }
 
@@ -420,6 +502,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             CanvasTool.PointLight => "点光源（360° 发光，单击放置）",
             CanvasTool.ParallelLight => "线平行光源（垂直于绘制线发射）",
             CanvasTool.Mirror => "平面反光镜",
+            CanvasTool.ConcaveSphericalMirror => "理想凹球面镜（先定镜面中心，再定曲率圆心）",
+            CanvasTool.ConvexSphericalMirror => "理想凸球面镜（先定镜面中心，再定曲率圆心）",
             CanvasTool.BeamSplitter => "平面分光镜（透射/反射各 50%）",
             CanvasTool.Screen => "光屏",
             CanvasTool.Aperture => "光阑",
@@ -428,6 +512,15 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             CanvasTool.ConcaveLens => "凹透镜",
             _ => "物件"
         };
+        if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror)
+        {
+            var sphericalMirrorName = tool == CanvasTool.ConcaveSphericalMirror
+                ? "理想凹球面镜"
+                : "理想凸球面镜";
+            return isPlacing
+                ? $"正在绘制{sphericalMirrorName} · 移动鼠标预览，单击确定曲率圆心和半径"
+                : $"{sphericalMirrorName} · 单击确定镜面中心点（第一原点）";
+        }
         return isPlacing ? $"正在绘制{name} · 单击确定终点" : $"{name} · 单击确定起点";
     }
 }

@@ -19,6 +19,30 @@ public sealed record LightSource(
 
 public sealed record MirrorSegment(Vector2D Start, Vector2D End);
 
+public sealed record ConcaveSphericalMirror(
+    Vector2D Vertex,
+    Vector2D CenterOfCurvature,
+    double ArcAngleDegrees = 180)
+{
+    [JsonIgnore]
+    public double Radius => (CenterOfCurvature - Vertex).Length;
+
+    [JsonIgnore]
+    public double FocalLength => Radius / 2;
+}
+
+public sealed record ConvexSphericalMirror(
+    Vector2D Vertex,
+    Vector2D CenterOfCurvature,
+    double ArcAngleDegrees = 180)
+{
+    [JsonIgnore]
+    public double Radius => (CenterOfCurvature - Vertex).Length;
+
+    [JsonIgnore]
+    public double FocalLength => Radius / 2;
+}
+
 public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End);
 
 public sealed record ScreenSegment(Vector2D Start, Vector2D End);
@@ -50,7 +74,9 @@ public sealed record OpticalScene(
     ScreenSegment[]? Screens = null,
     ApertureSegment[]? Apertures = null,
     ReflectionGratingSegment[]? ReflectionGratings = null,
-    BeamSplitterSegment[]? BeamSplitters = null)
+    BeamSplitterSegment[]? BeamSplitters = null,
+    ConcaveSphericalMirror[]? ConcaveSphericalMirrors = null,
+    ConvexSphericalMirror[]? ConvexSphericalMirrors = null)
 {
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
@@ -67,8 +93,16 @@ public sealed record OpticalScene(
     [JsonIgnore]
     public BeamSplitterSegment[] BeamSplitterElements => BeamSplitters ?? [];
 
+    [JsonIgnore]
+    public ConcaveSphericalMirror[] ConcaveSphericalMirrorElements => ConcaveSphericalMirrors ?? [];
+
+    [JsonIgnore]
+    public ConvexSphericalMirror[] ConvexSphericalMirrorElements => ConvexSphericalMirrors ?? [];
+
     public static OpticalScene CreateEmpty() => new(
         "空白场景",
+        [],
+        [],
         [],
         [],
         [],

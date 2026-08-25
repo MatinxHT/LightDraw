@@ -20,7 +20,9 @@ public sealed class RayTracer
         {
             foreach (var initialRay in Emit(source, options.RaysPerSource))
             {
-                TraceSingleRay(initialRay, scene.Mirrors, scene.LensElements, scene.ScreenElements,
+                TraceSingleRay(initialRay, scene.Mirrors, scene.ConcaveSphericalMirrorElements,
+                    scene.ConvexSphericalMirrorElements,
+                    scene.LensElements, scene.ScreenElements,
                     scene.ApertureElements, scene.ReflectionGratingElements, scene.BeamSplitterElements,
                     options, segments,
                     ref reflectedRayCount, ref refractedRayCount, ref diffractedRayCount);
@@ -64,6 +66,8 @@ public sealed class RayTracer
     private static void TraceSingleRay(
         Ray2D initialRay,
         IReadOnlyList<MirrorSegment> mirrors,
+        IReadOnlyList<ConcaveSphericalMirror> concaveSphericalMirrors,
+        IReadOnlyList<ConvexSphericalMirror> convexSphericalMirrors,
         IReadOnlyList<LensSegment> lenses,
         IReadOnlyList<ScreenSegment> screens,
         IReadOnlyList<ApertureSegment> apertures,
@@ -88,6 +92,8 @@ public sealed class RayTracer
             {
                 var nearestDistance = double.PositiveInfinity;
                 MirrorSegment? nearestMirror = null;
+                ConcaveSphericalMirror? nearestConcaveSphericalMirror = null;
+                ConvexSphericalMirror? nearestConvexSphericalMirror = null;
                 LensSegment? nearestLens = null;
                 ScreenSegment? nearestScreen = null;
                 ApertureSegment? nearestAperture = null;
@@ -101,6 +107,42 @@ public sealed class RayTracer
                     {
                         nearestDistance = distance;
                         nearestMirror = mirror;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
+                        nearestLens = null;
+                        nearestScreen = null;
+                        nearestAperture = null;
+                        nearestReflectionGrating = null;
+                        nearestBeamSplitter = null;
+                    }
+                }
+
+                foreach (var sphericalMirror in concaveSphericalMirrors)
+                {
+                    if (TryIntersect(ray, sphericalMirror, options.IntersectionEpsilon,
+                            out var distance) && distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestMirror = null;
+                        nearestConcaveSphericalMirror = sphericalMirror;
+                        nearestConvexSphericalMirror = null;
+                        nearestLens = null;
+                        nearestScreen = null;
+                        nearestAperture = null;
+                        nearestReflectionGrating = null;
+                        nearestBeamSplitter = null;
+                    }
+                }
+
+                foreach (var sphericalMirror in convexSphericalMirrors)
+                {
+                    if (TryIntersect(ray, sphericalMirror, options.IntersectionEpsilon,
+                            out var distance) && distance < nearestDistance)
+                    {
+                        nearestDistance = distance;
+                        nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = sphericalMirror;
                         nearestLens = null;
                         nearestScreen = null;
                         nearestAperture = null;
@@ -116,6 +158,8 @@ public sealed class RayTracer
                     {
                         nearestDistance = distance;
                         nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
                         nearestLens = lens;
                         nearestScreen = null;
                         nearestAperture = null;
@@ -131,6 +175,8 @@ public sealed class RayTracer
                     {
                         nearestDistance = distance;
                         nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
                         nearestLens = null;
                         nearestScreen = screen;
                         nearestAperture = null;
@@ -152,6 +198,8 @@ public sealed class RayTracer
 
                         nearestDistance = distance;
                         nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
                         nearestLens = null;
                         nearestScreen = null;
                         nearestAperture = aperture;
@@ -167,6 +215,8 @@ public sealed class RayTracer
                     {
                         nearestDistance = distance;
                         nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
                         nearestLens = null;
                         nearestScreen = null;
                         nearestAperture = null;
@@ -182,6 +232,8 @@ public sealed class RayTracer
                     {
                         nearestDistance = distance;
                         nearestMirror = null;
+                        nearestConcaveSphericalMirror = null;
+                        nearestConvexSphericalMirror = null;
                         nearestLens = null;
                         nearestScreen = null;
                         nearestAperture = null;
@@ -190,7 +242,9 @@ public sealed class RayTracer
                     }
                 }
 
-                if (nearestMirror is null && nearestLens is null && nearestScreen is null &&
+                if (nearestMirror is null && nearestConcaveSphericalMirror is null &&
+                    nearestConvexSphericalMirror is null &&
+                    nearestLens is null && nearestScreen is null &&
                     nearestAperture is null && nearestReflectionGrating is null && nearestBeamSplitter is null)
                 {
                     output.Add(new RaySegment(ray.Origin,
@@ -268,6 +322,18 @@ public sealed class RayTracer
                 {
                     var tangent = (nearestMirror.End - nearestMirror.Start).Normalized();
                     nextDirection = ray.Direction.Reflected(tangent.Perpendicular()).Normalized();
+                    reflectedRayCount++;
+                }
+                else if (nearestConcaveSphericalMirror is not null)
+                {
+                    var normal = (hitPoint - nearestConcaveSphericalMirror.CenterOfCurvature).Normalized();
+                    nextDirection = ray.Direction.Reflected(normal).Normalized();
+                    reflectedRayCount++;
+                }
+                else if (nearestConvexSphericalMirror is not null)
+                {
+                    var normal = (hitPoint - nearestConvexSphericalMirror.CenterOfCurvature).Normalized();
+                    nextDirection = ray.Direction.Reflected(normal).Normalized();
                     reflectedRayCount++;
                 }
                 else
@@ -350,6 +416,91 @@ public sealed class RayTracer
         var hit = rayParameter > epsilon && segmentParameter >= -epsilon && segmentParameter <= 1 + epsilon;
         distance = hit ? rayParameter : 0;
         return hit;
+    }
+
+    private static bool TryIntersect(
+        Ray2D ray,
+        ConcaveSphericalMirror mirror,
+        double epsilon,
+        out double distance) =>
+        TryIntersectSpherical(ray, mirror.Vertex, mirror.CenterOfCurvature,
+            mirror.ArcAngleDegrees, true, epsilon, out distance);
+
+    private static bool TryIntersect(
+        Ray2D ray,
+        ConvexSphericalMirror mirror,
+        double epsilon,
+        out double distance) =>
+        TryIntersectSpherical(ray, mirror.Vertex, mirror.CenterOfCurvature,
+            mirror.ArcAngleDegrees, false, epsilon, out distance);
+
+    private static bool TryIntersectSpherical(
+        Ray2D ray,
+        Vector2D vertex,
+        Vector2D centerOfCurvature,
+        double arcAngleDegrees,
+        bool isConcave,
+        double epsilon,
+        out double distance)
+    {
+        var radius = (centerOfCurvature - vertex).Length;
+        if (radius <= epsilon)
+        {
+            distance = 0;
+            return false;
+        }
+
+        var offset = ray.Origin - centerOfCurvature;
+        var projection = offset.Dot(ray.Direction);
+        var discriminant = projection * projection - (offset.LengthSquared - radius * radius);
+        if (discriminant < -epsilon)
+        {
+            distance = 0;
+            return false;
+        }
+
+        var root = Math.Sqrt(Math.Max(0, discriminant));
+        var first = -projection - root;
+        var second = -projection + root;
+        foreach (var candidate in new[] { first, second })
+        {
+            if (candidate <= epsilon)
+            {
+                continue;
+            }
+
+            var hitPoint = ray.Origin + ray.Direction * candidate;
+            var normal = (hitPoint - centerOfCurvature).Normalized();
+            var hitsReflectiveSide = isConcave
+                ? ray.Direction.Dot(normal) > epsilon
+                : ray.Direction.Dot(normal) < -epsilon;
+            if (hitsReflectiveSide && IsPointOnArc(
+                    hitPoint, vertex, centerOfCurvature, arcAngleDegrees))
+            {
+                distance = candidate;
+                return true;
+            }
+        }
+
+        distance = 0;
+        return false;
+    }
+
+    private static bool IsPointOnArc(
+        Vector2D point,
+        Vector2D vertex,
+        Vector2D centerOfCurvature,
+        double arcAngleDegrees)
+    {
+        var centerAngle = Math.Atan2(
+            vertex.Y - centerOfCurvature.Y,
+            vertex.X - centerOfCurvature.X);
+        var pointAngle = Math.Atan2(
+            point.Y - centerOfCurvature.Y,
+            point.X - centerOfCurvature.X);
+        var difference = Math.Atan2(Math.Sin(pointAngle - centerAngle), Math.Cos(pointAngle - centerAngle));
+        var halfAngle = Math.Clamp(Math.Abs(arcAngleDegrees), 1, 359.9) * Math.PI / 360;
+        return Math.Abs(difference) <= halfAngle + 1e-10;
     }
 
     private static bool IsWithinOpening(Vector2D hitPoint, ApertureSegment aperture, double epsilon)

@@ -56,7 +56,8 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 | 滚动鼠标滚轮 | 以当前指针位置为中心缩放 |
 | 点光源 | 单击放置，向 360° 均匀发光，随后自动返回平移工具 |
 | 线平行光源 | 两次点击确定发射线段，光线沿线段法线方向平行发射 |
-| 平面反光镜 / 平面分光镜 / 光屏 / 光阑 / 反射光栅 / 凸透镜 / 凹透镜 | 第一次点击确定起点，第二次点击确定长度和朝向，随后自动返回平移工具；分光镜让透射光和反射光各保留入射光强的 50%；反射光栅按波长与刻线密度生成可传播衍射级次 |
+| 平面反光镜 / 平面分光镜 / 光屏 / 光阑 / 反射光栅 / 凸透镜 / 凹透镜 | 第一次点击确定起点，第二次点击确定长度和朝向，随后自动返回平移工具；分光镜让透射光和反射光各保留入射光强的 50%；光屏命中后直接截停光线；反射光栅按波长与刻线密度生成可传播衍射级次 |
+| 理想凹球面镜 / 理想凸球面镜 | 第一次点击确定镜面中心点（第一原点），第二次点击确定球心（第二原点）、方向和初始半径；默认圆心角为 180°。编辑时画布上的第二原点只改变方向、不拉伸半径；属性栏可直接编辑两个原点坐标、圆心角、半径与焦距。修改半径或焦距时第一原点固定，第二原点沿当前轴线移动，且始终满足 `f = R/2`；凹、凸镜分别只在朝向球心和背向球心的一侧反射 |
 | Esc | 取消正在放置的物件 |
 | 重置场景 | 清空所有光源和光学元件，恢复空白场景 |
 | 适合窗口 | 恢复默认视图范围 |
@@ -65,11 +66,11 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 
 ## 场景文件格式
 
-场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `6`，并可继续读取版本 `1`～`5`。所有世界坐标、长度、通孔和焦距均以毫米（`mm`）计：
+场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `8`，并可继续读取版本 `1`～`7`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
 
 ```json
 {
-  "dataVersion": 6,
+  "dataVersion": 8,
   "scene": {
     "name": "双镜面反射演示",
     "lightSources": [
@@ -84,6 +85,20 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
       {
         "start": { "x": 40, "y": -170 },
         "end": { "x": 105, "y": 165 }
+      }
+    ],
+    "concaveSphericalMirrors": [
+      {
+        "vertex": { "x": 0, "y": 0 },
+        "centerOfCurvature": { "x": 100, "y": 0 },
+        "arcAngleDegrees": 180
+      }
+    ],
+    "convexSphericalMirrors": [
+      {
+        "vertex": { "x": 0, "y": 160 },
+        "centerOfCurvature": { "x": 100, "y": 160 },
+        "arcAngleDegrees": 120
       }
     ],
     "beamSplitters": [
@@ -126,8 +141,10 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 - `wavelengthNanometers`：波长，单位为纳米；
 - `kind`：光源类型，`point` 或 `parallelLine`；线光源还会保存 `end` 端点；
 - `mirrors[].start/end`：有限线段镜面的两个端点。
+- `concaveSphericalMirrors[].vertex`：凹球面镜的镜面中心点（第一原点）；`centerOfCurvature` 为球心（第二原点），两点距离为曲率半径；`arcAngleDegrees` 为镜面圆心角，焦距由 `f = R/2` 自动确定。
+- `convexSphericalMirrors[]`：字段与凹球面镜一致，但有效反射面位于背向球心的一侧。
 - `beamSplitters[].start/end`：平面分光镜的两个端点；透射和反射分支的光强各为入射光的 50%。
-- `screens[].start/end`：有限线段光屏的两个端点；命中光屏的光线会被吸收。
+- `screens[].start/end`：有限线段光屏的两个端点；命中光屏后光线立即终止传播。
 - `apertures[].start/end`：光阑外部线段的两个端点；`openingSize` 为中央通孔大小。
 - `reflectionGratings[].start/end`：反射光栅的两个端点；`grooveDensityLinesPerMillimeter` 为刻线密度（线/mm）。
 - `lenses[].start/end`：理想薄透镜的两个端点，另含 `kind` 与 `focalLength`。
