@@ -101,6 +101,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     public event EventHandler? ResetViewRequested;
     public event EventHandler? AboutRequested;
+    public event EventHandler? OpenElectrostaticSimulationRequested;
     public event Action<double>? RotateSelectedRequested;
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double>? SetSelectedFocalLengthRequested;
@@ -291,6 +292,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [RelayCommand]
     private void ShowAbout() => AboutRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void OpenElectrostaticSimulation() =>
+        OpenElectrostaticSimulationRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
     private void ResetScene()

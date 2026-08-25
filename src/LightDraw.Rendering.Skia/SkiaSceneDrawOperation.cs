@@ -366,8 +366,8 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawBeamSplitters(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
-        using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
+        using var glow = SegmentPaint(new SKColor(47, 213, 255, 50), 9);
+        using var paint = SegmentPaint(new SKColor(117, 225, 255), 3);
         for (var index = 0; index < scene.BeamSplitterElements.Length; index++)
         {
             var beamSplitter = scene.BeamSplitterElements[index];

@@ -21,6 +21,9 @@
 			<TextBlock Text="光绘课堂 (LightDraw)" FontSize="18" FontWeight="SemiBold" />
 			<TextBlock Text="几何光学教学与绘图" FontSize="11" Foreground="#91A4C2" />
 		  </StackPanel>
+		  <Border Width="1" Height="30" Margin="10,0,4,0" Background="#26344C" />
+		  <Button Classes="toolbar-inline" Content="↯ 打开静电场仿真" Command="{Binding OpenElectrostaticSimulationCommand}" />
+		  <Button Classes="toolbar-inline" Content="⌁ 打开静磁场仿真" IsEnabled="False" ToolTip.Tip="静磁场仿真正在开发中" />
 		</StackPanel>
 		<TextBlock Grid.Column="2" Text=".NET 10 · Avalonia · SkiaSharp" Foreground="#7F93B2" VerticalAlignment="Center" />
 	  </Grid>

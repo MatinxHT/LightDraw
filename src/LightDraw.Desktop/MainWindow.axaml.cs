@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
         {
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
+            _viewModel.OpenElectrostaticSimulationRequested -= OnOpenElectrostaticSimulationRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
@@ -36,6 +37,7 @@ public sealed partial class MainWindow : Window
         DataContext = viewModel;
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.AboutRequested += OnAboutRequested;
+        _viewModel.OpenElectrostaticSimulationRequested += OnOpenElectrostaticSimulationRequested;
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
@@ -61,6 +63,7 @@ public sealed partial class MainWindow : Window
         {
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
+            _viewModel.OpenElectrostaticSimulationRequested -= OnOpenElectrostaticSimulationRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
@@ -85,6 +88,9 @@ public sealed partial class MainWindow : Window
 
     private void OnAboutRequested(object? sender, EventArgs e) =>
         _ = new AboutWindow().ShowDialog(this);
+
+    private void OnOpenElectrostaticSimulationRequested(object? sender, EventArgs e) =>
+        new ElectrostaticWindow().Show(this);
 
     private void OnSimulationCompleted(object? sender, EventArgs e) =>
         _viewModel?.UpdateSimulation(Canvas.SimulationResult);
