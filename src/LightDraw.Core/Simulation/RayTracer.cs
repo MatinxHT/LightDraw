@@ -34,6 +34,7 @@ public sealed class RayTracer
         var count = Math.Max(1, rayCount);
         if (source.Kind == LightSourceKind.Point)
         {
+            count = Math.Max(8, count);
             for (var index = 0; index < count; index++)
             {
                 var angle = 2 * Math.PI * index / count;

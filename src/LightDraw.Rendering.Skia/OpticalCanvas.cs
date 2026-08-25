@@ -755,7 +755,10 @@ public sealed class OpticalCanvas : Control
             {
                 canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), glow);
                 canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), paint);
-                DrawHandles(canvas, mirror.Start, mirror.End, paint);
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, mirror.Start, mirror.End, paint);
+                }
             }
         }
 
@@ -768,7 +771,10 @@ public sealed class OpticalCanvas : Control
                 using var paint = SegmentPaint(color, 3);
                 canvas.DrawLine(ToScreen(lens.Start), ToScreen(lens.End), glow);
                 canvas.DrawLine(ToScreen(lens.Start), ToScreen(lens.End), paint);
-                DrawHandles(canvas, lens.Start, lens.End, paint);
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, lens.Start, lens.End, paint);
+                }
                 DrawLensArrows(canvas, lens, paint);
             }
         }
