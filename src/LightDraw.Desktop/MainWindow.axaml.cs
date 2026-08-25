@@ -22,6 +22,9 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
+            _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
+            _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
         }
@@ -33,6 +36,9 @@ public sealed partial class MainWindow : Window
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
+        _viewModel.SetSelectedApertureOpeningRequested += OnSetSelectedApertureOpeningRequested;
+        _viewModel.SetSelectedGrooveDensityRequested += OnSetSelectedGrooveDensityRequested;
+        _viewModel.SetSelectedWavelengthRequested += OnSetSelectedWavelengthRequested;
         _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
         Canvas.SimulationCompleted += OnSimulationCompleted;
@@ -52,6 +58,9 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
+            _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
+            _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
         }
@@ -85,6 +94,15 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedFocalLengthRequested(double focalLength) =>
         Canvas.SetSelectedFocalLength(focalLength);
+
+    private void OnSetSelectedApertureOpeningRequested(double openingSize) =>
+        Canvas.SetSelectedApertureOpening(openingSize);
+
+    private void OnSetSelectedGrooveDensityRequested(double grooveDensity) =>
+        Canvas.SetSelectedGrooveDensity(grooveDensity);
+
+    private void OnSetSelectedWavelengthRequested(double wavelengthNanometers) =>
+        Canvas.SetSelectedWavelength(wavelengthNanometers);
 
     private void OnSetSelectedLengthRequested(double length) =>
         Canvas.SetSelectedLength(length);

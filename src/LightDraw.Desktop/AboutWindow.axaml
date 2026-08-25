@@ -35,7 +35,7 @@
     <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
       <StackPanel Spacing="9">
         <TextBlock Text="鸣谢" FontWeight="SemiBold" />
-        <TextBlock Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源系"
+        <TextBlock Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源与照明系"
                    Foreground="#9EB0CA" LineHeight="22" TextWrapping="Wrap" />
       </StackPanel>
     </Border>

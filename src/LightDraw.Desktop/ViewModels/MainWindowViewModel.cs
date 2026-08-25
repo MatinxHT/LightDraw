@@ -31,10 +31,19 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedElement;
 
     [ObservableProperty]
+    private bool _hasSelectedLightSource;
+
+    [ObservableProperty]
     private bool _canRotateSelectedElement;
 
     [ObservableProperty]
     private bool _hasSelectedLens;
+
+    [ObservableProperty]
+    private bool _hasSelectedAperture;
+
+    [ObservableProperty]
+    private bool _hasSelectedReflectionGrating;
 
     [ObservableProperty]
     private bool _hasSelectedLength;
@@ -47,6 +56,15 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private decimal _selectedFocalLength = 100;
+
+    [ObservableProperty]
+    private decimal _selectedApertureOpening = 30;
+
+    [ObservableProperty]
+    private decimal _selectedGrooveDensity = 600;
+
+    [ObservableProperty]
+    private decimal _selectedWavelength = 589;
 
     [ObservableProperty]
     private decimal _selectedLength = 100;
@@ -68,6 +86,9 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? RotateSelectedRequested;
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double>? SetSelectedFocalLengthRequested;
+    public event Action<double>? SetSelectedApertureOpeningRequested;
+    public event Action<double>? SetSelectedGrooveDensityRequested;
+    public event Action<double>? SetSelectedWavelengthRequested;
     public event Action<double>? SetSelectedLengthRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
 
@@ -98,6 +119,51 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         if (!_updatingSelection && HasSelectedLens)
         {
             SetSelectedFocalLengthRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedApertureOpeningChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 0, 10000);
+        if (clamped != value)
+        {
+            SelectedApertureOpening = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedAperture)
+        {
+            SetSelectedApertureOpeningRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedGrooveDensityChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 1, 5000);
+        if (clamped != value)
+        {
+            SelectedGrooveDensity = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedReflectionGrating)
+        {
+            SetSelectedGrooveDensityRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedWavelengthChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 1, 1000000);
+        if (clamped != value)
+        {
+            SelectedWavelength = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedLightSource)
+        {
+            SetSelectedWavelengthRequested?.Invoke((double)clamped);
         }
     }
 
@@ -234,7 +300,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     public void UpdateSimulation(SimulationResult result) =>
         StatusText = $"{CurrentScene.Name} · 每光源 {AppliedRaysPerSource} 条 / 共 {result.InitialRayCount} 条 · " +
-                     $"{result.Segments.Count} 个线段 · 计算 {result.Elapsed.TotalMilliseconds:F2} ms";
+                     $"{result.Segments.Count} 个线段 · {result.DiffractedRayCount} 条衍射光线 · " +
+                     $"计算 {result.Elapsed.TotalMilliseconds:F2} ms";
 
     public void UpdateToolState(CanvasTool tool, bool isPlacing)
     {
@@ -243,7 +310,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
             CanvasTool.Move => "移动或调整元件 · 拖动主体平移；拖动端点可拉伸和旋转；光路实时刷新",
-            CanvasTool.Delete => "删除元件 · 单击光源、镜面、光屏或透镜即可删除，随后自动返回平移工具",
+            CanvasTool.Delete => "删除元件 · 单击光源、镜面、分光镜、光屏、光阑、光栅或透镜即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };
     }
@@ -254,8 +321,11 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         try
         {
             HasSelectedElement = selection is not null;
+            HasSelectedLightSource = selection?.WavelengthNanometers is not null;
             CanRotateSelectedElement = selection?.CanRotate == true;
             HasSelectedLens = selection?.FocalLength is not null;
+            HasSelectedAperture = selection?.ApertureOpening is not null;
+            HasSelectedReflectionGrating = selection?.GrooveDensity is not null;
             HasSelectedLength = selection?.Length is not null;
             SelectedElementName = selection?.DisplayName ?? "未选择元件";
             SelectedAngleText = selection?.CanRotate == true
@@ -272,6 +342,18 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             if (selection?.FocalLength is { } focalLength)
             {
                 SelectedFocalLength = (decimal)focalLength;
+            }
+            if (selection?.ApertureOpening is { } apertureOpening)
+            {
+                SelectedApertureOpening = (decimal)Math.Round(apertureOpening, 2);
+            }
+            if (selection?.GrooveDensity is { } grooveDensity)
+            {
+                SelectedGrooveDensity = (decimal)Math.Round(grooveDensity, 2);
+            }
+            if (selection?.WavelengthNanometers is { } wavelength)
+            {
+                SelectedWavelength = (decimal)Math.Round(wavelength, 2);
             }
             if (selection?.Length is { } length)
             {
@@ -338,7 +420,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             CanvasTool.PointLight => "点光源（360° 发光，单击放置）",
             CanvasTool.ParallelLight => "线平行光源（垂直于绘制线发射）",
             CanvasTool.Mirror => "平面反光镜",
+            CanvasTool.BeamSplitter => "平面分光镜（透射/反射各 50%）",
             CanvasTool.Screen => "光屏",
+            CanvasTool.Aperture => "光阑",
+            CanvasTool.ReflectionGrating => "反射光栅",
             CanvasTool.ConvexLens => "凸透镜",
             CanvasTool.ConcaveLens => "凹透镜",
             _ => "物件"

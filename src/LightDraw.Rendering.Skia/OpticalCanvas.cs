@@ -22,7 +22,10 @@ public enum CanvasTool
     PointLight,
     ParallelLight,
     Mirror,
+    BeamSplitter,
     Screen,
+    Aperture,
+    ReflectionGrating,
     ConvexLens,
     ConcaveLens
 }
@@ -32,7 +35,10 @@ public enum CanvasSelectionKind
     PointLight,
     ParallelLight,
     Mirror,
+    BeamSplitter,
     Screen,
+    Aperture,
+    ReflectionGrating,
     ConvexLens,
     ConcaveLens
 }
@@ -45,14 +51,20 @@ public sealed record CanvasSelection(
     double OriginY,
     double AngleDegrees,
     double? FocalLength,
-    double? Length);
+    double? Length,
+    double? ApertureOpening = null,
+    double? GrooveDensity = null,
+    double? WavelengthNanometers = null);
 
 internal enum SceneItemKind
 {
     None,
     LightSource,
     Mirror,
+    BeamSplitter,
     Screen,
+    Aperture,
+    ReflectionGrating,
     Lens
 }
 
@@ -83,7 +95,7 @@ public sealed class OpticalCanvas : Control
 
     private readonly RayTracer _rayTracer = new();
     private OpticalScene _scene = OpticalScene.CreateEmpty();
-    private SimulationResult _result = new([], 0, 0, 0, TimeSpan.Zero);
+    private SimulationResult _result = new([], 0, 0, 0, 0, TimeSpan.Zero);
     private Vector2D _pan = new(520, 360);
     private double _zoom = 1;
     private bool _isPanning;
@@ -153,7 +165,10 @@ public sealed class OpticalCanvas : Control
             LightSources = scene.LightSources ?? [],
             Mirrors = scene.Mirrors ?? [],
             Lenses = scene.LensElements,
-            Screens = scene.ScreenElements
+            Screens = scene.ScreenElements,
+            Apertures = scene.ApertureElements,
+            ReflectionGratings = scene.ReflectionGratingElements,
+            BeamSplitters = scene.BeamSplitterElements
         };
         SetAndRaise(SceneProperty, ref _scene, normalized);
         SetAndRaise(ActiveToolProperty, ref _tool, CanvasTool.Pan);
@@ -259,6 +274,17 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
+                var beamSplitter = beamSplitters[_selectedIndex];
+                var rotatedBeamSplitter = RotateSegment(beamSplitter.Start, beamSplitter.End, radians);
+                beamSplitters[_selectedIndex] = beamSplitter with
+                {
+                    Start = rotatedBeamSplitter.Start,
+                    End = rotatedBeamSplitter.End
+                };
+                UpdateScene(_scene with { BeamSplitters = beamSplitters });
+                break;
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
                 var screen = screens[_selectedIndex];
@@ -269,6 +295,28 @@ public sealed class OpticalCanvas : Control
                     End = rotatedScreen.End
                 };
                 UpdateScene(_scene with { Screens = screens });
+                break;
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
+                var aperture = apertures[_selectedIndex];
+                var rotatedAperture = RotateSegment(aperture.Start, aperture.End, radians);
+                apertures[_selectedIndex] = aperture with
+                {
+                    Start = rotatedAperture.Start,
+                    End = rotatedAperture.End
+                };
+                UpdateScene(_scene with { Apertures = apertures });
+                break;
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
+                var grating = gratings[_selectedIndex];
+                var rotatedGrating = RotateSegment(grating.Start, grating.End, radians);
+                gratings[_selectedIndex] = grating with
+                {
+                    Start = rotatedGrating.Start,
+                    End = rotatedGrating.End
+                };
+                UpdateScene(_scene with { ReflectionGratings = gratings });
                 break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
@@ -310,6 +358,73 @@ public sealed class OpticalCanvas : Control
         CommitSelectedEdit();
     }
 
+    public void SetSelectedApertureOpening(double openingSize)
+    {
+        if (_selectedKind != SceneItemKind.Aperture ||
+            !IsValidIndex(_selectedIndex, _scene.ApertureElements) ||
+            !double.IsFinite(openingSize))
+        {
+            return;
+        }
+
+        var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
+        var aperture = apertures[_selectedIndex];
+        var length = (aperture.End - aperture.Start).Length;
+        var clamped = Math.Clamp(openingSize, 0, length);
+        if (Math.Abs(aperture.OpeningSize - clamped) <= 1e-9)
+        {
+            return;
+        }
+
+        apertures[_selectedIndex] = aperture with { OpeningSize = clamped };
+        UpdateScene(_scene with { Apertures = apertures });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedGrooveDensity(double grooveDensity)
+    {
+        if (_selectedKind != SceneItemKind.ReflectionGrating ||
+            !IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements) ||
+            !double.IsFinite(grooveDensity))
+        {
+            return;
+        }
+
+        var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
+        var grating = gratings[_selectedIndex];
+        var clamped = Math.Clamp(grooveDensity, 1, 5000);
+        if (Math.Abs(grating.GrooveDensityLinesPerMillimeter - clamped) <= 1e-9)
+        {
+            return;
+        }
+
+        gratings[_selectedIndex] = grating with { GrooveDensityLinesPerMillimeter = clamped };
+        UpdateScene(_scene with { ReflectionGratings = gratings });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedWavelength(double wavelengthNanometers)
+    {
+        if (_selectedKind != SceneItemKind.LightSource ||
+            !IsValidIndex(_selectedIndex, _scene.LightSources) ||
+            !double.IsFinite(wavelengthNanometers))
+        {
+            return;
+        }
+
+        var sources = (LightSource[])_scene.LightSources.Clone();
+        var source = sources[_selectedIndex];
+        var clamped = Math.Clamp(wavelengthNanometers, 1, 1000000);
+        if (Math.Abs(source.WavelengthNanometers - clamped) <= 1e-9)
+        {
+            return;
+        }
+
+        sources[_selectedIndex] = source with { WavelengthNanometers = clamped };
+        UpdateScene(_scene with { LightSources = sources });
+        CommitSelectedEdit();
+    }
+
     public void SetSelectedLength(double length)
     {
         if (!double.IsFinite(length))
@@ -346,6 +461,17 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
+                var beamSplitter = beamSplitters[_selectedIndex];
+                var resizedBeamSplitter = ResizeSegment(beamSplitter.Start, beamSplitter.End, clamped);
+                beamSplitters[_selectedIndex] = beamSplitter with
+                {
+                    Start = resizedBeamSplitter.Start,
+                    End = resizedBeamSplitter.End
+                };
+                UpdateScene(_scene with { BeamSplitters = beamSplitters });
+                break;
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
                 var screen = screens[_selectedIndex];
@@ -356,6 +482,29 @@ public sealed class OpticalCanvas : Control
                     End = resizedScreen.End
                 };
                 UpdateScene(_scene with { Screens = screens });
+                break;
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
+                var aperture = apertures[_selectedIndex];
+                var resizedAperture = ResizeSegment(aperture.Start, aperture.End, clamped);
+                apertures[_selectedIndex] = aperture with
+                {
+                    Start = resizedAperture.Start,
+                    End = resizedAperture.End,
+                    OpeningSize = Math.Min(aperture.OpeningSize, clamped)
+                };
+                UpdateScene(_scene with { Apertures = apertures });
+                break;
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
+                var grating = gratings[_selectedIndex];
+                var resizedGrating = ResizeSegment(grating.Start, grating.End, clamped);
+                gratings[_selectedIndex] = grating with
+                {
+                    Start = resizedGrating.Start,
+                    End = resizedGrating.End
+                };
+                UpdateScene(_scene with { ReflectionGratings = gratings });
                 break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
@@ -410,6 +559,16 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
+                var beamSplitter = beamSplitters[_selectedIndex];
+                beamSplitters[_selectedIndex] = beamSplitter with
+                {
+                    Start = beamSplitter.Start + delta,
+                    End = beamSplitter.End + delta
+                };
+                UpdateScene(_scene with { BeamSplitters = beamSplitters });
+                break;
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
                 var screen = screens[_selectedIndex];
@@ -419,6 +578,26 @@ public sealed class OpticalCanvas : Control
                     End = screen.End + delta
                 };
                 UpdateScene(_scene with { Screens = screens });
+                break;
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
+                var aperture = apertures[_selectedIndex];
+                apertures[_selectedIndex] = aperture with
+                {
+                    Start = aperture.Start + delta,
+                    End = aperture.End + delta
+                };
+                UpdateScene(_scene with { Apertures = apertures });
+                break;
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
+                var grating = gratings[_selectedIndex];
+                gratings[_selectedIndex] = grating with
+                {
+                    Start = grating.Start + delta,
+                    End = grating.End + delta
+                };
+                UpdateScene(_scene with { ReflectionGratings = gratings });
                 break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
@@ -580,8 +759,28 @@ public sealed class OpticalCanvas : Control
             case CanvasTool.Mirror:
                 UpdateScene(_scene with { Mirrors = [.. _scene.Mirrors, new MirrorSegment(start, end)] });
                 break;
+            case CanvasTool.BeamSplitter:
+                UpdateScene(_scene with
+                {
+                    BeamSplitters = [.. _scene.BeamSplitterElements, new BeamSplitterSegment(start, end)]
+                });
+                break;
             case CanvasTool.Screen:
                 UpdateScene(_scene with { Screens = [.. _scene.ScreenElements, new ScreenSegment(start, end)] });
+                break;
+            case CanvasTool.Aperture:
+                var openingSize = Math.Min(60, delta.Length * 0.3);
+                UpdateScene(_scene with
+                {
+                    Apertures = [.. _scene.ApertureElements, new ApertureSegment(start, end, openingSize)]
+                });
+                break;
+            case CanvasTool.ReflectionGrating:
+                UpdateScene(_scene with
+                {
+                    ReflectionGratings =
+                    [.. _scene.ReflectionGratingElements, new ReflectionGratingSegment(start, end, 600)]
+                });
                 break;
             case CanvasTool.ConvexLens:
             case CanvasTool.ConcaveLens:
@@ -648,12 +847,39 @@ public sealed class OpticalCanvas : Control
                 MoveDragMode.EndEndpoint, ref bestDistance);
         }
 
+        for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
+        {
+            var beamSplitter = _scene.BeamSplitterElements[index];
+            SelectIfCloser((world - beamSplitter.Start).Length, SceneItemKind.BeamSplitter, index,
+                MoveDragMode.StartEndpoint, ref bestDistance);
+            SelectIfCloser((world - beamSplitter.End).Length, SceneItemKind.BeamSplitter, index,
+                MoveDragMode.EndEndpoint, ref bestDistance);
+        }
+
         for (var index = 0; index < _scene.ScreenElements.Length; index++)
         {
             var screen = _scene.ScreenElements[index];
             SelectIfCloser((world - screen.Start).Length, SceneItemKind.Screen, index,
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - screen.End).Length, SceneItemKind.Screen, index,
+                MoveDragMode.EndEndpoint, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ApertureElements.Length; index++)
+        {
+            var aperture = _scene.ApertureElements[index];
+            SelectIfCloser((world - aperture.Start).Length, SceneItemKind.Aperture, index,
+                MoveDragMode.StartEndpoint, ref bestDistance);
+            SelectIfCloser((world - aperture.End).Length, SceneItemKind.Aperture, index,
+                MoveDragMode.EndEndpoint, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ReflectionGratingElements.Length; index++)
+        {
+            var grating = _scene.ReflectionGratingElements[index];
+            SelectIfCloser((world - grating.Start).Length, SceneItemKind.ReflectionGrating, index,
+                MoveDragMode.StartEndpoint, ref bestDistance);
+            SelectIfCloser((world - grating.End).Length, SceneItemKind.ReflectionGrating, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
         }
 
@@ -722,10 +948,30 @@ public sealed class OpticalCanvas : Control
             Consider(DistanceToSegment(world, mirror.Start, mirror.End), SceneItemKind.Mirror, index);
         }
 
+        for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
+        {
+            var beamSplitter = _scene.BeamSplitterElements[index];
+            Consider(DistanceToSegment(world, beamSplitter.Start, beamSplitter.End),
+                SceneItemKind.BeamSplitter, index);
+        }
+
         for (var index = 0; index < _scene.ScreenElements.Length; index++)
         {
             var screen = _scene.ScreenElements[index];
             Consider(DistanceToSegment(world, screen.Start, screen.End), SceneItemKind.Screen, index);
+        }
+
+        for (var index = 0; index < _scene.ApertureElements.Length; index++)
+        {
+            var aperture = _scene.ApertureElements[index];
+            Consider(DistanceToSegment(world, aperture.Start, aperture.End), SceneItemKind.Aperture, index);
+        }
+
+        for (var index = 0; index < _scene.ReflectionGratingElements.Length; index++)
+        {
+            var grating = _scene.ReflectionGratingElements[index];
+            Consider(DistanceToSegment(world, grating.Start, grating.End),
+                SceneItemKind.ReflectionGrating, index);
         }
 
         for (var index = 0; index < _scene.LensElements.Length; index++)
@@ -742,8 +988,23 @@ public sealed class OpticalCanvas : Control
             case SceneItemKind.Mirror:
                 UpdateScene(_scene with { Mirrors = RemoveAt(_scene.Mirrors, itemIndex) });
                 break;
+            case SceneItemKind.BeamSplitter:
+                UpdateScene(_scene with
+                {
+                    BeamSplitters = RemoveAt(_scene.BeamSplitterElements, itemIndex)
+                });
+                break;
             case SceneItemKind.Screen:
                 UpdateScene(_scene with { Screens = RemoveAt(_scene.ScreenElements, itemIndex) });
+                break;
+            case SceneItemKind.Aperture:
+                UpdateScene(_scene with { Apertures = RemoveAt(_scene.ApertureElements, itemIndex) });
+                break;
+            case SceneItemKind.ReflectionGrating:
+                UpdateScene(_scene with
+                {
+                    ReflectionGratings = RemoveAt(_scene.ReflectionGratingElements, itemIndex)
+                });
                 break;
             case SceneItemKind.Lens:
                 UpdateScene(_scene with { Lenses = RemoveAt(_scene.LensElements, itemIndex) });
@@ -781,11 +1042,32 @@ public sealed class OpticalCanvas : Control
                 index, MoveDragMode.Translate, ref bestDistance);
         }
 
+        for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
+        {
+            var beamSplitter = _scene.BeamSplitterElements[index];
+            SelectIfCloser(DistanceToSegment(world, beamSplitter.Start, beamSplitter.End),
+                SceneItemKind.BeamSplitter, index, MoveDragMode.Translate, ref bestDistance);
+        }
+
         for (var index = 0; index < _scene.ScreenElements.Length; index++)
         {
             var screen = _scene.ScreenElements[index];
             SelectIfCloser(DistanceToSegment(world, screen.Start, screen.End), SceneItemKind.Screen,
                 index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ApertureElements.Length; index++)
+        {
+            var aperture = _scene.ApertureElements[index];
+            SelectIfCloser(DistanceToSegment(world, aperture.Start, aperture.End), SceneItemKind.Aperture,
+                index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ReflectionGratingElements.Length; index++)
+        {
+            var grating = _scene.ReflectionGratingElements[index];
+            SelectIfCloser(DistanceToSegment(world, grating.Start, grating.End),
+                SceneItemKind.ReflectionGrating, index, MoveDragMode.Translate, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.LensElements.Length; index++)
@@ -870,6 +1152,28 @@ public sealed class OpticalCanvas : Control
                 UpdateScene(_scene with { Mirrors = mirrors });
                 updated = true;
                 break;
+            case SceneItemKind.BeamSplitter:
+                var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
+                var beamSplitter = beamSplitters[_movingIndex];
+                var beamSplitterStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : beamSplitter.Start;
+                var beamSplitterEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : beamSplitter.End;
+                if (_moveDragMode == MoveDragMode.Translate)
+                {
+                    beamSplitterStart += delta;
+                    beamSplitterEnd += delta;
+                }
+                if (!HasUsableLength(beamSplitterStart, beamSplitterEnd))
+                {
+                    return;
+                }
+                beamSplitters[_movingIndex] = beamSplitter with
+                {
+                    Start = beamSplitterStart,
+                    End = beamSplitterEnd
+                };
+                UpdateScene(_scene with { BeamSplitters = beamSplitters });
+                updated = true;
+                break;
             case SceneItemKind.Screen:
                 var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
                 var screen = screens[_movingIndex];
@@ -886,6 +1190,48 @@ public sealed class OpticalCanvas : Control
                 }
                 screens[_movingIndex] = screen with { Start = screenStart, End = screenEnd };
                 UpdateScene(_scene with { Screens = screens });
+                updated = true;
+                break;
+            case SceneItemKind.Aperture:
+                var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
+                var aperture = apertures[_movingIndex];
+                var apertureStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : aperture.Start;
+                var apertureEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : aperture.End;
+                if (_moveDragMode == MoveDragMode.Translate)
+                {
+                    apertureStart += delta;
+                    apertureEnd += delta;
+                }
+                if (!HasUsableLength(apertureStart, apertureEnd))
+                {
+                    return;
+                }
+                var apertureLength = (apertureEnd - apertureStart).Length;
+                apertures[_movingIndex] = aperture with
+                {
+                    Start = apertureStart,
+                    End = apertureEnd,
+                    OpeningSize = Math.Min(aperture.OpeningSize, apertureLength)
+                };
+                UpdateScene(_scene with { Apertures = apertures });
+                updated = true;
+                break;
+            case SceneItemKind.ReflectionGrating:
+                var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
+                var grating = gratings[_movingIndex];
+                var gratingStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : grating.Start;
+                var gratingEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : grating.End;
+                if (_moveDragMode == MoveDragMode.Translate)
+                {
+                    gratingStart += delta;
+                    gratingEnd += delta;
+                }
+                if (!HasUsableLength(gratingStart, gratingEnd))
+                {
+                    return;
+                }
+                gratings[_movingIndex] = grating with { Start = gratingStart, End = gratingEnd };
+                UpdateScene(_scene with { ReflectionGratings = gratings });
                 updated = true;
                 break;
             case SceneItemKind.Lens:
@@ -944,22 +1290,44 @@ public sealed class OpticalCanvas : Control
                     return new CanvasSelection(CanvasSelectionKind.ParallelLight, "线平行光源", true,
                         sourceOrigin.X, sourceOrigin.Y,
                         SegmentAngleDegrees(source.Position, sourceEnd), null,
-                        (sourceEnd - sourceOrigin).Length * 2);
+                        (sourceEnd - sourceOrigin).Length * 2,
+                        WavelengthNanometers: source.WavelengthNanometers);
                 }
                 return new CanvasSelection(CanvasSelectionKind.PointLight, "点光源", false,
-                    source.Position.X, source.Position.Y, 0, null, null);
+                    source.Position.X, source.Position.Y, 0, null, null,
+                    WavelengthNanometers: source.WavelengthNanometers);
             case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
                 var mirror = _scene.Mirrors[_selectedIndex];
                 var mirrorOrigin = (mirror.Start + mirror.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.Mirror, "平面反光镜", true,
                     mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
                     (mirror.End - mirrorOrigin).Length * 2);
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                var beamSplitter = _scene.BeamSplitterElements[_selectedIndex];
+                var beamSplitterOrigin = (beamSplitter.Start + beamSplitter.End) / 2;
+                return new CanvasSelection(CanvasSelectionKind.BeamSplitter, "平面分光镜", true,
+                    beamSplitterOrigin.X, beamSplitterOrigin.Y,
+                    SegmentAngleDegrees(beamSplitter.Start, beamSplitter.End), null,
+                    (beamSplitter.End - beamSplitterOrigin).Length * 2);
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screen = _scene.ScreenElements[_selectedIndex];
                 var screenOrigin = (screen.Start + screen.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.Screen, "光屏", true,
                     screenOrigin.X, screenOrigin.Y, SegmentAngleDegrees(screen.Start, screen.End), null,
                     (screen.End - screenOrigin).Length * 2);
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                var aperture = _scene.ApertureElements[_selectedIndex];
+                var apertureOrigin = (aperture.Start + aperture.End) / 2;
+                return new CanvasSelection(CanvasSelectionKind.Aperture, "光阑", true,
+                    apertureOrigin.X, apertureOrigin.Y, SegmentAngleDegrees(aperture.Start, aperture.End), null,
+                    (aperture.End - apertureOrigin).Length * 2, aperture.OpeningSize);
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                var grating = _scene.ReflectionGratingElements[_selectedIndex];
+                var gratingOrigin = (grating.Start + grating.End) / 2;
+                return new CanvasSelection(CanvasSelectionKind.ReflectionGrating, "反射光栅", true,
+                    gratingOrigin.X, gratingOrigin.Y, SegmentAngleDegrees(grating.Start, grating.End), null,
+                    (grating.End - gratingOrigin).Length * 2, null,
+                    grating.GrooveDensityLinesPerMillimeter);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;
@@ -1077,7 +1445,7 @@ public sealed class OpticalCanvas : Control
         SceneItemKind selectedKind,
         int selectedIndex) : ICustomDrawOperation
     {
-        private const string CoordinateUnit = "p";
+        private const string CoordinateUnit = "mm";
 
         public Rect Bounds { get; } = bounds;
         public void Dispose() { }
@@ -1097,7 +1465,10 @@ public sealed class OpticalCanvas : Control
             DrawAxis(canvas);
             DrawRays(canvas);
             DrawMirrors(canvas);
+            DrawBeamSplitters(canvas);
             DrawScreens(canvas);
+            DrawApertures(canvas);
+            DrawReflectionGratings(canvas);
             DrawLenses(canvas);
             DrawSources(canvas);
             DrawPlacementPreview(canvas);
@@ -1239,36 +1610,53 @@ public sealed class OpticalCanvas : Control
 
         private void DrawRays(SKCanvas canvas)
         {
-            using var paint = new SKPaint
+            var segmentCount = result.Segments.Count;
+            var alpha = segmentCount > 5000 ? (byte)80 : segmentCount > 1200 ? (byte)115 : (byte)180;
+            foreach (var rayGroup in result.Segments.GroupBy(segment =>
+                         (Order: Math.Abs(segment.DiffractionOrder), segment.Intensity)))
             {
-                Color = new SKColor(255, 224, 92, result.InitialRayCount > 1200 ? (byte)115 : (byte)180),
-                StrokeWidth = Math.Max(0.8f, (float)(1.05 * Math.Sqrt(zoom))),
-                Style = SKPaintStyle.Stroke,
-                IsAntialias = result.InitialRayCount <= 1200,
-                StrokeCap = SKStrokeCap.Round,
-                BlendMode = SKBlendMode.SrcOver
-            };
-            using var path = new SKPath();
-            foreach (var segment in result.Segments)
-            {
-                path.MoveTo(ToScreen(segment.Start));
-                path.LineTo(ToScreen(segment.End));
-            }
-            if (result.InitialRayCount <= 600)
-            {
-                using var glow = new SKPaint
+                var color = DiffractionOrderColor(rayGroup.Key.Order);
+                var intensity = Math.Clamp(rayGroup.Key.Intensity, 0, 1);
+                var rayAlpha = (byte)Math.Clamp(Math.Round(alpha * intensity), 1, byte.MaxValue);
+                using var paint = new SKPaint
                 {
-                    Color = new SKColor(255, 192, 58, 32),
-                    StrokeWidth = Math.Max(2.2f, (float)(2.8 * Math.Sqrt(zoom))),
+                    Color = color.WithAlpha(rayAlpha),
+                    StrokeWidth = Math.Max(0.8f, (float)(1.05 * Math.Sqrt(zoom))),
                     Style = SKPaintStyle.Stroke,
-                    IsAntialias = true,
+                    IsAntialias = segmentCount <= 3000,
                     StrokeCap = SKStrokeCap.Round,
                     BlendMode = SKBlendMode.SrcOver
                 };
-                canvas.DrawPath(path, glow);
+                using var path = new SKPath();
+                foreach (var segment in rayGroup)
+                {
+                    path.MoveTo(ToScreen(segment.Start));
+                    path.LineTo(ToScreen(segment.End));
+                }
+                if (segmentCount <= 1200)
+                {
+                    using var glow = new SKPaint
+                    {
+                        Color = color.WithAlpha((byte)Math.Clamp(Math.Round(32 * intensity), 1, byte.MaxValue)),
+                        StrokeWidth = Math.Max(2.2f, (float)(2.8 * Math.Sqrt(zoom))),
+                        Style = SKPaintStyle.Stroke,
+                        IsAntialias = true,
+                        StrokeCap = SKStrokeCap.Round,
+                        BlendMode = SKBlendMode.SrcOver
+                    };
+                    canvas.DrawPath(path, glow);
+                }
+                canvas.DrawPath(path, paint);
             }
-            canvas.DrawPath(path, paint);
         }
+
+        private static SKColor DiffractionOrderColor(int absoluteOrder) => absoluteOrder switch
+        {
+            1 or 4 => new SKColor(72, 151, 255),
+            2 or 5 => new SKColor(72, 220, 132),
+            3 or 6 => new SKColor(255, 82, 82),
+            _ => new SKColor(255, 224, 92)
+        };
 
         private void DrawMirrors(SKCanvas canvas)
         {
@@ -1302,6 +1690,101 @@ public sealed class OpticalCanvas : Control
                     DrawHandles(canvas, screen.Start, screen.End, paint);
                     DrawOrigin(canvas, (screen.Start + screen.End) / 2,
                         selectedKind == SceneItemKind.Screen && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawBeamSplitters(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
+            using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
+            for (var index = 0; index < scene.BeamSplitterElements.Length; index++)
+            {
+                var beamSplitter = scene.BeamSplitterElements[index];
+                canvas.DrawLine(ToScreen(beamSplitter.Start), ToScreen(beamSplitter.End), glow);
+                canvas.DrawLine(ToScreen(beamSplitter.Start), ToScreen(beamSplitter.End), paint);
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, beamSplitter.Start, beamSplitter.End, paint);
+                    DrawOrigin(canvas, (beamSplitter.Start + beamSplitter.End) / 2,
+                        selectedKind == SceneItemKind.BeamSplitter && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawApertures(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
+            using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
+            for (var index = 0; index < scene.ApertureElements.Length; index++)
+            {
+                var aperture = scene.ApertureElements[index];
+                var edge = aperture.End - aperture.Start;
+                var length = edge.Length;
+                if (length <= 1e-12)
+                {
+                    continue;
+                }
+
+                var tangent = edge / length;
+                var normal = tangent.Perpendicular();
+                var midpoint = (aperture.Start + aperture.End) / 2;
+                var halfOpening = Math.Clamp(aperture.OpeningSize, 0, length) / 2;
+                var openingStart = midpoint - tangent * halfOpening;
+                var openingEnd = midpoint + tangent * halfOpening;
+                canvas.DrawLine(ToScreen(aperture.Start), ToScreen(openingStart), glow);
+                canvas.DrawLine(ToScreen(openingEnd), ToScreen(aperture.End), glow);
+                canvas.DrawLine(ToScreen(aperture.Start), ToScreen(openingStart), paint);
+                canvas.DrawLine(ToScreen(openingEnd), ToScreen(aperture.End), paint);
+
+                var markerSize = Math.Min(7 / zoom, length * 0.12);
+                canvas.DrawLine(ToScreen(openingStart - normal * markerSize),
+                    ToScreen(openingStart + normal * markerSize), paint);
+                canvas.DrawLine(ToScreen(openingEnd - normal * markerSize),
+                    ToScreen(openingEnd + normal * markerSize), paint);
+
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, aperture.Start, aperture.End, paint);
+                    DrawOrigin(canvas, midpoint,
+                        selectedKind == SceneItemKind.Aperture && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawReflectionGratings(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
+            using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
+            using var groovePaint = SegmentPaint(new SKColor(203, 213, 225), 1.2);
+            for (var index = 0; index < scene.ReflectionGratingElements.Length; index++)
+            {
+                var grating = scene.ReflectionGratingElements[index];
+                var edge = grating.End - grating.Start;
+                var length = edge.Length;
+                if (length <= 1e-12)
+                {
+                    continue;
+                }
+
+                canvas.DrawLine(ToScreen(grating.Start), ToScreen(grating.End), glow);
+                canvas.DrawLine(ToScreen(grating.Start), ToScreen(grating.End), paint);
+                var tangent = edge / length;
+                var normal = tangent.Perpendicular();
+                var visibleGrooves = Math.Clamp((int)Math.Round(length * zoom / 14), 4, 24);
+                var markerSize = Math.Min(5 / zoom, length * 0.08);
+                for (var groove = 1; groove < visibleGrooves; groove++)
+                {
+                    var point = grating.Start + edge * ((double)groove / visibleGrooves);
+                    canvas.DrawLine(ToScreen(point - normal * markerSize),
+                        ToScreen(point + normal * markerSize), groovePaint);
+                }
+
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, grating.Start, grating.End, paint);
+                    DrawOrigin(canvas, (grating.Start + grating.End) / 2,
+                        selectedKind == SceneItemKind.ReflectionGrating && selectedIndex == index);
                 }
             }
         }
@@ -1415,7 +1898,7 @@ public sealed class OpticalCanvas : Control
             using var paint = new SKPaint { Color = new SKColor(195, 209, 229), IsAntialias = true };
             using var matchedTypeface = SKFontManager.Default.MatchCharacter('光');
             using var font = new SKFont(matchedTypeface ?? SKTypeface.Default, 14);
-            canvas.DrawText($"{scene.Name}  ·  每光源 {raysPerSource} 条 / 共 {result.InitialRayCount} 条  ·  {result.ReflectedRayCount} 次反射  ·  {result.RefractedRayCount} 次折射",
+            canvas.DrawText($"{scene.Name}  ·  每光源 {raysPerSource} 条 / 共 {result.InitialRayCount} 条  ·  {result.ReflectedRayCount} 次反射  ·  {result.RefractedRayCount} 次折射  ·  {result.DiffractedRayCount} 条衍射光线",
                 18, 28, SKTextAlign.Left, font, paint);
         }
 

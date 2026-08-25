@@ -19,7 +19,16 @@ public sealed record LightSource(
 
 public sealed record MirrorSegment(Vector2D Start, Vector2D End);
 
+public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End);
+
 public sealed record ScreenSegment(Vector2D Start, Vector2D End);
+
+public sealed record ApertureSegment(Vector2D Start, Vector2D End, double OpeningSize);
+
+public sealed record ReflectionGratingSegment(
+    Vector2D Start,
+    Vector2D End,
+    double GrooveDensityLinesPerMillimeter);
 
 public enum LensKind
 {
@@ -38,7 +47,10 @@ public sealed record OpticalScene(
     LightSource[] LightSources,
     MirrorSegment[] Mirrors,
     LensSegment[]? Lenses = null,
-    ScreenSegment[]? Screens = null)
+    ScreenSegment[]? Screens = null,
+    ApertureSegment[]? Apertures = null,
+    ReflectionGratingSegment[]? ReflectionGratings = null,
+    BeamSplitterSegment[]? BeamSplitters = null)
 {
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
@@ -46,8 +58,20 @@ public sealed record OpticalScene(
     [JsonIgnore]
     public ScreenSegment[] ScreenElements => Screens ?? [];
 
+    [JsonIgnore]
+    public ApertureSegment[] ApertureElements => Apertures ?? [];
+
+    [JsonIgnore]
+    public ReflectionGratingSegment[] ReflectionGratingElements => ReflectionGratings ?? [];
+
+    [JsonIgnore]
+    public BeamSplitterSegment[] BeamSplitterElements => BeamSplitters ?? [];
+
     public static OpticalScene CreateEmpty() => new(
         "空白场景",
+        [],
+        [],
+        [],
         [],
         [],
         [],
