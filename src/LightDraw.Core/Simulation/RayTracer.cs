@@ -20,11 +20,7 @@ public sealed class RayTracer
         {
             foreach (var initialRay in Emit(source, options.RaysPerSource))
             {
-                TraceSingleRay(initialRay, scene.Mirrors, scene.ConcaveSphericalMirrorElements,
-                    scene.ConvexSphericalMirrorElements,
-                    scene.LensElements, scene.ScreenElements,
-                    scene.ApertureElements, scene.ReflectionGratingElements, scene.BeamSplitterElements,
-                    options, segments,
+                TraceSingleRay(initialRay, scene, options, segments,
                     ref reflectedRayCount, ref refractedRayCount, ref diffractedRayCount);
             }
         }
@@ -65,14 +61,7 @@ public sealed class RayTracer
 
     private static void TraceSingleRay(
         Ray2D initialRay,
-        IReadOnlyList<MirrorSegment> mirrors,
-        IReadOnlyList<ConcaveSphericalMirror> concaveSphericalMirrors,
-        IReadOnlyList<ConvexSphericalMirror> convexSphericalMirrors,
-        IReadOnlyList<LensSegment> lenses,
-        IReadOnlyList<ScreenSegment> screens,
-        IReadOnlyList<ApertureSegment> apertures,
-        IReadOnlyList<ReflectionGratingSegment> reflectionGratings,
-        IReadOnlyList<BeamSplitterSegment> beamSplitters,
+        OpticalScene scene,
         SimulationOptions options,
         List<RaySegment> output,
         ref int reflectedRayCount,
@@ -90,162 +79,8 @@ public sealed class RayTracer
                  bounce <= options.MaximumReflections && output.Count < options.MaximumSegments;
                  bounce++)
             {
-                var nearestDistance = double.PositiveInfinity;
-                MirrorSegment? nearestMirror = null;
-                ConcaveSphericalMirror? nearestConcaveSphericalMirror = null;
-                ConvexSphericalMirror? nearestConvexSphericalMirror = null;
-                LensSegment? nearestLens = null;
-                ScreenSegment? nearestScreen = null;
-                ApertureSegment? nearestAperture = null;
-                ReflectionGratingSegment? nearestReflectionGrating = null;
-                BeamSplitterSegment? nearestBeamSplitter = null;
-
-                foreach (var mirror in mirrors)
-                {
-                    if (TryIntersect(ray, mirror.Start, mirror.End, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = mirror;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var sphericalMirror in concaveSphericalMirrors)
-                {
-                    if (TryIntersect(ray, sphericalMirror, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = sphericalMirror;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var sphericalMirror in convexSphericalMirrors)
-                {
-                    if (TryIntersect(ray, sphericalMirror, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = sphericalMirror;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var lens in lenses)
-                {
-                    if (TryIntersect(ray, lens.Start, lens.End, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = lens;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var screen in screens)
-                {
-                    if (TryIntersect(ray, screen.Start, screen.End, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = screen;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var aperture in apertures)
-                {
-                    if (TryIntersect(ray, aperture.Start, aperture.End, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        var apertureHitPoint = ray.Origin + ray.Direction * distance;
-                        if (IsWithinOpening(apertureHitPoint, aperture, options.IntersectionEpsilon))
-                        {
-                            continue;
-                        }
-
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = aperture;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var grating in reflectionGratings)
-                {
-                    if (TryIntersect(ray, grating.Start, grating.End, options.IntersectionEpsilon,
-                            out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = grating;
-                        nearestBeamSplitter = null;
-                    }
-                }
-
-                foreach (var beamSplitter in beamSplitters)
-                {
-                    if (TryIntersect(ray, beamSplitter.Start, beamSplitter.End,
-                            options.IntersectionEpsilon, out var distance) && distance < nearestDistance)
-                    {
-                        nearestDistance = distance;
-                        nearestMirror = null;
-                        nearestConcaveSphericalMirror = null;
-                        nearestConvexSphericalMirror = null;
-                        nearestLens = null;
-                        nearestScreen = null;
-                        nearestAperture = null;
-                        nearestReflectionGrating = null;
-                        nearestBeamSplitter = beamSplitter;
-                    }
-                }
-
-                if (nearestMirror is null && nearestConcaveSphericalMirror is null &&
-                    nearestConvexSphericalMirror is null &&
-                    nearestLens is null && nearestScreen is null &&
-                    nearestAperture is null && nearestReflectionGrating is null && nearestBeamSplitter is null)
+                var hit = FindNearestHit(ray, scene, options.IntersectionEpsilon);
+                if (hit is not { } nearestHit)
                 {
                     output.Add(new RaySegment(ray.Origin,
                         ray.Origin + ray.Direction * options.UnboundedRayLength,
@@ -253,20 +88,21 @@ public sealed class RayTracer
                     break;
                 }
 
-                var hitPoint = ray.Origin + ray.Direction * nearestDistance;
+                var hitPoint = ray.Origin + ray.Direction * nearestHit.Distance;
                 output.Add(new RaySegment(ray.Origin, hitPoint, ray.WavelengthNanometers, bounce,
                     ray.DiffractionOrder, ray.Intensity));
 
-                if (nearestScreen is not null || nearestAperture is not null)
+                if (nearestHit.Kind is OpticalHitKind.Screen or OpticalHitKind.Aperture)
                 {
                     break;
                 }
 
-                if (nearestReflectionGrating is not null)
+                if (nearestHit.Kind == OpticalHitKind.ReflectionGrating)
                 {
+                    var grating = nearestHit.GetElement<ReflectionGratingSegment>();
                     if (bounce < options.MaximumReflections)
                     {
-                        foreach (var diffractedRay in Diffract(ray, nearestReflectionGrating,
+                        foreach (var diffractedRay in Diffract(ray, grating,
                                      options.MaximumDiffractionOrder))
                         {
                             if (output.Count + pending.Count >= options.MaximumSegments)
@@ -289,11 +125,12 @@ public sealed class RayTracer
                 }
 
 
-                if (nearestBeamSplitter is not null)
+                if (nearestHit.Kind == OpticalHitKind.BeamSplitter)
                 {
+                    var beamSplitter = nearestHit.GetElement<BeamSplitterSegment>();
                     if (bounce < options.MaximumReflections)
                     {
-                        var tangent = (nearestBeamSplitter.End - nearestBeamSplitter.Start).Normalized();
+                        var tangent = (beamSplitter.End - beamSplitter.Start).Normalized();
                         var reflectedDirection = ray.Direction.Reflected(tangent.Perpendicular()).Normalized();
                         var splitIntensity = ray.Intensity * 0.5;
                         var offset = options.IntersectionEpsilon * 32;
@@ -317,34 +154,133 @@ public sealed class RayTracer
                     break;
                 }
 
-                Vector2D nextDirection;
-                if (nearestMirror is not null)
-                {
-                    var tangent = (nearestMirror.End - nearestMirror.Start).Normalized();
-                    nextDirection = ray.Direction.Reflected(tangent.Perpendicular()).Normalized();
-                    reflectedRayCount++;
-                }
-                else if (nearestConcaveSphericalMirror is not null)
-                {
-                    var normal = (hitPoint - nearestConcaveSphericalMirror.CenterOfCurvature).Normalized();
-                    nextDirection = ray.Direction.Reflected(normal).Normalized();
-                    reflectedRayCount++;
-                }
-                else if (nearestConvexSphericalMirror is not null)
-                {
-                    var normal = (hitPoint - nearestConvexSphericalMirror.CenterOfCurvature).Normalized();
-                    nextDirection = ray.Direction.Reflected(normal).Normalized();
-                    reflectedRayCount++;
-                }
-                else
-                {
-                    nextDirection = RefractThroughIdealLens(ray, hitPoint, nearestLens!);
-                    refractedRayCount++;
-                }
+                var nextDirection = ResolveInteraction(ray, hitPoint, nearestHit,
+                    ref reflectedRayCount, ref refractedRayCount);
 
                 ray = new Ray2D(hitPoint + nextDirection * (options.IntersectionEpsilon * 32),
                     nextDirection, ray.WavelengthNanometers, ray.DiffractionOrder, ray.Intensity);
             }
+        }
+    }
+
+    private static OpticalHit? FindNearestHit(Ray2D ray, OpticalScene scene, double epsilon)
+    {
+        OpticalHit? nearest = null;
+
+        void Consider(double distance, OpticalHitKind kind, object element)
+        {
+            if (nearest is null || distance < nearest.Value.Distance)
+            {
+                nearest = new OpticalHit(distance, kind, element);
+            }
+        }
+
+        foreach (var mirror in scene.Mirrors)
+        {
+            if (TryIntersect(ray, mirror.Start, mirror.End, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.Mirror, mirror);
+            }
+        }
+
+        foreach (var mirror in scene.ConcaveSphericalMirrorElements)
+        {
+            if (TryIntersect(ray, mirror, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.ConcaveSphericalMirror, mirror);
+            }
+        }
+
+        foreach (var mirror in scene.ConvexSphericalMirrorElements)
+        {
+            if (TryIntersect(ray, mirror, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.ConvexSphericalMirror, mirror);
+            }
+        }
+
+        foreach (var lens in scene.LensElements)
+        {
+            if (TryIntersect(ray, lens.Start, lens.End, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.Lens, lens);
+            }
+        }
+
+        foreach (var screen in scene.ScreenElements)
+        {
+            if (TryIntersect(ray, screen.Start, screen.End, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.Screen, screen);
+            }
+        }
+
+        foreach (var aperture in scene.ApertureElements)
+        {
+            if (!TryIntersect(ray, aperture.Start, aperture.End, epsilon, out var distance))
+            {
+                continue;
+            }
+
+            var hitPoint = ray.Origin + ray.Direction * distance;
+            if (!IsWithinOpening(hitPoint, aperture, epsilon))
+            {
+                Consider(distance, OpticalHitKind.Aperture, aperture);
+            }
+        }
+
+        foreach (var grating in scene.ReflectionGratingElements)
+        {
+            if (TryIntersect(ray, grating.Start, grating.End, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.ReflectionGrating, grating);
+            }
+        }
+
+        foreach (var beamSplitter in scene.BeamSplitterElements)
+        {
+            if (TryIntersect(ray, beamSplitter.Start, beamSplitter.End, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.BeamSplitter, beamSplitter);
+            }
+        }
+
+        return nearest;
+    }
+
+    private static Vector2D ResolveInteraction(
+        Ray2D ray,
+        Vector2D hitPoint,
+        OpticalHit hit,
+        ref int reflectedRayCount,
+        ref int refractedRayCount)
+    {
+        switch (hit.Kind)
+        {
+            case OpticalHitKind.Mirror:
+                var mirror = hit.GetElement<MirrorSegment>();
+                var tangent = (mirror.End - mirror.Start).Normalized();
+                reflectedRayCount++;
+                return ray.Direction.Reflected(tangent.Perpendicular()).Normalized();
+
+            case OpticalHitKind.ConcaveSphericalMirror:
+                var concaveMirror = hit.GetElement<ConcaveSphericalMirror>();
+                var concaveNormal = (hitPoint - concaveMirror.CenterOfCurvature).Normalized();
+                reflectedRayCount++;
+                return ray.Direction.Reflected(concaveNormal).Normalized();
+
+            case OpticalHitKind.ConvexSphericalMirror:
+                var convexMirror = hit.GetElement<ConvexSphericalMirror>();
+                var convexNormal = (hitPoint - convexMirror.CenterOfCurvature).Normalized();
+                reflectedRayCount++;
+                return ray.Direction.Reflected(convexNormal).Normalized();
+
+            case OpticalHitKind.Lens:
+                refractedRayCount++;
+                return RefractThroughIdealLens(ray, hitPoint, hit.GetElement<LensSegment>());
+
+            default:
+                throw new InvalidOperationException($"命中类型 {hit.Kind} 不能作为连续传播交互处理。");
         }
     }
 
