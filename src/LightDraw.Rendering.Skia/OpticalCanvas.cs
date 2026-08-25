@@ -22,6 +22,7 @@ public enum CanvasTool
     PointLight,
     ParallelLight,
     Mirror,
+    Screen,
     ConvexLens,
     ConcaveLens
 }
@@ -31,6 +32,7 @@ public enum CanvasSelectionKind
     PointLight,
     ParallelLight,
     Mirror,
+    Screen,
     ConvexLens,
     ConcaveLens
 }
@@ -50,6 +52,7 @@ internal enum SceneItemKind
     None,
     LightSource,
     Mirror,
+    Screen,
     Lens
 }
 
@@ -149,7 +152,8 @@ public sealed class OpticalCanvas : Control
         {
             LightSources = scene.LightSources ?? [],
             Mirrors = scene.Mirrors ?? [],
-            Lenses = scene.LensElements
+            Lenses = scene.LensElements,
+            Screens = scene.ScreenElements
         };
         SetAndRaise(SceneProperty, ref _scene, normalized);
         SetAndRaise(ActiveToolProperty, ref _tool, CanvasTool.Pan);
@@ -255,6 +259,17 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
+                var screen = screens[_selectedIndex];
+                var rotatedScreen = RotateSegment(screen.Start, screen.End, radians);
+                screens[_selectedIndex] = screen with
+                {
+                    Start = rotatedScreen.Start,
+                    End = rotatedScreen.End
+                };
+                UpdateScene(_scene with { Screens = screens });
+                break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_selectedIndex];
@@ -331,6 +346,17 @@ public sealed class OpticalCanvas : Control
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
                 break;
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
+                var screen = screens[_selectedIndex];
+                var resizedScreen = ResizeSegment(screen.Start, screen.End, clamped);
+                screens[_selectedIndex] = screen with
+                {
+                    Start = resizedScreen.Start,
+                    End = resizedScreen.End
+                };
+                UpdateScene(_scene with { Screens = screens });
+                break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_selectedIndex];
@@ -383,6 +409,16 @@ public sealed class OpticalCanvas : Control
                     End = mirror.End + delta
                 };
                 UpdateScene(_scene with { Mirrors = mirrors });
+                break;
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
+                var screen = screens[_selectedIndex];
+                screens[_selectedIndex] = screen with
+                {
+                    Start = screen.Start + delta,
+                    End = screen.End + delta
+                };
+                UpdateScene(_scene with { Screens = screens });
                 break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
@@ -544,6 +580,9 @@ public sealed class OpticalCanvas : Control
             case CanvasTool.Mirror:
                 UpdateScene(_scene with { Mirrors = [.. _scene.Mirrors, new MirrorSegment(start, end)] });
                 break;
+            case CanvasTool.Screen:
+                UpdateScene(_scene with { Screens = [.. _scene.ScreenElements, new ScreenSegment(start, end)] });
+                break;
             case CanvasTool.ConvexLens:
             case CanvasTool.ConcaveLens:
                 var kind = _tool == CanvasTool.ConvexLens ? LensKind.Convex : LensKind.Concave;
@@ -606,6 +645,15 @@ public sealed class OpticalCanvas : Control
             SelectIfCloser((world - mirror.Start).Length, SceneItemKind.Mirror, index,
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - mirror.End).Length, SceneItemKind.Mirror, index,
+                MoveDragMode.EndEndpoint, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ScreenElements.Length; index++)
+        {
+            var screen = _scene.ScreenElements[index];
+            SelectIfCloser((world - screen.Start).Length, SceneItemKind.Screen, index,
+                MoveDragMode.StartEndpoint, ref bestDistance);
+            SelectIfCloser((world - screen.End).Length, SceneItemKind.Screen, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
         }
 
@@ -674,6 +722,12 @@ public sealed class OpticalCanvas : Control
             Consider(DistanceToSegment(world, mirror.Start, mirror.End), SceneItemKind.Mirror, index);
         }
 
+        for (var index = 0; index < _scene.ScreenElements.Length; index++)
+        {
+            var screen = _scene.ScreenElements[index];
+            Consider(DistanceToSegment(world, screen.Start, screen.End), SceneItemKind.Screen, index);
+        }
+
         for (var index = 0; index < _scene.LensElements.Length; index++)
         {
             var lens = _scene.LensElements[index];
@@ -687,6 +741,9 @@ public sealed class OpticalCanvas : Control
                 break;
             case SceneItemKind.Mirror:
                 UpdateScene(_scene with { Mirrors = RemoveAt(_scene.Mirrors, itemIndex) });
+                break;
+            case SceneItemKind.Screen:
+                UpdateScene(_scene with { Screens = RemoveAt(_scene.ScreenElements, itemIndex) });
                 break;
             case SceneItemKind.Lens:
                 UpdateScene(_scene with { Lenses = RemoveAt(_scene.LensElements, itemIndex) });
@@ -721,6 +778,13 @@ public sealed class OpticalCanvas : Control
         {
             var mirror = _scene.Mirrors[index];
             SelectIfCloser(DistanceToSegment(world, mirror.Start, mirror.End), SceneItemKind.Mirror,
+                index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ScreenElements.Length; index++)
+        {
+            var screen = _scene.ScreenElements[index];
+            SelectIfCloser(DistanceToSegment(world, screen.Start, screen.End), SceneItemKind.Screen,
                 index, MoveDragMode.Translate, ref bestDistance);
         }
 
@@ -806,6 +870,24 @@ public sealed class OpticalCanvas : Control
                 UpdateScene(_scene with { Mirrors = mirrors });
                 updated = true;
                 break;
+            case SceneItemKind.Screen:
+                var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
+                var screen = screens[_movingIndex];
+                var screenStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : screen.Start;
+                var screenEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : screen.End;
+                if (_moveDragMode == MoveDragMode.Translate)
+                {
+                    screenStart += delta;
+                    screenEnd += delta;
+                }
+                if (!HasUsableLength(screenStart, screenEnd))
+                {
+                    return;
+                }
+                screens[_movingIndex] = screen with { Start = screenStart, End = screenEnd };
+                UpdateScene(_scene with { Screens = screens });
+                updated = true;
+                break;
             case SceneItemKind.Lens:
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_movingIndex];
@@ -872,6 +954,12 @@ public sealed class OpticalCanvas : Control
                 return new CanvasSelection(CanvasSelectionKind.Mirror, "平面反光镜", true,
                     mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
                     (mirror.End - mirrorOrigin).Length * 2);
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                var screen = _scene.ScreenElements[_selectedIndex];
+                var screenOrigin = (screen.Start + screen.End) / 2;
+                return new CanvasSelection(CanvasSelectionKind.Screen, "光屏", true,
+                    screenOrigin.X, screenOrigin.Y, SegmentAngleDegrees(screen.Start, screen.End), null,
+                    (screen.End - screenOrigin).Length * 2);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;
@@ -1009,6 +1097,7 @@ public sealed class OpticalCanvas : Control
             DrawAxis(canvas);
             DrawRays(canvas);
             DrawMirrors(canvas);
+            DrawScreens(canvas);
             DrawLenses(canvas);
             DrawSources(canvas);
             DrawPlacementPreview(canvas);
@@ -1195,6 +1284,24 @@ public sealed class OpticalCanvas : Control
                     DrawHandles(canvas, mirror.Start, mirror.End, paint);
                     DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
                         selectedKind == SceneItemKind.Mirror && selectedIndex == index);
+                }
+            }
+        }
+
+        private void DrawScreens(SKCanvas canvas)
+        {
+            using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
+            using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
+            for (var index = 0; index < scene.ScreenElements.Length; index++)
+            {
+                var screen = scene.ScreenElements[index];
+                canvas.DrawLine(ToScreen(screen.Start), ToScreen(screen.End), glow);
+                canvas.DrawLine(ToScreen(screen.Start), ToScreen(screen.End), paint);
+                if (tool == CanvasTool.Move)
+                {
+                    DrawHandles(canvas, screen.Start, screen.End, paint);
+                    DrawOrigin(canvas, (screen.Start + screen.End) / 2,
+                        selectedKind == SceneItemKind.Screen && selectedIndex == index);
                 }
             }
         }

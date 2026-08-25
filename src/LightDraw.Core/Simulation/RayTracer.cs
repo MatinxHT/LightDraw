@@ -19,7 +19,7 @@ public sealed class RayTracer
         {
             foreach (var initialRay in Emit(source, options.RaysPerSource))
             {
-                TraceSingleRay(initialRay, scene.Mirrors, scene.LensElements, options, segments,
+                TraceSingleRay(initialRay, scene.Mirrors, scene.LensElements, scene.ScreenElements, options, segments,
                     ref reflectedRayCount, ref refractedRayCount);
             }
         }
@@ -62,6 +62,7 @@ public sealed class RayTracer
         Ray2D initialRay,
         IReadOnlyList<MirrorSegment> mirrors,
         IReadOnlyList<LensSegment> lenses,
+        IReadOnlyList<ScreenSegment> screens,
         SimulationOptions options,
         List<RaySegment> output,
         ref int reflectedRayCount,
@@ -73,6 +74,7 @@ public sealed class RayTracer
             var nearestDistance = double.PositiveInfinity;
             MirrorSegment? nearestMirror = null;
             LensSegment? nearestLens = null;
+            ScreenSegment? nearestScreen = null;
 
             foreach (var mirror in mirrors)
             {
@@ -82,6 +84,7 @@ public sealed class RayTracer
                     nearestDistance = distance;
                     nearestMirror = mirror;
                     nearestLens = null;
+                    nearestScreen = null;
                 }
             }
 
@@ -93,10 +96,23 @@ public sealed class RayTracer
                     nearestDistance = distance;
                     nearestMirror = null;
                     nearestLens = lens;
+                    nearestScreen = null;
                 }
             }
 
-            if (nearestMirror is null && nearestLens is null)
+            foreach (var screen in screens)
+            {
+                if (TryIntersect(ray, screen.Start, screen.End, options.IntersectionEpsilon, out var distance) &&
+                    distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestMirror = null;
+                    nearestLens = null;
+                    nearestScreen = screen;
+                }
+            }
+
+            if (nearestMirror is null && nearestLens is null && nearestScreen is null)
             {
                 output.Add(new RaySegment(ray.Origin,
                     ray.Origin + ray.Direction * options.UnboundedRayLength,
@@ -106,6 +122,11 @@ public sealed class RayTracer
 
             var hitPoint = ray.Origin + ray.Direction * nearestDistance;
             output.Add(new RaySegment(ray.Origin, hitPoint, ray.WavelengthNanometers, bounce));
+
+            if (nearestScreen is not null)
+            {
+                return;
+            }
 
             Vector2D nextDirection;
             if (nearestMirror is not null)

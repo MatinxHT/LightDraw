@@ -19,6 +19,8 @@ public sealed record LightSource(
 
 public sealed record MirrorSegment(Vector2D Start, Vector2D End);
 
+public sealed record ScreenSegment(Vector2D Start, Vector2D End);
+
 public enum LensKind
 {
     Convex,
@@ -35,13 +37,18 @@ public sealed record OpticalScene(
     string Name,
     LightSource[] LightSources,
     MirrorSegment[] Mirrors,
-    LensSegment[]? Lenses = null)
+    LensSegment[]? Lenses = null,
+    ScreenSegment[]? Screens = null)
 {
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
 
+    [JsonIgnore]
+    public ScreenSegment[] ScreenElements => Screens ?? [];
+
     public static OpticalScene CreateEmpty() => new(
         "空白场景",
+        [],
         [],
         [],
         []);

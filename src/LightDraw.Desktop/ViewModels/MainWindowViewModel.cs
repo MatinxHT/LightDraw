@@ -243,7 +243,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
             CanvasTool.Move => "移动或调整元件 · 拖动主体平移；拖动端点可拉伸和旋转；光路实时刷新",
-            CanvasTool.Delete => "删除元件 · 单击光源、镜面或透镜即可删除，随后自动返回平移工具",
+            CanvasTool.Delete => "删除元件 · 单击光源、镜面、光屏或透镜即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };
     }
@@ -338,6 +338,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             CanvasTool.PointLight => "点光源（360° 发光，单击放置）",
             CanvasTool.ParallelLight => "线平行光源（垂直于绘制线发射）",
             CanvasTool.Mirror => "平面反光镜",
+            CanvasTool.Screen => "光屏",
             CanvasTool.ConvexLens => "凸透镜",
             CanvasTool.ConcaveLens => "凹透镜",
             _ => "物件"

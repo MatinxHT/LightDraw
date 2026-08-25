@@ -104,6 +104,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 线平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" />
 			<TextBlock Text="光学元件" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" />
 
