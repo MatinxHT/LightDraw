@@ -36,9 +36,14 @@ public sealed class RayTracer
         if (source.Kind == LightSourceKind.Point)
         {
             count = Math.Max(8, count);
+            var spreadDegrees = Math.Clamp(Math.Abs(source.SpreadDegrees), 1, 360);
+            var centerAngle = DegreesToRadians(source.DirectionDegrees);
+            var spreadRadians = DegreesToRadians(spreadDegrees);
             for (var index = 0; index < count; index++)
             {
-                var angle = 2 * Math.PI * index / count;
+                var angle = spreadDegrees >= 360 - 1e-9
+                    ? centerAngle + 2 * Math.PI * index / count
+                    : centerAngle - spreadRadians / 2 + spreadRadians * index / (count - 1);
                 yield return new Ray2D(source.Position, Vector2D.FromAngle(angle), source.WavelengthNanometers);
             }
 

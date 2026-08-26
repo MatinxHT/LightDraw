@@ -70,7 +70,7 @@
 			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSecondOrigin}">
-			<TextBlock Text="第二原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="凹球面镜的球心坐标" />
+			<TextBlock Text="第二原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="球面镜为曲率圆心；其余元件为距第一原点 100 mm 的白色旋转点" />
 			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
 			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -121,9 +121,9 @@
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
-			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
-			  <TextBlock Text="圆心角" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="决定镜面圆弧大小；默认 180°" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorArcAngle, Mode=TwoWay}" />
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedCentralAngle}">
+			  <TextBlock Text="圆心角" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="点光源：发射范围，默认 360°；球面镜：镜面圆弧大小，默认 180°" />
+			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedCentralAngle, Mode=TwoWay}" />
 			  <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedReflectionGrating}">
@@ -157,7 +157,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />
-			<TextBlock Text="移动主体：整体平移&#x0a;一般端点：拉伸并旋转&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			  <TextBlock Text="移动主体：整体平移&#x0a;一般端点：拉伸并旋转&#x0a;白色圆点：固定原点旋转&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>

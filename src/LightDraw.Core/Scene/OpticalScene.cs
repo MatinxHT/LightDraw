@@ -12,7 +12,7 @@ public enum LightSourceKind
 public sealed record LightSource(
     Vector2D Position,
     double DirectionDegrees,
-    double SpreadDegrees = 34,
+    double SpreadDegrees = 360,
     double WavelengthNanometers = 589,
     LightSourceKind Kind = LightSourceKind.Point,
     Vector2D? End = null);

@@ -30,7 +30,7 @@ public sealed record CanvasSelection(
     double? ApertureOpening = null, double? GrooveDensity = null,
     double? WavelengthNanometers = null, double? Radius = null,
     double? ArcAngleDegrees = null, double? SecondOriginX = null,
-    double? SecondOriginY = null);
+    double? SecondOriginY = null, double? EmissionAngleDegrees = null);
 
 internal enum SceneItemKind
 {
@@ -40,7 +40,7 @@ internal enum SceneItemKind
 
 internal enum MoveDragMode
 {
-    None, Translate, StartEndpoint, EndEndpoint, DirectionHandle
+    None, Translate, StartEndpoint, EndEndpoint, DirectionHandle, RotationHandle
 }
 
 public sealed class OpticalCanvas : Control
@@ -149,6 +149,8 @@ public sealed class OpticalCanvas : Control
     public void SetSelectedFocalLength(double value) => _editor.SetSelectedFocalLength(value);
     public void SetSelectedSphericalMirrorRadius(double value) => _editor.SetSelectedSphericalMirrorRadius(value);
     public void SetSelectedSphericalMirrorArcAngle(double value) => _editor.SetSelectedSphericalMirrorArcAngle(value);
+    public void SetSelectedPointLightEmissionAngle(double value) => _editor.SetSelectedPointLightEmissionAngle(value);
+    public void SetSelectedCentralAngle(double value) => _editor.SetSelectedCentralAngle(value);
     public void SetSelectedApertureOpening(double value) => _editor.SetSelectedApertureOpening(value);
     public void SetSelectedGrooveDensity(double value) => _editor.SetSelectedGrooveDensity(value);
     public void SetSelectedWavelength(double value) => _editor.SetSelectedWavelength(value);

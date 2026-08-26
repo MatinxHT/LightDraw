@@ -24,6 +24,7 @@ internal sealed class SkiaSceneDrawOperation(
     int selectedIndex) : ICustomDrawOperation
 {
     private const string CoordinateUnit = "mm";
+    private const double RotationHandleOffset = 100;
 
     public Rect Bounds { get; } = bounds;
     public void Dispose() { }
@@ -252,6 +253,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, mirror.Start, mirror.End, paint);
                 DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
                     selectedKind == SceneItemKind.Mirror && selectedIndex == index);
+                DrawRotationHandle(canvas, mirror.Start, mirror.End);
             }
         }
     }
@@ -297,6 +299,7 @@ internal sealed class SkiaSceneDrawOperation(
                 canvas.DrawCircle(center, 4.5f, paint);
                 DrawOrigin(canvas, mirror.Vertex,
                     selectedKind == SceneItemKind.ConcaveSphericalMirror && selectedIndex == index);
+                DrawSphericalMirrorRotationHandle(canvas, mirror.Vertex, mirror.CenterOfCurvature);
             }
         }
     }
@@ -342,6 +345,7 @@ internal sealed class SkiaSceneDrawOperation(
                 canvas.DrawCircle(center, 4.5f, paint);
                 DrawOrigin(canvas, mirror.Vertex,
                     selectedKind == SceneItemKind.ConvexSphericalMirror && selectedIndex == index);
+                DrawSphericalMirrorRotationHandle(canvas, mirror.Vertex, mirror.CenterOfCurvature);
             }
         }
     }
@@ -360,6 +364,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, screen.Start, screen.End, paint);
                 DrawOrigin(canvas, (screen.Start + screen.End) / 2,
                     selectedKind == SceneItemKind.Screen && selectedIndex == index);
+                DrawRotationHandle(canvas, screen.Start, screen.End);
             }
         }
     }
@@ -378,6 +383,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, beamSplitter.Start, beamSplitter.End, paint);
                 DrawOrigin(canvas, (beamSplitter.Start + beamSplitter.End) / 2,
                     selectedKind == SceneItemKind.BeamSplitter && selectedIndex == index);
+                DrawRotationHandle(canvas, beamSplitter.Start, beamSplitter.End);
             }
         }
     }
@@ -418,6 +424,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, aperture.Start, aperture.End, paint);
                 DrawOrigin(canvas, midpoint,
                     selectedKind == SceneItemKind.Aperture && selectedIndex == index);
+                DrawRotationHandle(canvas, aperture.Start, aperture.End);
             }
         }
     }
@@ -455,6 +462,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, grating.Start, grating.End, paint);
                 DrawOrigin(canvas, (grating.Start + grating.End) / 2,
                     selectedKind == SceneItemKind.ReflectionGrating && selectedIndex == index);
+                DrawRotationHandle(canvas, grating.Start, grating.End);
             }
         }
     }
@@ -483,6 +491,7 @@ internal sealed class SkiaSceneDrawOperation(
                 DrawHandles(canvas, lens.Start, lens.End, paint);
                 DrawOrigin(canvas, (lens.Start + lens.End) / 2,
                     selectedKind == SceneItemKind.Lens && selectedIndex == index);
+                DrawRotationHandle(canvas, lens.Start, lens.End);
             }
         }
     }
@@ -533,6 +542,7 @@ internal sealed class SkiaSceneDrawOperation(
                 {
                     DrawOrigin(canvas, middle,
                         selectedKind == SceneItemKind.LightSource && selectedIndex == index);
+                    DrawRotationHandle(canvas, source.Position, end);
                 }
             }
             else
@@ -544,6 +554,7 @@ internal sealed class SkiaSceneDrawOperation(
                 {
                     DrawOrigin(canvas, source.Position,
                         selectedKind == SceneItemKind.LightSource && selectedIndex == index);
+                    DrawPointLightRotationHandle(canvas, source);
                 }
             }
         }
@@ -613,6 +624,58 @@ internal sealed class SkiaSceneDrawOperation(
         canvas.DrawCircle(point, isSelected ? 5.5f : 4.5f, paint);
         canvas.DrawLine(point.X - 8, point.Y, point.X + 8, point.Y, paint);
         canvas.DrawLine(point.X, point.Y - 8, point.X, point.Y + 8, paint);
+    }
+
+    private void DrawRotationHandle(SKCanvas canvas, Vector2D start, Vector2D end)
+    {
+        var midpoint = (start + end) / 2;
+        var handle = midpoint + (end - start).Normalized().Perpendicular() * RotationHandleOffset;
+        DrawRotationPoint(canvas, midpoint, handle);
+    }
+
+    private void DrawSphericalMirrorRotationHandle(
+        SKCanvas canvas, Vector2D vertex, Vector2D centerOfCurvature)
+    {
+        var handle = vertex + (centerOfCurvature - vertex).Normalized() * RotationHandleOffset;
+        DrawRotationPoint(canvas, vertex, handle);
+    }
+
+    private void DrawPointLightRotationHandle(SKCanvas canvas, LightSource source)
+    {
+        var handle = source.Position +
+                     Vector2D.FromAngle(source.DirectionDegrees * Math.PI / 180) *
+                     RotationHandleOffset;
+        DrawRotationPoint(canvas, source.Position, handle);
+    }
+
+    private void DrawRotationPoint(SKCanvas canvas, Vector2D origin, Vector2D handle)
+    {
+        var originPoint = ToScreen(origin);
+        var handlePoint = ToScreen(handle);
+        using var guide = new SKPaint
+        {
+            Color = new SKColor(255, 255, 255, 90),
+            StrokeWidth = 1,
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([3, 4], 0)
+        };
+        using var outline = new SKPaint
+        {
+            Color = new SKColor(8, 13, 24, 210),
+            StrokeWidth = 1.5f,
+            Style = SKPaintStyle.Stroke,
+            IsAntialias = true
+        };
+        using var fill = new SKPaint
+        {
+            Color = SKColors.White,
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+        canvas.DrawLine(originPoint, handlePoint, guide);
+        canvas.DrawCircle(handlePoint, 5.5f, fill);
+        canvas.DrawCircle(handlePoint, 5.5f, outline);
     }
 
     private void DrawArrow(SKCanvas canvas, Vector2D start, Vector2D end, SKPaint paint)

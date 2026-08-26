@@ -25,6 +25,8 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
             _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
             _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
+            _viewModel.SetSelectedPointLightEmissionAngleRequested -= OnSetSelectedPointLightEmissionAngleRequested;
+            _viewModel.SetSelectedCentralAngleRequested -= OnSetSelectedCentralAngleRequested;
             _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
@@ -43,6 +45,8 @@ public sealed partial class MainWindow : Window
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
         _viewModel.SetSelectedSphericalMirrorRadiusRequested += OnSetSelectedSphericalMirrorRadiusRequested;
         _viewModel.SetSelectedSphericalMirrorArcAngleRequested += OnSetSelectedSphericalMirrorArcAngleRequested;
+        _viewModel.SetSelectedPointLightEmissionAngleRequested += OnSetSelectedPointLightEmissionAngleRequested;
+        _viewModel.SetSelectedCentralAngleRequested += OnSetSelectedCentralAngleRequested;
         _viewModel.SetSelectedApertureOpeningRequested += OnSetSelectedApertureOpeningRequested;
         _viewModel.SetSelectedGrooveDensityRequested += OnSetSelectedGrooveDensityRequested;
         _viewModel.SetSelectedWavelengthRequested += OnSetSelectedWavelengthRequested;
@@ -69,6 +73,8 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
             _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
             _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
+            _viewModel.SetSelectedPointLightEmissionAngleRequested -= OnSetSelectedPointLightEmissionAngleRequested;
+            _viewModel.SetSelectedCentralAngleRequested -= OnSetSelectedCentralAngleRequested;
             _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
@@ -115,6 +121,12 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedSphericalMirrorArcAngleRequested(double angleDegrees) =>
         Canvas.SetSelectedSphericalMirrorArcAngle(angleDegrees);
+
+    private void OnSetSelectedPointLightEmissionAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedPointLightEmissionAngle(angleDegrees);
+
+    private void OnSetSelectedCentralAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedCentralAngle(angleDegrees);
 
     private void OnSetSelectedApertureOpeningRequested(double openingSize) =>
         Canvas.SetSelectedApertureOpening(openingSize);

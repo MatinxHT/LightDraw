@@ -34,6 +34,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedLightSource;
 
     [ObservableProperty]
+    private bool _hasSelectedPointLight;
+
+    [ObservableProperty]
+    private bool _hasSelectedCentralAngle;
+
+    [ObservableProperty]
     private bool _canRotateSelectedElement;
 
     [ObservableProperty]
@@ -68,6 +74,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private decimal _selectedSphericalMirrorArcAngle = 180;
+
+    [ObservableProperty]
+    private decimal _selectedPointLightEmissionAngle = 360;
+
+    [ObservableProperty]
+    private decimal _selectedCentralAngle = 360;
 
     [ObservableProperty]
     private decimal _selectedApertureOpening = 30;
@@ -107,6 +119,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? SetSelectedFocalLengthRequested;
     public event Action<double>? SetSelectedSphericalMirrorRadiusRequested;
     public event Action<double>? SetSelectedSphericalMirrorArcAngleRequested;
+    public event Action<double>? SetSelectedPointLightEmissionAngleRequested;
+    public event Action<double>? SetSelectedCentralAngleRequested;
     public event Action<double>? SetSelectedApertureOpeningRequested;
     public event Action<double>? SetSelectedGrooveDensityRequested;
     public event Action<double>? SetSelectedWavelengthRequested;
@@ -171,6 +185,36 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         if (!_updatingSelection && HasSelectedSphericalMirror)
         {
             SetSelectedSphericalMirrorArcAngleRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedPointLightEmissionAngleChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 1, 360);
+        if (clamped != value)
+        {
+            SelectedPointLightEmissionAngle = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedPointLight)
+        {
+            SetSelectedPointLightEmissionAngleRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedCentralAngleChanged(decimal value)
+    {
+        var clamped = Math.Clamp(value, 1, 360);
+        if (clamped != value)
+        {
+            SelectedCentralAngle = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedCentralAngle)
+        {
+            SetSelectedCentralAngleRequested?.Invoke((double)clamped);
         }
     }
 
@@ -371,7 +415,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         StatusText = tool switch
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 拖动主体平移；凹球面镜圆心控制点只旋转、不改变半径；光路实时刷新",
+            CanvasTool.Move => "移动或调整元件 · 拖动主体平移；拖动白点固定元件原点旋转；光路实时刷新",
             CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };
@@ -384,6 +428,9 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         {
             HasSelectedElement = selection is not null;
             HasSelectedLightSource = selection?.WavelengthNanometers is not null;
+            HasSelectedPointLight = selection?.Kind == CanvasSelectionKind.PointLight;
+            HasSelectedCentralAngle = selection?.ArcAngleDegrees is not null ||
+                                      selection?.EmissionAngleDegrees is not null;
             CanRotateSelectedElement = selection?.CanRotate == true;
             HasSelectedLens = selection?.FocalLength is not null;
             HasSelectedSphericalMirror = selection?.Kind is CanvasSelectionKind.ConcaveSphericalMirror
@@ -421,6 +468,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             if (selection?.ArcAngleDegrees is { } arcAngle)
             {
                 SelectedSphericalMirrorArcAngle = (decimal)Math.Round(arcAngle, 2);
+                SelectedCentralAngle = (decimal)Math.Round(arcAngle, 2);
+            }
+            if (selection?.EmissionAngleDegrees is { } emissionAngle)
+            {
+                SelectedPointLightEmissionAngle = (decimal)Math.Round(emissionAngle, 2);
+                SelectedCentralAngle = (decimal)Math.Round(emissionAngle, 2);
             }
             if (selection?.ApertureOpening is { } apertureOpening)
             {

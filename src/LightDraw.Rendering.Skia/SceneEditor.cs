@@ -6,6 +6,7 @@ namespace LightDraw.Rendering.Skia;
 
 internal sealed class SceneEditor
 {
+    private const double RotationHandleOffset = 100;
     private OpticalScene _scene = OpticalScene.CreateEmpty();
     private double _zoom = 1;
     private SceneItemKind _movingKind;
@@ -182,7 +183,13 @@ internal sealed class SceneEditor
             case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
                 var sources = (LightSource[])_scene.LightSources.Clone();
                 var source = sources[_selectedIndex];
-                if (source.Kind != LightSourceKind.ParallelLine || source.End is not { } sourceEnd)
+                if (source.Kind == LightSourceKind.Point)
+                {
+                    sources[_selectedIndex] = source with { DirectionDegrees = NormalizeDegrees(degrees) };
+                    UpdateScene(_scene with { LightSources = sources });
+                    break;
+                }
+                if (source.End is not { } sourceEnd)
                 {
                     return;
                 }
@@ -288,6 +295,46 @@ internal sealed class SceneEditor
         }
 
         CommitSelectedEdit();
+    }
+
+    public void SetSelectedPointLightEmissionAngle(double angleDegrees)
+    {
+        if (!double.IsFinite(angleDegrees) || _selectedKind != SceneItemKind.LightSource ||
+            !IsValidIndex(_selectedIndex, _scene.LightSources))
+        {
+            return;
+        }
+
+        var sources = (LightSource[])_scene.LightSources.Clone();
+        var source = sources[_selectedIndex];
+        if (source.Kind != LightSourceKind.Point)
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(Math.Abs(angleDegrees), 1, 360);
+        if (Math.Abs(source.SpreadDegrees - clamped) <= 1e-9)
+        {
+            return;
+        }
+
+        sources[_selectedIndex] = source with { SpreadDegrees = clamped };
+        UpdateScene(_scene with { LightSources = sources });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedCentralAngle(double angleDegrees)
+    {
+        if (_selectedKind == SceneItemKind.LightSource &&
+            IsValidIndex(_selectedIndex, _scene.LightSources) &&
+            _scene.LightSources[_selectedIndex].Kind == LightSourceKind.Point)
+        {
+            SetSelectedPointLightEmissionAngle(angleDegrees);
+        }
+        else
+        {
+            SetSelectedSphericalMirrorArcAngle(angleDegrees);
+        }
     }
 
     public void SetSelectedFocalLength(double focalLength)
@@ -730,6 +777,22 @@ internal sealed class SceneEditor
             mirrors[_selectedIndex] = mirror with { CenterOfCurvature = center };
             UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
         }
+        else if (CreateSelection() is { } selection)
+        {
+            var direction = (center - new Vector2D(selection.OriginX, selection.OriginY)).Normalized();
+            if (direction.LengthSquared <= 1e-12)
+            {
+                return;
+            }
+
+            var handleAngle = DirectionDegrees(direction);
+            SetSelectedAngle(_selectedKind == SceneItemKind.LightSource &&
+                             IsValidIndex(_selectedIndex, _scene.LightSources) &&
+                             _scene.LightSources[_selectedIndex].Kind == LightSourceKind.Point
+                ? handleAngle
+                : handleAngle - 90);
+            return;
+        }
         else
         {
             return;
@@ -746,7 +809,14 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.LightSources.Length; index++)
         {
             var source = _scene.LightSources[index];
-            if (source.Kind != LightSourceKind.ParallelLine || source.End is not { } end)
+            if (source.Kind == LightSourceKind.Point)
+            {
+                SelectIfCloser((world - PointLightRotationHandle(source)).Length,
+                    SceneItemKind.LightSource, index, MoveDragMode.RotationHandle,
+                    ref bestDistance);
+                continue;
+            }
+            if (source.End is not { } end)
             {
                 continue;
             }
@@ -755,6 +825,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - end).Length, SceneItemKind.LightSource, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(source.Position, end)).Length,
+                SceneItemKind.LightSource, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.Mirrors.Length; index++)
@@ -764,6 +836,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - mirror.End).Length, SceneItemKind.Mirror, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(mirror.Start, mirror.End)).Length,
+                SceneItemKind.Mirror, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.ConcaveSphericalMirrorElements.Length; index++)
@@ -773,6 +847,10 @@ internal sealed class SceneEditor
                 index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - mirror.CenterOfCurvature).Length,
                 SceneItemKind.ConcaveSphericalMirror, index, MoveDragMode.DirectionHandle,
+                ref bestDistance);
+            SelectIfCloser((world - SphericalMirrorRotationHandle(
+                    mirror.Vertex, mirror.CenterOfCurvature)).Length,
+                SceneItemKind.ConcaveSphericalMirror, index, MoveDragMode.RotationHandle,
                 ref bestDistance);
         }
 
@@ -784,6 +862,10 @@ internal sealed class SceneEditor
             SelectIfCloser((world - mirror.CenterOfCurvature).Length,
                 SceneItemKind.ConvexSphericalMirror, index, MoveDragMode.DirectionHandle,
                 ref bestDistance);
+            SelectIfCloser((world - SphericalMirrorRotationHandle(
+                    mirror.Vertex, mirror.CenterOfCurvature)).Length,
+                SceneItemKind.ConvexSphericalMirror, index, MoveDragMode.RotationHandle,
+                ref bestDistance);
         }
 
         for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
@@ -793,6 +875,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - beamSplitter.End).Length, SceneItemKind.BeamSplitter, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(beamSplitter.Start, beamSplitter.End)).Length,
+                SceneItemKind.BeamSplitter, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.ScreenElements.Length; index++)
@@ -802,6 +886,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - screen.End).Length, SceneItemKind.Screen, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(screen.Start, screen.End)).Length,
+                SceneItemKind.Screen, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.ApertureElements.Length; index++)
@@ -811,6 +897,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - aperture.End).Length, SceneItemKind.Aperture, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(aperture.Start, aperture.End)).Length,
+                SceneItemKind.Aperture, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.ReflectionGratingElements.Length; index++)
@@ -820,6 +908,9 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - grating.End).Length, SceneItemKind.ReflectionGrating, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(grating.Start, grating.End)).Length,
+                SceneItemKind.ReflectionGrating, index, MoveDragMode.RotationHandle,
+                ref bestDistance);
         }
 
         for (var index = 0; index < _scene.LensElements.Length; index++)
@@ -829,6 +920,8 @@ internal sealed class SceneEditor
                 MoveDragMode.StartEndpoint, ref bestDistance);
             SelectIfCloser((world - lens.End).Length, SceneItemKind.Lens, index,
                 MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - RotationHandle(lens.Start, lens.End)).Length,
+                SceneItemKind.Lens, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
 
         if (_movingKind == SceneItemKind.None)
@@ -1085,7 +1178,19 @@ internal sealed class SceneEditor
             case SceneItemKind.LightSource:
                 var sources = (LightSource[])_scene.LightSources.Clone();
                 var source = sources[_movingIndex];
-                if (_moveDragMode == MoveDragMode.Translate || source.End is null)
+                if (_moveDragMode == MoveDragMode.RotationHandle && source.Kind == LightSourceKind.Point)
+                {
+                    var direction = (world - source.Position).Normalized();
+                    if (direction.LengthSquared <= 1e-12)
+                    {
+                        return;
+                    }
+                    sources[_movingIndex] = source with
+                    {
+                        DirectionDegrees = DirectionDegrees(direction)
+                    };
+                }
+                else if (_moveDragMode == MoveDragMode.Translate || source.End is null)
                 {
                     sources[_movingIndex] = source with
                     {
@@ -1097,6 +1202,12 @@ internal sealed class SceneEditor
                 {
                     var start = _moveDragMode == MoveDragMode.StartEndpoint ? world : source.Position;
                     var end = _moveDragMode == MoveDragMode.EndEndpoint ? world : source.End.Value;
+                    if (_moveDragMode == MoveDragMode.RotationHandle &&
+                        !TryRotateSegmentFromHandle(source.Position, source.End.Value, world,
+                            out start, out end))
+                    {
+                        return;
+                    }
                     if (!HasUsableLength(start, end))
                     {
                         return;
@@ -1122,6 +1233,12 @@ internal sealed class SceneEditor
                     mirrorStart += delta;
                     mirrorEnd += delta;
                 }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(mirror.Start, mirror.End, world,
+                             out mirrorStart, out mirrorEnd))
+                {
+                    return;
+                }
                 if (!HasUsableLength(mirrorStart, mirrorEnd))
                 {
                     return;
@@ -1133,7 +1250,7 @@ internal sealed class SceneEditor
             case SceneItemKind.ConcaveSphericalMirror:
                 var sphericalMirrors = (ConcaveSphericalMirror[])_scene.ConcaveSphericalMirrorElements.Clone();
                 var sphericalMirror = sphericalMirrors[_movingIndex];
-                if (_moveDragMode == MoveDragMode.DirectionHandle)
+                if (_moveDragMode is MoveDragMode.DirectionHandle or MoveDragMode.RotationHandle)
                 {
                     var direction = (world - sphericalMirror.Vertex).Normalized();
                     if (direction.LengthSquared <= 1e-12)
@@ -1159,7 +1276,7 @@ internal sealed class SceneEditor
             case SceneItemKind.ConvexSphericalMirror:
                 var convexSphericalMirrors = (ConvexSphericalMirror[])_scene.ConvexSphericalMirrorElements.Clone();
                 var convexSphericalMirror = convexSphericalMirrors[_movingIndex];
-                if (_moveDragMode == MoveDragMode.DirectionHandle)
+                if (_moveDragMode is MoveDragMode.DirectionHandle or MoveDragMode.RotationHandle)
                 {
                     var direction = (world - convexSphericalMirror.Vertex).Normalized();
                     if (direction.LengthSquared <= 1e-12)
@@ -1193,6 +1310,12 @@ internal sealed class SceneEditor
                     beamSplitterStart += delta;
                     beamSplitterEnd += delta;
                 }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(beamSplitter.Start, beamSplitter.End, world,
+                             out beamSplitterStart, out beamSplitterEnd))
+                {
+                    return;
+                }
                 if (!HasUsableLength(beamSplitterStart, beamSplitterEnd))
                 {
                     return;
@@ -1215,6 +1338,12 @@ internal sealed class SceneEditor
                     screenStart += delta;
                     screenEnd += delta;
                 }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(screen.Start, screen.End, world,
+                             out screenStart, out screenEnd))
+                {
+                    return;
+                }
                 if (!HasUsableLength(screenStart, screenEnd))
                 {
                     return;
@@ -1232,6 +1361,12 @@ internal sealed class SceneEditor
                 {
                     apertureStart += delta;
                     apertureEnd += delta;
+                }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(aperture.Start, aperture.End, world,
+                             out apertureStart, out apertureEnd))
+                {
+                    return;
                 }
                 if (!HasUsableLength(apertureStart, apertureEnd))
                 {
@@ -1257,6 +1392,12 @@ internal sealed class SceneEditor
                     gratingStart += delta;
                     gratingEnd += delta;
                 }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(grating.Start, grating.End, world,
+                             out gratingStart, out gratingEnd))
+                {
+                    return;
+                }
                 if (!HasUsableLength(gratingStart, gratingEnd))
                 {
                     return;
@@ -1274,6 +1415,12 @@ internal sealed class SceneEditor
                 {
                     lensStart += delta;
                     lensEnd += delta;
+                }
+                else if (_moveDragMode == MoveDragMode.RotationHandle &&
+                         !TryRotateSegmentFromHandle(lens.Start, lens.End, world,
+                             out lensStart, out lensEnd))
+                {
+                    return;
                 }
                 if (!HasUsableLength(lensStart, lensEnd))
                 {
@@ -1298,6 +1445,40 @@ internal sealed class SceneEditor
 
     private bool HasUsableLength(Vector2D start, Vector2D end) =>
         (end - start).Length >= 4 / _zoom;
+
+    private static Vector2D RotationHandle(Vector2D start, Vector2D end)
+    {
+        var midpoint = (start + end) / 2;
+        return midpoint + (end - start).Normalized().Perpendicular() * RotationHandleOffset;
+    }
+
+    private static Vector2D SphericalMirrorRotationHandle(
+        Vector2D vertex, Vector2D centerOfCurvature) =>
+        vertex + (centerOfCurvature - vertex).Normalized() * RotationHandleOffset;
+
+    private static Vector2D PointLightRotationHandle(LightSource source) =>
+        source.Position + Vector2D.FromAngle(source.DirectionDegrees * Math.PI / 180) *
+        RotationHandleOffset;
+
+    private static bool TryRotateSegmentFromHandle(
+        Vector2D start, Vector2D end, Vector2D handlePosition,
+        out Vector2D rotatedStart, out Vector2D rotatedEnd)
+    {
+        var midpoint = (start + end) / 2;
+        var handleDirection = (handlePosition - midpoint).Normalized();
+        if (handleDirection.LengthSquared <= 1e-12)
+        {
+            rotatedStart = start;
+            rotatedEnd = end;
+            return false;
+        }
+
+        var tangent = -handleDirection.Perpendicular();
+        var halfLength = (end - start).Length / 2;
+        rotatedStart = midpoint - tangent * halfLength;
+        rotatedEnd = midpoint + tangent * halfLength;
+        return true;
+    }
 
     private void UpdateScene(OpticalScene scene)
     {
@@ -1325,17 +1506,25 @@ internal sealed class SceneEditor
                         sourceOrigin.X, sourceOrigin.Y,
                         SegmentAngleDegrees(source.Position, sourceEnd), null,
                         (sourceEnd - sourceOrigin).Length * 2,
-                        WavelengthNanometers: source.WavelengthNanometers);
+                        WavelengthNanometers: source.WavelengthNanometers,
+                        SecondOriginX: RotationHandle(source.Position, sourceEnd).X,
+                        SecondOriginY: RotationHandle(source.Position, sourceEnd).Y);
                 }
-                return new CanvasSelection(CanvasSelectionKind.PointLight, "点光源", false,
-                    source.Position.X, source.Position.Y, 0, null, null,
-                    WavelengthNanometers: source.WavelengthNanometers);
+                var pointLightHandle = PointLightRotationHandle(source);
+                return new CanvasSelection(CanvasSelectionKind.PointLight, "点光源", true,
+                    source.Position.X, source.Position.Y, source.DirectionDegrees, null, null,
+                    WavelengthNanometers: source.WavelengthNanometers,
+                    SecondOriginX: pointLightHandle.X,
+                    SecondOriginY: pointLightHandle.Y,
+                    EmissionAngleDegrees: Math.Clamp(Math.Abs(source.SpreadDegrees), 1, 360));
             case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
                 var mirror = _scene.Mirrors[_selectedIndex];
                 var mirrorOrigin = (mirror.Start + mirror.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.Mirror, "平面反光镜", true,
                     mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
-                    (mirror.End - mirrorOrigin).Length * 2);
+                    (mirror.End - mirrorOrigin).Length * 2,
+                    SecondOriginX: RotationHandle(mirror.Start, mirror.End).X,
+                    SecondOriginY: RotationHandle(mirror.Start, mirror.End).Y);
             case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
                 _selectedIndex, _scene.ConcaveSphericalMirrorElements):
                 var sphericalMirror = _scene.ConcaveSphericalMirrorElements[_selectedIndex];
@@ -1375,26 +1564,34 @@ internal sealed class SceneEditor
                 return new CanvasSelection(CanvasSelectionKind.BeamSplitter, "平面分光镜", true,
                     beamSplitterOrigin.X, beamSplitterOrigin.Y,
                     SegmentAngleDegrees(beamSplitter.Start, beamSplitter.End), null,
-                    (beamSplitter.End - beamSplitterOrigin).Length * 2);
+                    (beamSplitter.End - beamSplitterOrigin).Length * 2,
+                    SecondOriginX: RotationHandle(beamSplitter.Start, beamSplitter.End).X,
+                    SecondOriginY: RotationHandle(beamSplitter.Start, beamSplitter.End).Y);
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screen = _scene.ScreenElements[_selectedIndex];
                 var screenOrigin = (screen.Start + screen.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.Screen, "光屏", true,
                     screenOrigin.X, screenOrigin.Y, SegmentAngleDegrees(screen.Start, screen.End), null,
-                    (screen.End - screenOrigin).Length * 2);
+                    (screen.End - screenOrigin).Length * 2,
+                    SecondOriginX: RotationHandle(screen.Start, screen.End).X,
+                    SecondOriginY: RotationHandle(screen.Start, screen.End).Y);
             case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
                 var aperture = _scene.ApertureElements[_selectedIndex];
                 var apertureOrigin = (aperture.Start + aperture.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.Aperture, "光阑", true,
                     apertureOrigin.X, apertureOrigin.Y, SegmentAngleDegrees(aperture.Start, aperture.End), null,
-                    (aperture.End - apertureOrigin).Length * 2, aperture.OpeningSize);
+                    (aperture.End - apertureOrigin).Length * 2, aperture.OpeningSize,
+                    SecondOriginX: RotationHandle(aperture.Start, aperture.End).X,
+                    SecondOriginY: RotationHandle(aperture.Start, aperture.End).Y);
             case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
                 var grating = _scene.ReflectionGratingElements[_selectedIndex];
                 var gratingOrigin = (grating.Start + grating.End) / 2;
                 return new CanvasSelection(CanvasSelectionKind.ReflectionGrating, "反射光栅", true,
                     gratingOrigin.X, gratingOrigin.Y, SegmentAngleDegrees(grating.Start, grating.End), null,
                     (grating.End - gratingOrigin).Length * 2, null,
-                    grating.GrooveDensityLinesPerMillimeter);
+                    grating.GrooveDensityLinesPerMillimeter,
+                    SecondOriginX: RotationHandle(grating.Start, grating.End).X,
+                    SecondOriginY: RotationHandle(grating.Start, grating.End).Y);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;
@@ -1404,7 +1601,9 @@ internal sealed class SceneEditor
                 var displayName = lens.Kind == LensKind.Convex ? "凸透镜" : "凹透镜";
                 return new CanvasSelection(selectionKind, displayName, true,
                     lensOrigin.X, lensOrigin.Y, SegmentAngleDegrees(lens.Start, lens.End), lens.FocalLength,
-                    (lens.End - lensOrigin).Length * 2);
+                    (lens.End - lensOrigin).Length * 2,
+                    SecondOriginX: RotationHandle(lens.Start, lens.End).X,
+                    SecondOriginY: RotationHandle(lens.Start, lens.End).Y);
             default:
                 return null;
         }
