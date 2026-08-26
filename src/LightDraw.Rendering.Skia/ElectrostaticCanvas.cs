@@ -57,7 +57,6 @@ public sealed class ElectrostaticCanvas : Control
     private Point _lastPointer;
     private ElectrostaticSelectionKind? _selectedKind;
     private int _selectedIndex = -1;
-    private DragMode _dragMode;
     private Vector2D _moveOffset, _dragStart;
     private ChargedPlate? _dragOriginalPlate;
     private Vector2D? _plateStart;
@@ -232,7 +231,9 @@ public sealed class ElectrostaticCanvas : Control
     private void BeginMove(ElementHit? hit, Vector2D world, PointerPressedEventArgs e)
     {
         if (hit is not { } h) { SetSelection(null, -1); return; }
-        SetSelection(h.Kind, h.Index); _dragMode = h.Mode; _isMoving = true; _moveChanged = _moveSimulationDirty = false;
+        SetSelection(h.Kind, h.Index);
+        if (h.Mode != DragMode.Origin) return;
+        _isMoving = true; _moveChanged = _moveSimulationDirty = false;
         _lastMoveSimulationTimestamp = 0; _dragStart = world;
         if (h.Kind == ElectrostaticSelectionKind.PointCharge) _moveOffset = _scene.Charges[h.Index].Position - world;
         else _dragOriginalPlate = _scene.PlateElements[h.Index];
@@ -246,8 +247,12 @@ public sealed class ElectrostaticCanvas : Control
             SetAndRaise(SceneProperty, ref _scene, _scene with { Charges = items }); return;
         }
         if (_dragOriginalPlate is not { } original) return;
-        var plates = _scene.PlateElements.ToArray(); plates[s.Index] = _dragMode switch
-        { DragMode.Start => original with { Start = world }, DragMode.End => original with { End = world }, _ => original with { Start = original.Start + world - _dragStart, End = original.End + world - _dragStart } };
+        var plates = _scene.PlateElements.ToArray();
+        plates[s.Index] = original with
+        {
+            Start = original.Start + world - _dragStart,
+            End = original.End + world - _dragStart
+        };
         SetAndRaise(SceneProperty, ref _scene, _scene with { Plates = plates });
     }
 
@@ -287,10 +292,12 @@ public sealed class ElectrostaticCanvas : Control
     private void DrawPlate(DrawingContext c, ChargedPlate p, int index)
     {
         var pen = p.PotentialVolts > 1e-9 ? PositivePlatePen : p.PotentialVolts < -1e-9 ? NegativePlatePen : ZeroPlatePen;
-        c.DrawLine(pen, ToScreen(p.Start), ToScreen(p.End)); var center = ToScreen((p.Start + p.End) / 2);
+        var centerWorld = (p.Start + p.End) / 2;
+        c.DrawLine(pen, ToScreen(p.Start), ToScreen(p.End)); var center = ToScreen(centerWorld);
         c.DrawText(Text($"{p.PotentialVolts:G5} V", 11), new(center.X + 7, center.Y - 21));
+        if (_activeTool == ElectrostaticTool.Move) DrawHandle(c, centerWorld);
         if (_selectedKind != ElectrostaticSelectionKind.ChargedPlate || _selectedIndex != index) return;
-        c.DrawLine(SelectionPen, ToScreen(p.Start), ToScreen(p.End)); DrawHandle(c, p.Start); DrawHandle(c, p.End);
+        c.DrawLine(SelectionPen, ToScreen(p.Start), ToScreen(p.End));
     }
     private void DrawHandle(DrawingContext c, Vector2D p) => c.DrawEllipse(Brushes.White, TickPen, ToScreen(p), 5, 5);
     private void DrawCharge(DrawingContext c, PointCharge q, int index)
@@ -303,10 +310,15 @@ public sealed class ElectrostaticCanvas : Control
 
     private ElementHit? HitTest(Vector2D world)
     {
-        var endpoint = 12 / _zoom;
         for (var i = _scene.PlateElements.Length - 1; i >= 0; i--)
-        { var p = _scene.PlateElements[i]; if ((world - p.Start).Length <= endpoint) return new(ElectrostaticSelectionKind.ChargedPlate, i, DragMode.Start); if ((world - p.End).Length <= endpoint) return new(ElectrostaticSelectionKind.ChargedPlate, i, DragMode.End); }
-        for (var i = _scene.Charges.Length - 1; i >= 0; i--) if ((world - _scene.Charges[i].Position).Length <= 18 / _zoom) return new(ElectrostaticSelectionKind.PointCharge, i, DragMode.Body);
+        {
+            var p = _scene.PlateElements[i];
+            if ((world - (p.Start + p.End) / 2).Length <= 12 / _zoom)
+                return new(ElectrostaticSelectionKind.ChargedPlate, i, DragMode.Origin);
+        }
+        for (var i = _scene.Charges.Length - 1; i >= 0; i--)
+            if ((world - _scene.Charges[i].Position).Length <= 18 / _zoom)
+                return new(ElectrostaticSelectionKind.PointCharge, i, DragMode.Origin);
         for (var i = _scene.PlateElements.Length - 1; i >= 0; i--) { var p = _scene.PlateElements[i]; if (DistanceToSegment(world, p.Start, p.End) <= 10 / _zoom) return new(ElectrostaticSelectionKind.ChargedPlate, i, DragMode.Body); }
         return null;
     }
@@ -342,5 +354,5 @@ public sealed class ElectrostaticCanvas : Control
     private static Pen Pen(string color, double width) => new(Brush(color), width);
     private static FormattedText Text(string value, double size) => new(value, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new("Inter"), size, TextBrush);
     private readonly record struct ElementHit(ElectrostaticSelectionKind Kind, int Index, DragMode Mode);
-    private enum DragMode { Body, Start, End }
+    private enum DragMode { Body, Origin }
 }

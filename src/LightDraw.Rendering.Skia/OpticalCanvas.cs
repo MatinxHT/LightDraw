@@ -40,7 +40,7 @@ internal enum SceneItemKind
 
 internal enum MoveDragMode
 {
-    None, Translate, StartEndpoint, EndEndpoint, DirectionHandle, RotationHandle
+    None, Translate, DirectionHandle, RotationHandle
 }
 
 public sealed class OpticalCanvas : Control

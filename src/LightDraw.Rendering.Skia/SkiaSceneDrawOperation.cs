@@ -250,7 +250,6 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), paint);
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, mirror.Start, mirror.End, paint);
                 DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
                     selectedKind == SceneItemKind.Mirror && selectedIndex == index);
                 DrawRotationHandle(canvas, mirror.Start, mirror.End);
@@ -361,7 +360,6 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawLine(ToScreen(screen.Start), ToScreen(screen.End), paint);
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, screen.Start, screen.End, paint);
                 DrawOrigin(canvas, (screen.Start + screen.End) / 2,
                     selectedKind == SceneItemKind.Screen && selectedIndex == index);
                 DrawRotationHandle(canvas, screen.Start, screen.End);
@@ -380,7 +378,6 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawLine(ToScreen(beamSplitter.Start), ToScreen(beamSplitter.End), paint);
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, beamSplitter.Start, beamSplitter.End, paint);
                 DrawOrigin(canvas, (beamSplitter.Start + beamSplitter.End) / 2,
                     selectedKind == SceneItemKind.BeamSplitter && selectedIndex == index);
                 DrawRotationHandle(canvas, beamSplitter.Start, beamSplitter.End);
@@ -421,7 +418,6 @@ internal sealed class SkiaSceneDrawOperation(
 
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, aperture.Start, aperture.End, paint);
                 DrawOrigin(canvas, midpoint,
                     selectedKind == SceneItemKind.Aperture && selectedIndex == index);
                 DrawRotationHandle(canvas, aperture.Start, aperture.End);
@@ -459,7 +455,6 @@ internal sealed class SkiaSceneDrawOperation(
 
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, grating.Start, grating.End, paint);
                 DrawOrigin(canvas, (grating.Start + grating.End) / 2,
                     selectedKind == SceneItemKind.ReflectionGrating && selectedIndex == index);
                 DrawRotationHandle(canvas, grating.Start, grating.End);
@@ -488,7 +483,6 @@ internal sealed class SkiaSceneDrawOperation(
             DrawLensArrows(canvas, lens, paint, arrowInset);
             if (tool == CanvasTool.Move)
             {
-                DrawHandles(canvas, lens.Start, lens.End, paint);
                 DrawOrigin(canvas, (lens.Start + lens.End) / 2,
                     selectedKind == SceneItemKind.Lens && selectedIndex == index);
                 DrawRotationHandle(canvas, lens.Start, lens.End);
@@ -604,12 +598,6 @@ internal sealed class SkiaSceneDrawOperation(
         StrokeCap = SKStrokeCap.Round,
         IsAntialias = true
     };
-
-    private void DrawHandles(SKCanvas canvas, Vector2D start, Vector2D end, SKPaint paint)
-    {
-        canvas.DrawCircle(ToScreen(start), 4.5f, paint);
-        canvas.DrawCircle(ToScreen(end), 4.5f, paint);
-    }
 
     private void DrawOrigin(SKCanvas canvas, Vector2D origin, bool isSelected)
     {

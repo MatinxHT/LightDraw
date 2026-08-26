@@ -20,6 +20,7 @@ public sealed partial class MainWindow : Window
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
             _viewModel.OpenElectrostaticSimulationRequested -= OnOpenElectrostaticSimulationRequested;
+            _viewModel.OpenMagnetostaticSimulationRequested -= OnOpenMagnetostaticSimulationRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
@@ -40,6 +41,7 @@ public sealed partial class MainWindow : Window
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.AboutRequested += OnAboutRequested;
         _viewModel.OpenElectrostaticSimulationRequested += OnOpenElectrostaticSimulationRequested;
+        _viewModel.OpenMagnetostaticSimulationRequested += OnOpenMagnetostaticSimulationRequested;
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
@@ -68,6 +70,7 @@ public sealed partial class MainWindow : Window
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
             _viewModel.OpenElectrostaticSimulationRequested -= OnOpenElectrostaticSimulationRequested;
+            _viewModel.OpenMagnetostaticSimulationRequested -= OnOpenMagnetostaticSimulationRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
@@ -97,6 +100,9 @@ public sealed partial class MainWindow : Window
 
     private void OnOpenElectrostaticSimulationRequested(object? sender, EventArgs e) =>
         new ElectrostaticWindow().Show(this);
+
+    private void OnOpenMagnetostaticSimulationRequested(object? sender, EventArgs e) =>
+        new MagnetostaticWindow().Show(this);
 
     private void OnSimulationCompleted(object? sender, EventArgs e) =>
         _viewModel?.UpdateSimulation(Canvas.SimulationResult);

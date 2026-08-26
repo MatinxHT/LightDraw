@@ -120,7 +120,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     public void UpdateToolState(ElectrostaticTool tool) => StatusText = tool switch
     {
         ElectrostaticTool.Pan => "平移工具 · 按住左键拖动画布，滚轮缩放",
-        ElectrostaticTool.Move => "移动/编辑 · 拖动平板主体可平移，拖动端点可调整长度和角度",
+        ElectrostaticTool.Move => "移动/编辑 · 仅拖动第一原点平移；平板长度和角度通过属性框修改",
         ElectrostaticTool.Delete => "删除工具 · 单击点电荷或平板后自动返回平移工具",
         ElectrostaticTool.PointCharge => "放置点电荷 · 在画布中单击，随后可在顶部设置电量",
         ElectrostaticTool.ChargedPlate => "放置带电平板 · 第一次点击起点，第二次点击终点",

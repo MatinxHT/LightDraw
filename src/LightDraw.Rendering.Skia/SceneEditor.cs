@@ -811,6 +811,8 @@ internal sealed class SceneEditor
             var source = _scene.LightSources[index];
             if (source.Kind == LightSourceKind.Point)
             {
+                SelectIfCloser((world - source.Position).Length,
+                    SceneItemKind.LightSource, index, MoveDragMode.Translate, ref bestDistance);
                 SelectIfCloser((world - PointLightRotationHandle(source)).Length,
                     SceneItemKind.LightSource, index, MoveDragMode.RotationHandle,
                     ref bestDistance);
@@ -821,10 +823,8 @@ internal sealed class SceneEditor
                 continue;
             }
 
-            SelectIfCloser((world - source.Position).Length, SceneItemKind.LightSource, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - end).Length, SceneItemKind.LightSource, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (source.Position + end) / 2).Length,
+                SceneItemKind.LightSource, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(source.Position, end)).Length,
                 SceneItemKind.LightSource, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -832,10 +832,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.Mirrors.Length; index++)
         {
             var mirror = _scene.Mirrors[index];
-            SelectIfCloser((world - mirror.Start).Length, SceneItemKind.Mirror, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - mirror.End).Length, SceneItemKind.Mirror, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (mirror.Start + mirror.End) / 2).Length,
+                SceneItemKind.Mirror, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(mirror.Start, mirror.End)).Length,
                 SceneItemKind.Mirror, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -871,10 +869,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.BeamSplitterElements.Length; index++)
         {
             var beamSplitter = _scene.BeamSplitterElements[index];
-            SelectIfCloser((world - beamSplitter.Start).Length, SceneItemKind.BeamSplitter, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - beamSplitter.End).Length, SceneItemKind.BeamSplitter, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (beamSplitter.Start + beamSplitter.End) / 2).Length,
+                SceneItemKind.BeamSplitter, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(beamSplitter.Start, beamSplitter.End)).Length,
                 SceneItemKind.BeamSplitter, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -882,10 +878,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.ScreenElements.Length; index++)
         {
             var screen = _scene.ScreenElements[index];
-            SelectIfCloser((world - screen.Start).Length, SceneItemKind.Screen, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - screen.End).Length, SceneItemKind.Screen, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (screen.Start + screen.End) / 2).Length,
+                SceneItemKind.Screen, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(screen.Start, screen.End)).Length,
                 SceneItemKind.Screen, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -893,10 +887,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.ApertureElements.Length; index++)
         {
             var aperture = _scene.ApertureElements[index];
-            SelectIfCloser((world - aperture.Start).Length, SceneItemKind.Aperture, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - aperture.End).Length, SceneItemKind.Aperture, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (aperture.Start + aperture.End) / 2).Length,
+                SceneItemKind.Aperture, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(aperture.Start, aperture.End)).Length,
                 SceneItemKind.Aperture, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -904,10 +896,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.ReflectionGratingElements.Length; index++)
         {
             var grating = _scene.ReflectionGratingElements[index];
-            SelectIfCloser((world - grating.Start).Length, SceneItemKind.ReflectionGrating, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - grating.End).Length, SceneItemKind.ReflectionGrating, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (grating.Start + grating.End) / 2).Length,
+                SceneItemKind.ReflectionGrating, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(grating.Start, grating.End)).Length,
                 SceneItemKind.ReflectionGrating, index, MoveDragMode.RotationHandle,
                 ref bestDistance);
@@ -916,10 +906,8 @@ internal sealed class SceneEditor
         for (var index = 0; index < _scene.LensElements.Length; index++)
         {
             var lens = _scene.LensElements[index];
-            SelectIfCloser((world - lens.Start).Length, SceneItemKind.Lens, index,
-                MoveDragMode.StartEndpoint, ref bestDistance);
-            SelectIfCloser((world - lens.End).Length, SceneItemKind.Lens, index,
-                MoveDragMode.EndEndpoint, ref bestDistance);
+            SelectIfCloser((world - (lens.Start + lens.End) / 2).Length,
+                SceneItemKind.Lens, index, MoveDragMode.Translate, ref bestDistance);
             SelectIfCloser((world - RotationHandle(lens.Start, lens.End)).Length,
                 SceneItemKind.Lens, index, MoveDragMode.RotationHandle, ref bestDistance);
         }
@@ -928,6 +916,16 @@ internal sealed class SceneEditor
         {
             bestDistance = 10 / _zoom;
             FindTranslatableItem(world, ref bestDistance);
+            if (_movingKind != SceneItemKind.None)
+            {
+                _selectedKind = _movingKind;
+                _selectedIndex = _movingIndex;
+                _movingKind = SceneItemKind.None;
+                _movingIndex = -1;
+                _moveDragMode = MoveDragMode.None;
+                SelectionChanged?.Invoke(this, EventArgs.Empty);
+                return false;
+            }
         }
 
         if (_movingKind == SceneItemKind.None)
@@ -1200,8 +1198,8 @@ internal sealed class SceneEditor
                 }
                 else
                 {
-                    var start = _moveDragMode == MoveDragMode.StartEndpoint ? world : source.Position;
-                    var end = _moveDragMode == MoveDragMode.EndEndpoint ? world : source.End.Value;
+                    var start = source.Position;
+                    var end = source.End.Value;
                     if (_moveDragMode == MoveDragMode.RotationHandle &&
                         !TryRotateSegmentFromHandle(source.Position, source.End.Value, world,
                             out start, out end))
@@ -1226,8 +1224,8 @@ internal sealed class SceneEditor
             case SceneItemKind.Mirror:
                 var mirrors = (MirrorSegment[])_scene.Mirrors.Clone();
                 var mirror = mirrors[_movingIndex];
-                var mirrorStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : mirror.Start;
-                var mirrorEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : mirror.End;
+                var mirrorStart = mirror.Start;
+                var mirrorEnd = mirror.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     mirrorStart += delta;
@@ -1303,8 +1301,8 @@ internal sealed class SceneEditor
             case SceneItemKind.BeamSplitter:
                 var beamSplitters = (BeamSplitterSegment[])_scene.BeamSplitterElements.Clone();
                 var beamSplitter = beamSplitters[_movingIndex];
-                var beamSplitterStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : beamSplitter.Start;
-                var beamSplitterEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : beamSplitter.End;
+                var beamSplitterStart = beamSplitter.Start;
+                var beamSplitterEnd = beamSplitter.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     beamSplitterStart += delta;
@@ -1331,8 +1329,8 @@ internal sealed class SceneEditor
             case SceneItemKind.Screen:
                 var screens = (ScreenSegment[])_scene.ScreenElements.Clone();
                 var screen = screens[_movingIndex];
-                var screenStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : screen.Start;
-                var screenEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : screen.End;
+                var screenStart = screen.Start;
+                var screenEnd = screen.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     screenStart += delta;
@@ -1355,8 +1353,8 @@ internal sealed class SceneEditor
             case SceneItemKind.Aperture:
                 var apertures = (ApertureSegment[])_scene.ApertureElements.Clone();
                 var aperture = apertures[_movingIndex];
-                var apertureStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : aperture.Start;
-                var apertureEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : aperture.End;
+                var apertureStart = aperture.Start;
+                var apertureEnd = aperture.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     apertureStart += delta;
@@ -1385,8 +1383,8 @@ internal sealed class SceneEditor
             case SceneItemKind.ReflectionGrating:
                 var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
                 var grating = gratings[_movingIndex];
-                var gratingStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : grating.Start;
-                var gratingEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : grating.End;
+                var gratingStart = grating.Start;
+                var gratingEnd = grating.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     gratingStart += delta;
@@ -1409,8 +1407,8 @@ internal sealed class SceneEditor
             case SceneItemKind.Lens:
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_movingIndex];
-                var lensStart = _moveDragMode == MoveDragMode.StartEndpoint ? world : lens.Start;
-                var lensEnd = _moveDragMode == MoveDragMode.EndEndpoint ? world : lens.End;
+                var lensStart = lens.Start;
+                var lensEnd = lens.End;
                 if (_moveDragMode == MoveDragMode.Translate)
                 {
                     lensStart += delta;

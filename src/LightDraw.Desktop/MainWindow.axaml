@@ -22,7 +22,7 @@
 		  </StackPanel>
 		  <Border Width="1" Height="30" Margin="10,0,4,0" Background="#26344C" />
 		  <Button Classes="toolbar-inline" Content="↯ 打开静电场仿真" Command="{Binding OpenElectrostaticSimulationCommand}" />
-		  <Button Classes="toolbar-inline" Content="⌁ 打开静磁场仿真" IsEnabled="False" ToolTip.Tip="静磁场仿真正在开发中" />
+		  <Button Classes="toolbar-inline" Content="⌁ 打开静磁场仿真" Command="{Binding OpenMagnetostaticSimulationCommand}" />
 		</StackPanel>
 		<TextBlock Grid.Column="2" Text=".NET 10 · Avalonia · SkiaSharp" Foreground="#7F93B2" VerticalAlignment="Center" />
 	  </Grid>
@@ -157,7 +157,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />
-			  <TextBlock Text="移动主体：整体平移&#x0a;一般端点：拉伸并旋转&#x0a;白色圆点：固定原点旋转&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			  <TextBlock Text="第一原点：按住拖拽平移&#x0a;白色圆点：固定原点旋转&#x0a;长度：仅通过属性框修改&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>

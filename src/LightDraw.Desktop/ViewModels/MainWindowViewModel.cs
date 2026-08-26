@@ -114,6 +114,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event EventHandler? ResetViewRequested;
     public event EventHandler? AboutRequested;
     public event EventHandler? OpenElectrostaticSimulationRequested;
+    public event EventHandler? OpenMagnetostaticSimulationRequested;
     public event Action<double>? RotateSelectedRequested;
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double>? SetSelectedFocalLengthRequested;
@@ -342,6 +343,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         OpenElectrostaticSimulationRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
+    private void OpenMagnetostaticSimulation() =>
+        OpenMagnetostaticSimulationRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
     private void ResetScene()
     {
         CancelRayDensityUpdate();
@@ -415,7 +420,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         StatusText = tool switch
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 拖动主体平移；拖动白点固定元件原点旋转；光路实时刷新",
+            CanvasTool.Move => "移动或调整元件 · 仅拖动第一原点平移；拖动白点旋转；长度仅通过属性框修改",
             CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };

@@ -1,0 +1,136 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:skia="using:LightDraw.Rendering.Skia"
+        xmlns:vm="using:LightDraw.Desktop.ViewModels"
+        x:Class="LightDraw.Desktop.MagnetostaticWindow"
+        x:DataType="vm:MagnetostaticWindowViewModel"
+        Title="静磁场仿真 - 光绘课堂"
+        Icon="/Assets/Icons/LightDraw.ico"
+        Width="1320" Height="780" MinWidth="900" MinHeight="580"
+        Background="#0B1220">
+  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,*,Auto">
+    <Border Grid.ColumnSpan="2" Padding="18,11" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <Image Width="40" Height="40" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
+          <StackPanel>
+            <TextBlock Text="静磁场仿真" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="理想恒定电流导体与磁场方向" FontSize="11" Foreground="#91A4C2" />
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Grid.Column="2" Text="真空磁导率 μ₀ · 毕奥-萨伐尔定律" Foreground="#7F93B2" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,9" Background="#0F1A2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+        <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,16,2">
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="✥ 平移界面" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="✣ 移动/编辑" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="× 删除" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
+        </StackPanel>
+        <Border Grid.Column="1" Width="1" Height="28" Margin="0,0,16,0" Background="#26344C" />
+        <TextBlock Grid.Column="2" Text="统一模拟配置" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+          <TextBlock Text="场图密度" Foreground="#9EB0CA" VerticalAlignment="Center" />
+          <Grid Width="180" ColumnDefinitions="*,34" VerticalAlignment="Center">
+            <Slider Minimum="4" Maximum="48" Value="{Binding MarkerDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Text="{Binding MarkerDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#67E8C7" />
+          </Grid>
+          <Button Classes="toolbar-inline" Content="⌂ 重置场景" Command="{Binding ResetSceneCommand}" />
+          <Button Classes="toolbar-inline" Content="◎ 适合窗口" Command="{Binding ResetViewCommand}" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+      <Grid RowDefinitions="Auto,Auto">
+        <WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock Text="几何约束" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding SelectedElementName}" MinWidth="130" Foreground="#67E8C7" VerticalAlignment="Center" Margin="0,2,18,2" />
+          <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
+            <TextBlock Text="中心" Foreground="#9EB0CA" VerticalAlignment="Center" />
+            <TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
+            <TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
+            <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedSecondOrigin}" Margin="0,2,18,2">
+            <TextBlock Text="第二原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="垂直面环形电流的白色旋转控制点" />
+            <TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
+            <TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay}" />
+            <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelectedRotatableElement}" Margin="0,2,18,2">
+            <TextBlock Text="旋转步进" Foreground="#9EB0CA" VerticalAlignment="Center" />
+            <TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
+            <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <Button Classes="setting-inline" Content="↶ 逆时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
+            <Button Classes="setting-inline" Content="↷ 顺时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
+            <TextBlock Text="当前角度" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="4,0,0,0" />
+            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedAngle, Mode=TwoWay}" />
+            <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
+            <ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
+              <ComboBoxItem Content="自定义" IsEnabled="False" />
+              <ComboBoxItem Content="0°" />
+              <ComboBoxItem Content="90°" />
+              <ComboBoxItem Content="180°" />
+              <ComboBoxItem Content="270°" />
+            </ComboBox>
+          </StackPanel>
+        </WrapPanel>
+        <Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+          <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+            <TextBlock Text="元件参数" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedLinearConductor}" Margin="0,2,18,2">
+              <TextBlock Text="长度" Foreground="#9EB0CA" VerticalAlignment="Center" />
+              <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
+              <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedLoop}" Margin="0,2,18,2">
+              <TextBlock Text="半径" Foreground="#9EB0CA" VerticalAlignment="Center" />
+              <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedRadius, Mode=TwoWay}" />
+              <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
+              <TextBlock Text="恒定电流 I" Foreground="#9EB0CA" VerticalAlignment="Center" />
+              <TextBox Width="100" HorizontalContentAlignment="Right" Text="{Binding SelectedCurrent, Mode=TwoWay}" />
+              <TextBlock Text="A" Foreground="#7F93B2" VerticalAlignment="Center" />
+              <TextBlock Text="（可输入正数、负数或 0）" Foreground="#687D9D" VerticalAlignment="Center" />
+            </StackPanel>
+          </WrapPanel>
+        </Border>
+      </Grid>
+    </Border>
+
+    <Border Grid.Row="3" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
+      <Grid RowDefinitions="Auto,*">
+        <TextBlock Text="创建模型" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
+        <StackPanel Grid.Row="1" Margin="16,0,16,16" Spacing="2">
+          <TextBlock Text="电流" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PlanarIdealConstantCurrentConductor}" Content="▰ 平面理想恒定电流导体" Command="{Binding SelectToolCommand}" CommandParameter="PlanarIdealConstantCurrentConductor" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=VerticalInfiniteCurrentConductor}" Content="⊙ 竖直面无限长恒定电流导体" Command="{Binding SelectToolCommand}" CommandParameter="VerticalInfiniteCurrentConductor" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PlanarCircularCurrentLoop}" Content="○ 平面环形恒定电流" Command="{Binding SelectToolCommand}" CommandParameter="PlanarCircularCurrentLoop" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=VerticalCircularCurrentLoop}" Content="◯ 垂直面环形恒定电流" Command="{Binding SelectToolCommand}" CommandParameter="VerticalCircularCurrentLoop" />
+          <Separator Margin="0,16,0,14" />
+          <TextBlock Text="线形和环形元件均按毕奥-萨伐尔定律叠加。&#x0a;&#x0a;平面圆环：圆弧箭头逆时针为正；· / × 显示法向磁场。&#x0a;&#x0a;垂直圆环：实线半环位于绘图面以上，虚线半环位于绘图面以下；绿色曲线显示平面内磁感线。拖动白色第二原点可固定圆心旋转。&#x0a;&#x0a;负电流使方向反转。" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <skia:MagnetostaticCanvas x:Name="Canvas" Grid.Row="3" Grid.Column="1"
+                               Scene="{Binding CurrentScene, Mode=TwoWay}"
+                               ActiveTool="{Binding ActiveTool, Mode=TwoWay}"
+                               MarkerDensity="{Binding MarkerDensity}" />
+
+    <Border Grid.Row="4" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding StatusText}" Foreground="#9EB0CA" FontSize="12" />
+        <TextBlock Grid.Column="1" Text="毕奥-萨伐尔定律 · 方向遵循右手定则" Foreground="#687D9D" FontSize="12" />
+      </Grid>
+    </Border>
+  </Grid>
+</Window>
