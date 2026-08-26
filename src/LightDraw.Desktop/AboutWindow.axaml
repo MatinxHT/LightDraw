@@ -2,45 +2,83 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="LightDraw.Desktop.AboutWindow"
         Title="关于光绘课堂"
-        Width="480"
-        SizeToContent="Height"
-        CanResize="False"
+        Icon="/Assets/Icons/LightDraw.ico"
+        Width="580"
+        Height="700"
+        MinWidth="520"
+        MinHeight="560"
         WindowStartupLocation="CenterOwner"
         Background="#0B1220">
-  <StackPanel Margin="28" Spacing="16">
-    <StackPanel Orientation="Horizontal" Spacing="14">
-      <Border Width="48" Height="48" CornerRadius="11" Background="#194B68">
-        <TextBlock Text="◈" FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#7DE3FF" />
-      </Border>
-      <StackPanel VerticalAlignment="Center">
-        <TextBlock Text="光绘课堂 (LightDraw)" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock x:Name="VersionText" Foreground="#7DE3FF" />
+  <Grid Margin="28" RowDefinitions="*,Auto">
+    <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="0,0,10,18" Spacing="16">
+        <StackPanel Orientation="Horizontal" Spacing="14">
+          <Image Width="72" Height="72" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="光绘课堂 (LightDraw)" FontSize="20" FontWeight="SemiBold" />
+            <TextBlock x:Name="VersionText" Foreground="#7DE3FF" />
+          </StackPanel>
+        </StackPanel>
+
+        <TextBlock Text="面向物理课堂、实验演示和物理学习的二维光学与静电场绘图、仿真工具。"
+                   Foreground="#B7C5DA" TextWrapping="Wrap" />
+
+        <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+          <StackPanel Spacing="8">
+            <TextBlock Text="项目仓库" FontWeight="SemiBold" />
+            <TextBlock Text="欢迎查看源代码、提交问题或参与改进。" Foreground="#9EB0CA" TextWrapping="Wrap" />
+            <HyperlinkButton Content="https://github.com/MatinxHT/LightDraw"
+                             NavigateUri="https://github.com/MatinxHT/LightDraw"
+                             HorizontalAlignment="Left"
+                             Padding="0"
+                             Foreground="#7DE3FF" />
+          </StackPanel>
+        </Border>
+
+        <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+          <StackPanel Spacing="12">
+            <TextBlock Text="主要仿真方法" FontWeight="SemiBold" />
+            <StackPanel Spacing="4">
+              <TextBlock Text="光学仿真 · 二维几何光线追迹" Foreground="#7DE3FF" FontWeight="SemiBold" />
+              <TextBlock Text="从光源离散发射光线，计算光线与光学元件的最近交点，并依据反射定律、理想薄透镜近轴模型和光栅方程继续传播。只考虑几何光学，不考虑波动光学效应，甚至三棱镜色散这种需要设置截止常数确定色散角度的也不是很想做。"
+                         Foreground="#9EB0CA" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="静电场仿真 · 库仑叠加与数值积分" Foreground="#7DE3FF" FontWeight="SemiBold" />
+              <TextBlock Text="按库仑定律叠加点电荷的电势和电场；有限导体板采用边界元离散并求解感应电荷，再使用四阶 Runge–Kutta 方法沿电场方向追踪电场线。"
+                         Foreground="#9EB0CA" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock Text="仿真面向课堂演示和概念学习，不替代精密工程或科研计算。"
+                       Foreground="#7F93B2" FontSize="12" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+          <StackPanel Spacing="7">
+            <TextBlock Text="授权许可" FontWeight="SemiBold" />
+            <TextBlock Text="PolyForm Noncommercial License 1.0.0" Foreground="#7DE3FF" />
+            <TextBlock Text="本软件仅授权用于非商业用途。许可条款：&#x0a;https://polyformproject.org/licenses/noncommercial/1.0.0"
+                       Foreground="#9EB0CA" TextWrapping="Wrap" />
+            <TextBlock Text="Required Notice: Copyright 2026 LightDraw contributors"
+                       Foreground="#7F93B2" FontSize="12" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+
+        <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
+          <StackPanel Spacing="9">
+            <TextBlock Text="鸣谢" FontWeight="SemiBold" />
+            <TextBlock Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源与照明系&#x0a;佛山市升阳光学科技有限公司"
+                       Foreground="#9EB0CA" LineHeight="22" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
       </StackPanel>
-    </StackPanel>
+    </ScrollViewer>
 
-    <TextBlock Text="面向物理课堂、实验演示和几何光学学习的二维光学绘图与模拟工具。"
-               Foreground="#B7C5DA" TextWrapping="Wrap" />
-
-    <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
-      <StackPanel Spacing="7">
-        <TextBlock Text="授权许可" FontWeight="SemiBold" />
-        <TextBlock Text="PolyForm Noncommercial License 1.0.0" Foreground="#7DE3FF" />
-        <TextBlock Text="本软件仅授权用于非商业用途。许可条款：&#x0a;https://polyformproject.org/licenses/noncommercial/1.0.0"
-                   Foreground="#9EB0CA" TextWrapping="Wrap" />
-        <TextBlock Text="Required Notice: Copyright 2026 LightDraw contributors"
-                   Foreground="#7F93B2" FontSize="12" TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
-    <Border Padding="16" CornerRadius="8" Background="#111B2E" BorderBrush="#26344C" BorderThickness="1">
-      <StackPanel Spacing="9">
-        <TextBlock Text="鸣谢" FontWeight="SemiBold" />
-        <TextBlock Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源与照明系&#x0a;佛山市升阳光学科技有限公司"
-                   Foreground="#9EB0CA" LineHeight="22" TextWrapping="Wrap" />
-      </StackPanel>
-    </Border>
-
-    <TextBlock Text="基于 .NET 10、Avalonia 和 SkiaSharp 构建" HorizontalAlignment="Center" Foreground="#687D9D" FontSize="12" />
-    <Button Content="关闭" HorizontalAlignment="Right" MinWidth="88" IsDefault="True" IsCancel="True" Click="OnCloseClicked" />
-  </StackPanel>
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+      <TextBlock Text="基于 .NET 10、Avalonia 和 SkiaSharp 构建"
+                 VerticalAlignment="Center" Foreground="#687D9D" FontSize="12" />
+      <Button Grid.Column="1" Content="关闭" HorizontalAlignment="Right" MinWidth="88"
+              IsDefault="True" IsCancel="True" Click="OnCloseClicked" />
+    </Grid>
+  </Grid>
 </Window>

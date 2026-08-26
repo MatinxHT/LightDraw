@@ -5,6 +5,7 @@
 		x:Class="LightDraw.Desktop.MainWindow"
 		x:DataType="vm:MainWindowViewModel"
 		Title="光绘课堂 (LightDraw)"
+		Icon="/Assets/Icons/LightDraw.ico"
 		Width="1480"
 		Height="800"
 		MinWidth="920"
@@ -14,9 +15,7 @@
 	<Border Grid.ColumnSpan="2" Padding="18,12" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
 	  <Grid ColumnDefinitions="Auto,*,Auto">
 		<StackPanel Orientation="Horizontal" Spacing="10">
-		  <Border Width="34" Height="34" CornerRadius="8" Background="#194B68">
-			<TextBlock Text="◈" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#7DE3FF" />
-		  </Border>
+		  <Image Width="40" Height="40" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
 		  <StackPanel>
 			<TextBlock Text="光绘课堂 (LightDraw)" FontSize="18" FontWeight="SemiBold" />
 			<TextBlock Text="几何光学教学与绘图" FontSize="11" Foreground="#91A4C2" />
