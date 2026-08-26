@@ -2,7 +2,7 @@ using System.Diagnostics;
 using LightDraw.Core.Geometry;
 using LightDraw.Core.Scene;
 
-namespace LightDraw.Rendering.Skia;
+namespace LightDraw.Rendering.Skia.Optics;
 
 internal sealed class SceneEditor
 {

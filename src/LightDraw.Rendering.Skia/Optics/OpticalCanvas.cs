@@ -7,7 +7,7 @@ using LightDraw.Core.Geometry;
 using LightDraw.Core.Scene;
 using LightDraw.Core.Simulation;
 
-namespace LightDraw.Rendering.Skia;
+namespace LightDraw.Rendering.Skia.Optics;
 
 public enum CanvasTool
 {

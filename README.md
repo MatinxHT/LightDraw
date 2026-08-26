@@ -161,16 +161,23 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 
 ```text
 LightDraw
+├─ assets
+│  └─ app-store          受版本控制的应用商店海报
 ├─ src/LightDraw.Core
 │  ├─ Geometry           向量和几何基础类型
 │  ├─ Scene              平台无关的场景模型
 │  ├─ Simulation         光线生成、求交和反射
+│  ├─ Electromagnetics   静电场与磁静态模型及模拟器
 │  └─ Persistence        带版本号的 JSON 场景读写
 ├─ src/LightDraw.Rendering.Skia
-│  └─ OpticalCanvas      Avalonia + SkiaSharp 高性能画布
+│  ├─ Optics             光学画布、场景编辑和 Skia 绘制
+│  ├─ Electrostatics     静电场交互画布
+│  └─ Magnetostatics     磁静态交互画布
 └─ src/LightDraw.Desktop
-   ├─ App                Avalonia 应用入口和主题
-   └─ MainWindow         简体中文桌面界面
+   ├─ Views              Avalonia 窗口和界面布局
+   ├─ ViewModels         窗口状态与命令
+   ├─ Services           文件选择与场景存储服务
+   └─ Assets             应用内使用的品牌和图标资源
 ```
 
 依赖方向保持为：
@@ -179,7 +186,7 @@ LightDraw
 LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop
 ```
 
-`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，也便于未来复用于命令行工具、WebAssembly 或其他前端。
+`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，也便于未来复用于命令行工具、WebAssembly 或其他前端。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件仍输出到被 Git 忽略的 `artifacts` 目录。
 
 ### 模拟与绘制
 

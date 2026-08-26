@@ -8,7 +8,7 @@ using Avalonia.Media;
 using LightDraw.Core.Electromagnetics;
 using LightDraw.Core.Geometry;
 
-namespace LightDraw.Rendering.Skia;
+namespace LightDraw.Rendering.Skia.Electrostatics;
 
 public enum ElectrostaticTool { Pan, Move, Delete, PointCharge, ChargedPlate }
 public enum ElectrostaticSelectionKind { PointCharge, ChargedPlate }

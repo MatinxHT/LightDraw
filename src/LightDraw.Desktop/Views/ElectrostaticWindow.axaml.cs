@@ -1,22 +1,22 @@
 using Avalonia.Controls;
 using LightDraw.Desktop.ViewModels;
 
-namespace LightDraw.Desktop;
+namespace LightDraw.Desktop.Views;
 
-public sealed partial class MagnetostaticWindow : Window
+public sealed partial class ElectrostaticWindow : Window
 {
-    private readonly MagnetostaticWindowViewModel _viewModel = new();
+    private readonly ElectrostaticWindowViewModel _viewModel = new();
 
-    public MagnetostaticWindow()
+    public ElectrostaticWindow()
     {
-        InitializeComponent(); DataContext = _viewModel;
+        InitializeComponent();
+        DataContext = _viewModel;
         _viewModel.ResetViewRequested += OnResetViewRequested;
-        _viewModel.SetSelectedCurrentRequested += OnSetSelectedCurrentRequested;
-        _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
-        _viewModel.SetSelectedRadiusRequested += OnSetSelectedRadiusRequested;
-        _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
+        _viewModel.SetSelectedChargeRequested += OnSetSelectedChargeRequested;
+        _viewModel.SetSelectedPotentialRequested += OnSetSelectedPotentialRequested;
+        _viewModel.SetSelectedPlateLengthRequested += OnSetSelectedPlateLengthRequested;
+        _viewModel.SetSelectedPlateAngleRequested += OnSetSelectedPlateAngleRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
-        _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
         Canvas.SceneChanged += OnSceneChanged;
         Canvas.SimulationCompleted += OnSimulationCompleted;
         Canvas.ToolStateChanged += OnToolStateChanged;
@@ -28,12 +28,11 @@ public sealed partial class MagnetostaticWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _viewModel.ResetViewRequested -= OnResetViewRequested;
-        _viewModel.SetSelectedCurrentRequested -= OnSetSelectedCurrentRequested;
-        _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
-        _viewModel.SetSelectedRadiusRequested -= OnSetSelectedRadiusRequested;
-        _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
+        _viewModel.SetSelectedChargeRequested -= OnSetSelectedChargeRequested;
+        _viewModel.SetSelectedPotentialRequested -= OnSetSelectedPotentialRequested;
+        _viewModel.SetSelectedPlateLengthRequested -= OnSetSelectedPlateLengthRequested;
+        _viewModel.SetSelectedPlateAngleRequested -= OnSetSelectedPlateAngleRequested;
         _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
-        _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
         Canvas.SceneChanged -= OnSceneChanged;
         Canvas.SimulationCompleted -= OnSimulationCompleted;
         Canvas.ToolStateChanged -= OnToolStateChanged;
@@ -42,12 +41,11 @@ public sealed partial class MagnetostaticWindow : Window
     }
 
     private void OnResetViewRequested(object? sender, EventArgs e) => Canvas.ResetView();
-    private void OnSetSelectedCurrentRequested(double value) => Canvas.SetSelectedCurrent(value);
-    private void OnSetSelectedLengthRequested(double value) => Canvas.SetSelectedLength(value);
-    private void OnSetSelectedRadiusRequested(double value) => Canvas.SetSelectedRadius(value);
-    private void OnSetSelectedAngleRequested(double value) => Canvas.SetSelectedAngle(value);
+    private void OnSetSelectedChargeRequested(double value) => Canvas.SetSelectedCharge(value);
+    private void OnSetSelectedPotentialRequested(double value) => Canvas.SetSelectedPotential(value);
+    private void OnSetSelectedPlateLengthRequested(double value) => Canvas.SetSelectedPlateLength(value);
+    private void OnSetSelectedPlateAngleRequested(double value) => Canvas.SetSelectedPlateAngle(value);
     private void OnSetSelectedOriginRequested(double x, double y) => Canvas.SetSelectedOrigin(x, y);
-    private void OnSetSelectedSecondOriginRequested(double x, double y) => Canvas.SetSelectedSecondOrigin(x, y);
     private void OnSceneChanged(object? sender, EventArgs e) => _viewModel.CurrentScene = Canvas.Scene;
     private void OnSimulationCompleted(object? sender, EventArgs e) => _viewModel.UpdateSimulation(Canvas.SimulationResult);
     private void OnToolStateChanged(object? sender, EventArgs e) => _viewModel.UpdateToolState(Canvas.ActiveTool);

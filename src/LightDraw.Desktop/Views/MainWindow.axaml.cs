@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using LightDraw.Desktop.ViewModels;
 
-namespace LightDraw.Desktop;
+namespace LightDraw.Desktop.Views;
 
 public sealed partial class MainWindow : Window
 {

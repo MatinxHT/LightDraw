@@ -2,7 +2,7 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
-namespace LightDraw.Desktop;
+namespace LightDraw.Desktop.Views;
 
 public sealed partial class AboutWindow : Window
 {

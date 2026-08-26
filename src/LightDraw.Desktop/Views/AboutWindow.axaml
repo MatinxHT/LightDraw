@@ -1,5 +1,5 @@
 <Window
-    x:Class="LightDraw.Desktop.AboutWindow"
+    x:Class="LightDraw.Desktop.Views.AboutWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="关于光绘课堂"

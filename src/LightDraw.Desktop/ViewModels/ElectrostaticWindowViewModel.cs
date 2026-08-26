@@ -1,7 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Electromagnetics;
-using LightDraw.Rendering.Skia;
+using LightDraw.Rendering.Skia.Electrostatics;
 
 namespace LightDraw.Desktop.ViewModels;
 

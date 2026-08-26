@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Scene;
 using LightDraw.Core.Simulation;
 using LightDraw.Desktop.Services;
-using LightDraw.Rendering.Skia;
+using LightDraw.Rendering.Skia.Optics;
 
 namespace LightDraw.Desktop.ViewModels;
 

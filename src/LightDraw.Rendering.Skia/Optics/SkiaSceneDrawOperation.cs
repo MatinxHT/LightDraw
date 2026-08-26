@@ -8,7 +8,7 @@ using LightDraw.Core.Scene;
 using LightDraw.Core.Simulation;
 using SkiaSharp;
 
-namespace LightDraw.Rendering.Skia;
+namespace LightDraw.Rendering.Skia.Optics;
 
 internal sealed class SkiaSceneDrawOperation(
     Rect bounds,

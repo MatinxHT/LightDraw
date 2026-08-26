@@ -3,6 +3,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using LightDraw.Desktop.Services;
 using LightDraw.Desktop.ViewModels;
+using LightDraw.Desktop.Views;
 
 namespace LightDraw.Desktop;
 
