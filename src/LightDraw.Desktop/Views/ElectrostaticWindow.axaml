@@ -102,9 +102,9 @@
         <TextBlock Text="创建模型" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
         <StackPanel Grid.Row="1" Margin="16,0,16,16" Spacing="2">
           <TextBlock Text="电荷" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
-          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointCharge}" Content="⊕ 放置点电荷" Command="{Binding SelectToolCommand}" CommandParameter="PointCharge" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointCharge}" Content="⊕ 点电荷" Command="{Binding SelectToolCommand}" CommandParameter="PointCharge" />
           <TextBlock Text="导体" Foreground="#7F93B2" FontSize="11" Margin="3,14,0,2" />
-          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ChargedPlate}" Content="▰ 放置带电平板" Command="{Binding SelectToolCommand}" CommandParameter="ChargedPlate" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ChargedPlate}" Content="▰ 带电平板" Command="{Binding SelectToolCommand}" CommandParameter="ChargedPlate" />
           <Separator Margin="0,16,0,14" />
           <TextBlock Text="红色：正电荷/正电势&#x0a;蓝色：负电荷/负电势&#x0a;&#x0a;平板两次点击创建；移动工具下仅拖动第一原点平移。平板长度和角度通过顶部属性框修改。&#x0a;&#x0a;所有电势均以无穷远 φ=0 为参考。" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
         </StackPanel>
