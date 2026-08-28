@@ -2,6 +2,10 @@
 
 <p align="center">
   <img src="src/LightDraw.Desktop/Assets/Brand/LightDrawLogo.png" alt="LightDraw 标准 Logo" width="220" />
+  <br />
+  <a href="https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&amp;gl=CN&amp;ocid=pdpshare">
+    <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="从 Microsoft Store 获取" width="142" height="52" />
+  </a>
 </p>
 
 **光绘课堂 (LightDraw)** 是一款面向中小学物理课堂、实验演示和几何光学学习的跨平台二维光学绘图与模拟工具。项目希望用直观、流畅的可视化方式帮助教师讲解光的传播与反射，也让学生能够自由搭建场景、观察光路并验证自己的猜想。同时光是电磁波，所以也提供静电场和静磁场模拟仿真供教学使用。
