@@ -9,13 +9,26 @@ public enum LightSourceKind
     ParallelLine
 }
 
+public enum LightSpectrumKind
+{
+    Monochromatic,
+    Composite
+}
+
 public sealed record LightSource(
     Vector2D Position,
     double DirectionDegrees,
     double SpreadDegrees = 360,
-    double WavelengthNanometers = 589,
+    double WavelengthNanometers = 580,
     LightSourceKind Kind = LightSourceKind.Point,
-    Vector2D? End = null);
+    Vector2D? End = null,
+    LightSpectrumKind Spectrum = LightSpectrumKind.Monochromatic)
+{
+    public const double MonochromaticWavelengthNanometers = 580;
+    public const double CompositeBlueWavelengthNanometers = 450;
+    public const double CompositeGreenWavelengthNanometers = 550;
+    public const double CompositeRedWavelengthNanometers = 650;
+}
 
 public sealed record MirrorSegment(Vector2D Start, Vector2D End);
 
@@ -113,7 +126,7 @@ public sealed record OpticalScene(
 
     public static OpticalScene CreateDemo() => new(
         "双镜面反射演示",
-        [new LightSource(new Vector2D(-300, 20), -8, 38, 589)],
+        [new LightSource(new Vector2D(-300, 20), -8, 38)],
         [
             new MirrorSegment(new Vector2D(40, -170), new Vector2D(105, 165)),
             new MirrorSegment(new Vector2D(260, -130), new Vector2D(430, 80)),

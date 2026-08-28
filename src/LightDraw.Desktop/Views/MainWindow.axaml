@@ -101,9 +101,9 @@
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
-			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLightSource}">
-			  <TextBlock Text="波长" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="光源波长；用于计算光栅衍射角" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" />
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedLightSource}">
+			  <TextBlock Text="波长" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="单色光源波长；光栅按此真实波长计算衍射角" />
+			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" ToolTip.Tip="默认 580 nm；显示颜色按最近参考波长匹配，中值时选择更靠近黄色 580 nm 的一侧" />
 			  <TextBlock Text="nm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedAperture}">
@@ -142,8 +142,10 @@
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
 		  <StackPanel Spacing="2">
 			<TextBlock Text="光源类" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="● 点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 线平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="● 单色点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" ToolTip.Tip="默认 580 nm；选中后可修改波长" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 单色平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" ToolTip.Tip="默认 580 nm；选中后可修改波长" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositePointLight}" Content="◉ 复色点光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositePointLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositeParallelLight}" Content="▤ 复色平行光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositeParallelLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
 			<TextBlock Text="透镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" />
@@ -153,7 +155,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="◖ 理想凹球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="◗ 理想凸球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="／ 平面分光镜" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="透射与反射光强各为入射光的 50%" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="≋ 反射光栅" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="衍射强度：0级 7/8，正负1级各 6/8，之后每级递减 1/8" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="≋ 反射光栅" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="复色光 0 级保持黄色混光；±1、±2、±3 级发生色散；光强分别为 90%、50%、25%、10%" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />

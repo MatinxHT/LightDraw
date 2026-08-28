@@ -44,12 +44,13 @@ internal sealed class SceneEditor
 
     public void SetZoom(double zoom) => _zoom = zoom;
 
-    public void AddPointLight(Vector2D position)
+    public void AddPointLight(Vector2D position, LightSpectrumKind spectrum)
     {
         UpdateScene(_scene with
         {
             LightSources = [.. _scene.LightSources,
-                new LightSource(position, 0, 360, 589, LightSourceKind.Point)]
+                new LightSource(position, 0, 360, ReferenceWavelength(spectrum),
+                    LightSourceKind.Point, Spectrum: spectrum)]
         });
         CommitSelectedEdit();
     }
@@ -62,9 +63,13 @@ internal sealed class SceneEditor
         switch (tool)
         {
             case CanvasTool.ParallelLight:
+            case CanvasTool.CompositeParallelLight:
                 var direction = delta.Normalized().Perpendicular();
-                var source = new LightSource(start, DirectionDegrees(direction), 0, 589,
-                    LightSourceKind.ParallelLine, end);
+                var spectrum = tool == CanvasTool.CompositeParallelLight
+                    ? LightSpectrumKind.Composite
+                    : LightSpectrumKind.Monochromatic;
+                var source = new LightSource(start, DirectionDegrees(direction), 0,
+                    ReferenceWavelength(spectrum), LightSourceKind.ParallelLine, end, spectrum);
                 UpdateScene(_scene with { LightSources = [.. _scene.LightSources, source] });
                 break;
             case CanvasTool.Mirror:
@@ -148,7 +153,14 @@ internal sealed class SceneEditor
 
     private static OpticalScene Normalize(OpticalScene scene) => scene with
     {
-        LightSources = scene.LightSources ?? [],
+        LightSources = (scene.LightSources ?? [])
+            .Select(source => source with
+            {
+                WavelengthNanometers = source.Spectrum == LightSpectrumKind.Composite
+                    ? ReferenceWavelength(source.Spectrum)
+                    : NormalizeMonochromaticWavelength(source.WavelengthNanometers)
+            })
+            .ToArray(),
         Mirrors = scene.Mirrors ?? [],
         ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements,
         ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements,
@@ -158,6 +170,16 @@ internal sealed class SceneEditor
         ReflectionGratings = scene.ReflectionGratingElements,
         BeamSplitters = scene.BeamSplitterElements
     };
+
+    private static double ReferenceWavelength(LightSpectrumKind spectrum) =>
+        spectrum == LightSpectrumKind.Composite
+            ? LightSource.CompositeGreenWavelengthNanometers
+            : LightSource.MonochromaticWavelengthNanometers;
+
+    private static double NormalizeMonochromaticWavelength(double wavelengthNanometers) =>
+        double.IsFinite(wavelengthNanometers) && wavelengthNanometers > 0
+            ? wavelengthNanometers
+            : LightSource.MonochromaticWavelengthNanometers;
 
     public void RotateSelectedBy(double degrees)
     {
@@ -519,6 +541,11 @@ internal sealed class SceneEditor
 
         var sources = (LightSource[])_scene.LightSources.Clone();
         var source = sources[_selectedIndex];
+        if (source.Spectrum != LightSpectrumKind.Monochromatic)
+        {
+            return;
+        }
+
         var clamped = Math.Clamp(wavelengthNanometers, 1, 1000000);
         if (Math.Abs(source.WavelengthNanometers - clamped) <= 1e-9)
         {
@@ -1500,21 +1527,29 @@ internal sealed class SceneEditor
                 if (source.Kind == LightSourceKind.ParallelLine && source.End is { } sourceEnd)
                 {
                     var sourceOrigin = (source.Position + sourceEnd) / 2;
-                    return new CanvasSelection(CanvasSelectionKind.ParallelLight, "线平行光源", true,
+                    return new CanvasSelection(CanvasSelectionKind.ParallelLight,
+                        source.Spectrum == LightSpectrumKind.Composite ? "复色平行光源" : "单色平行光源",
+                        true,
                         sourceOrigin.X, sourceOrigin.Y,
                         SegmentAngleDegrees(source.Position, sourceEnd), null,
                         (sourceEnd - sourceOrigin).Length * 2,
-                        WavelengthNanometers: source.WavelengthNanometers,
                         SecondOriginX: RotationHandle(source.Position, sourceEnd).X,
-                        SecondOriginY: RotationHandle(source.Position, sourceEnd).Y);
+                        SecondOriginY: RotationHandle(source.Position, sourceEnd).Y,
+                        WavelengthNanometers: source.Spectrum == LightSpectrumKind.Monochromatic
+                            ? source.WavelengthNanometers
+                            : null);
                 }
                 var pointLightHandle = PointLightRotationHandle(source);
-                return new CanvasSelection(CanvasSelectionKind.PointLight, "点光源", true,
+                return new CanvasSelection(CanvasSelectionKind.PointLight,
+                    source.Spectrum == LightSpectrumKind.Composite ? "复色点光源" : "单色点光源",
+                    true,
                     source.Position.X, source.Position.Y, source.DirectionDegrees, null, null,
-                    WavelengthNanometers: source.WavelengthNanometers,
                     SecondOriginX: pointLightHandle.X,
                     SecondOriginY: pointLightHandle.Y,
-                    EmissionAngleDegrees: Math.Clamp(Math.Abs(source.SpreadDegrees), 1, 360));
+                    EmissionAngleDegrees: Math.Clamp(Math.Abs(source.SpreadDegrees), 1, 360),
+                    WavelengthNanometers: source.Spectrum == LightSpectrumKind.Monochromatic
+                        ? source.WavelengthNanometers
+                        : null);
             case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
                 var mirror = _scene.Mirrors[_selectedIndex];
                 var mirrorOrigin = (mirror.Start + mirror.End) / 2;
@@ -1606,6 +1641,7 @@ internal sealed class SceneEditor
                 return null;
         }
     }
+
 
     public void ClearSelection()
     {

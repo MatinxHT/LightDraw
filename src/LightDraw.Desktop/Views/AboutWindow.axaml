@@ -128,7 +128,7 @@
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="9">
-                        <TextBlock FontWeight="SemiBold" Text="鸣谢" />
+                        <TextBlock FontWeight="SemiBold" Text="技术支持及鸣谢" />
                         <TextBlock
                             Foreground="#9EB0CA"
                             LineHeight="22"

@@ -88,7 +88,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private decimal _selectedGrooveDensity = 600;
 
     [ObservableProperty]
-    private decimal _selectedWavelength = 589;
+    private decimal _selectedWavelength = (decimal)LightSource.MonochromaticWavelengthNanometers;
 
     [ObservableProperty]
     private decimal _selectedLength = 100;
@@ -562,8 +562,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     {
         var name = tool switch
         {
-            CanvasTool.PointLight => "点光源（360° 发光，单击放置）",
-            CanvasTool.ParallelLight => "线平行光源（垂直于绘制线发射）",
+            CanvasTool.PointLight => "单色点光源（580 nm，360° 发光，单击放置）",
+            CanvasTool.ParallelLight => "单色平行光源（580 nm，垂直于绘制线发射）",
+            CanvasTool.CompositePointLight => "复色点光源（450/550/650 nm，单击放置）",
+            CanvasTool.CompositeParallelLight => "复色平行光源（450/550/650 nm，垂直于绘制线发射）",
             CanvasTool.Mirror => "平面反光镜",
             CanvasTool.ConcaveSphericalMirror => "理想凹球面镜（先定镜面中心，再定曲率圆心）",
             CanvasTool.ConvexSphericalMirror => "理想凸球面镜（先定镜面中心，再定曲率圆心）",
@@ -575,6 +577,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             CanvasTool.ConcaveLens => "凹透镜",
             _ => "物件"
         };
+        if (tool is CanvasTool.PointLight or CanvasTool.CompositePointLight)
+        {
+            return name;
+        }
         if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror)
         {
             var sphericalMirrorName = tool == CanvasTool.ConcaveSphericalMirror

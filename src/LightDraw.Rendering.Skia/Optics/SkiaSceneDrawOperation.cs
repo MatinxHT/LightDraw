@@ -194,9 +194,10 @@ internal sealed class SkiaSceneDrawOperation(
         var segmentCount = result.Segments.Count;
         var alpha = segmentCount > 5000 ? (byte)80 : segmentCount > 1200 ? (byte)115 : (byte)180;
         foreach (var rayGroup in result.Segments.GroupBy(segment =>
-                     (Order: Math.Abs(segment.DiffractionOrder), segment.Intensity)))
+                     (Order: Math.Abs(segment.DiffractionOrder), segment.Intensity,
+                         segment.WavelengthNanometers, segment.SpectrumState)))
         {
-            var color = DiffractionOrderColor(rayGroup.Key.Order);
+            var color = RayColor(rayGroup.Key.WavelengthNanometers, rayGroup.Key.SpectrumState);
             var intensity = Math.Clamp(rayGroup.Key.Intensity, 0, 1);
             var rayAlpha = (byte)Math.Clamp(Math.Round(alpha * intensity), 1, byte.MaxValue);
             using var paint = new SKPaint
@@ -231,13 +232,43 @@ internal sealed class SkiaSceneDrawOperation(
         }
     }
 
-    private static SKColor DiffractionOrderColor(int absoluteOrder) => absoluteOrder switch
+    private static readonly SKColor MixedLightColor = new(255, 224, 92);
+    private const double ColorCenterWavelengthNanometers = 580;
+    private static readonly (double WavelengthNanometers, SKColor Color)[] WavelengthColors =
+    [
+        (390, new SKColor(168, 92, 255)),
+        (450, new SKColor(72, 151, 255)),
+        (550, new SKColor(72, 220, 132)),
+        (580, new SKColor(255, 224, 92)),
+        (650, new SKColor(255, 82, 82))
+    ];
+
+    private static SKColor RayColor(double wavelengthNanometers, RaySpectrumState spectrumState)
     {
-        1 or 4 => new SKColor(72, 151, 255),
-        2 or 5 => new SKColor(72, 220, 132),
-        3 or 6 => new SKColor(255, 82, 82),
-        _ => new SKColor(255, 224, 92)
-    };
+        if (spectrumState == RaySpectrumState.Composite)
+        {
+            return MixedLightColor;
+        }
+
+        var closestColor = WavelengthColors[0];
+        var closestDistance = Math.Abs(wavelengthNanometers - closestColor.WavelengthNanometers);
+        foreach (var candidate in WavelengthColors[1..])
+        {
+            var distance = Math.Abs(wavelengthNanometers - candidate.WavelengthNanometers);
+            var isCloser = distance < closestDistance;
+            var isMidpointTie = Math.Abs(distance - closestDistance) <= 1e-9;
+            var isCloserToYellowCenter =
+                Math.Abs(candidate.WavelengthNanometers - ColorCenterWavelengthNanometers) <
+                Math.Abs(closestColor.WavelengthNanometers - ColorCenterWavelengthNanometers);
+            if (isCloser || isMidpointTie && isCloserToYellowCenter)
+            {
+                closestColor = candidate;
+                closestDistance = distance;
+            }
+        }
+
+        return closestColor.Color;
+    }
 
     private void DrawMirrors(SKCanvas canvas)
     {
@@ -574,7 +605,7 @@ internal sealed class SkiaSceneDrawOperation(
                 canvas.DrawArc(oval, (float)(middleAngle - 90), 180, false, preview);
             }
         }
-        if (tool == CanvasTool.ParallelLight)
+        if (tool is CanvasTool.ParallelLight or CanvasTool.CompositeParallelLight)
         {
             var middle = (start + end) / 2;
             DrawArrow(canvas, middle, middle + (end - start).Normalized().Perpendicular() * (40 / zoom), preview);

@@ -11,7 +11,7 @@ namespace LightDraw.Rendering.Skia.Optics;
 
 public enum CanvasTool
 {
-    Pan, Move, Delete, PointLight, ParallelLight, Mirror,
+    Pan, Move, Delete, PointLight, ParallelLight, CompositePointLight, CompositeParallelLight, Mirror,
     ConcaveSphericalMirror, ConvexSphericalMirror, BeamSplitter,
     Screen, Aperture, ReflectionGrating, ConvexLens, ConcaveLens
 }
@@ -28,9 +28,9 @@ public sealed record CanvasSelection(
     double OriginX, double OriginY, double AngleDegrees,
     double? FocalLength, double? Length,
     double? ApertureOpening = null, double? GrooveDensity = null,
-    double? WavelengthNanometers = null, double? Radius = null,
-    double? ArcAngleDegrees = null, double? SecondOriginX = null,
-    double? SecondOriginY = null, double? EmissionAngleDegrees = null);
+    double? Radius = null, double? ArcAngleDegrees = null, double? SecondOriginX = null,
+    double? SecondOriginY = null, double? EmissionAngleDegrees = null,
+    double? WavelengthNanometers = null);
 
 internal enum SceneItemKind
 {
@@ -198,9 +198,11 @@ public sealed class OpticalCanvas : Control
         else if (properties.IsLeftButtonPressed)
         {
             var world = ScreenToWorld(pointerPosition);
-            if (_tool == CanvasTool.PointLight)
+            if (_tool is CanvasTool.PointLight or CanvasTool.CompositePointLight)
             {
-                _editor.AddPointLight(world);
+                _editor.AddPointLight(world, _tool == CanvasTool.CompositePointLight
+                    ? LightSpectrumKind.Composite
+                    : LightSpectrumKind.Monochromatic);
                 FinishOneShotPlacement();
             }
             else if (_placementStart is null)

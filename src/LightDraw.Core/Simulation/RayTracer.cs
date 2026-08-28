@@ -44,7 +44,7 @@ public sealed class RayTracer
                 var angle = spreadDegrees >= 360 - 1e-9
                     ? centerAngle + 2 * Math.PI * index / count
                     : centerAngle - spreadRadians / 2 + spreadRadians * index / (count - 1);
-                yield return new Ray2D(source.Position, Vector2D.FromAngle(angle), source.WavelengthNanometers);
+                yield return CreateInitialRay(source, source.Position, Vector2D.FromAngle(angle));
             }
 
             yield break;
@@ -60,9 +60,15 @@ public sealed class RayTracer
                 origin += (end - source.Position) * ratio;
             }
 
-            yield return new Ray2D(origin, direction, source.WavelengthNanometers);
+            yield return CreateInitialRay(source, origin, direction);
         }
     }
+
+    private static Ray2D CreateInitialRay(LightSource source, Vector2D origin, Vector2D direction) =>
+        new(origin, direction, source.WavelengthNanometers, SpectrumState:
+            source.Spectrum == LightSpectrumKind.Composite
+                ? RaySpectrumState.Composite
+                : RaySpectrumState.Monochromatic);
 
     private static void TraceSingleRay(
         Ray2D initialRay,
@@ -89,13 +95,14 @@ public sealed class RayTracer
                 {
                     output.Add(new RaySegment(ray.Origin,
                         ray.Origin + ray.Direction * options.UnboundedRayLength,
-                        ray.WavelengthNanometers, bounce, ray.DiffractionOrder, ray.Intensity));
+                        ray.WavelengthNanometers, bounce, ray.DiffractionOrder, ray.Intensity,
+                        ray.SpectrumState));
                     break;
                 }
 
                 var hitPoint = ray.Origin + ray.Direction * nearestHit.Distance;
                 output.Add(new RaySegment(ray.Origin, hitPoint, ray.WavelengthNanometers, bounce,
-                    ray.DiffractionOrder, ray.Intensity));
+                    ray.DiffractionOrder, ray.Intensity, ray.SpectrumState));
 
                 if (nearestHit.Kind is OpticalHitKind.Screen or OpticalHitKind.Aperture)
                 {
@@ -107,7 +114,7 @@ public sealed class RayTracer
                     var grating = nearestHit.GetElement<ReflectionGratingSegment>();
                     if (bounce < options.MaximumReflections)
                     {
-                        foreach (var diffractedRay in Diffract(ray, grating,
+                        foreach (var diffractedRay in DiffractSpectrum(ray, grating,
                                      options.MaximumDiffractionOrder))
                         {
                             if (output.Count + pending.Count >= options.MaximumSegments)
@@ -118,9 +125,11 @@ public sealed class RayTracer
                             pending.Enqueue((new Ray2D(
                                 hitPoint + diffractedRay.Direction * (options.IntersectionEpsilon * 32),
                                 diffractedRay.Direction,
-                                ray.WavelengthNanometers,
+                                diffractedRay.WavelengthNanometers,
                                 diffractedRay.Order,
-                                ray.Intensity * DiffractionIntensityFactor(diffractedRay.Order)),
+                                ray.Intensity * diffractedRay.SpectralIntensityFactor *
+                                DiffractionIntensityFactor(diffractedRay.Order),
+                                diffractedRay.SpectrumState),
                                 bounce + 1));
                             diffractedRayCount++;
                         }
@@ -142,17 +151,22 @@ public sealed class RayTracer
 
                         if (output.Count + pending.Count < options.MaximumSegments)
                         {
-                            pending.Enqueue((new Ray2D(hitPoint + reflectedDirection * offset,
-                                reflectedDirection, ray.WavelengthNanometers, ray.DiffractionOrder,
-                                splitIntensity), bounce + 1));
+                            pending.Enqueue((ray with
+                            {
+                                Origin = hitPoint + reflectedDirection * offset,
+                                Direction = reflectedDirection,
+                                Intensity = splitIntensity
+                            }, bounce + 1));
                             reflectedRayCount++;
                         }
 
                         if (output.Count + pending.Count < options.MaximumSegments)
                         {
-                            pending.Enqueue((new Ray2D(hitPoint + ray.Direction * offset,
-                                ray.Direction, ray.WavelengthNanometers, ray.DiffractionOrder,
-                                splitIntensity), bounce + 1));
+                            pending.Enqueue((ray with
+                            {
+                                Origin = hitPoint + ray.Direction * offset,
+                                Intensity = splitIntensity
+                            }, bounce + 1));
                         }
                     }
 
@@ -162,8 +176,11 @@ public sealed class RayTracer
                 var nextDirection = ResolveInteraction(ray, hitPoint, nearestHit,
                     ref reflectedRayCount, ref refractedRayCount);
 
-                ray = new Ray2D(hitPoint + nextDirection * (options.IntersectionEpsilon * 32),
-                    nextDirection, ray.WavelengthNanometers, ray.DiffractionOrder, ray.Intensity);
+                ray = ray with
+                {
+                    Origin = hitPoint + nextDirection * (options.IntersectionEpsilon * 32),
+                    Direction = nextDirection
+                };
             }
         }
     }
@@ -289,6 +306,63 @@ public sealed class RayTracer
         }
     }
 
+    private static IEnumerable<(
+        Vector2D Direction,
+        int Order,
+        double WavelengthNanometers,
+        double SpectralIntensityFactor,
+        RaySpectrumState SpectrumState)> DiffractSpectrum(
+        Ray2D ray,
+        ReflectionGratingSegment grating,
+        int maximumOrder)
+    {
+        if (ray.SpectrumState == RaySpectrumState.Composite)
+        {
+            foreach (var zeroOrderRay in Diffract(ray, grating, maximumOrder))
+            {
+                if (zeroOrderRay.Order != 0)
+                {
+                    continue;
+                }
+
+                yield return (zeroOrderRay.Direction, 0, ray.WavelengthNanometers, 1,
+                    RaySpectrumState.Composite);
+                break;
+            }
+
+            foreach (var wavelength in new[]
+                     {
+                         LightSource.CompositeBlueWavelengthNanometers,
+                         LightSource.CompositeGreenWavelengthNanometers,
+                         LightSource.CompositeRedWavelengthNanometers
+                     })
+            {
+                foreach (var diffractedRay in Diffract(ray with
+                         {
+                             WavelengthNanometers = wavelength,
+                             SpectrumState = RaySpectrumState.DispersedComponent
+                         }, grating, maximumOrder))
+                {
+                    if (diffractedRay.Order == 0)
+                    {
+                        continue;
+                    }
+
+                    yield return (diffractedRay.Direction, diffractedRay.Order, wavelength, 1,
+                        RaySpectrumState.DispersedComponent);
+                }
+            }
+
+            yield break;
+        }
+
+        foreach (var diffractedRay in Diffract(ray, grating, maximumOrder))
+        {
+            yield return (diffractedRay.Direction, diffractedRay.Order,
+                ray.WavelengthNanometers, 1, ray.SpectrumState);
+        }
+    }
+
     private static IEnumerable<(Vector2D Direction, int Order)> Diffract(
         Ray2D ray,
         ReflectionGratingSegment grating,
@@ -302,7 +376,7 @@ public sealed class RayTracer
         var wavelengthMillimeters = Math.Max(0, ray.WavelengthNanometers) * 1e-6;
         var grooveDensity = Math.Max(1e-9, grating.GrooveDensityLinesPerMillimeter);
         var tangentialStep = wavelengthMillimeters * grooveDensity;
-        var orderLimit = Math.Clamp(maximumOrder, 0, 6);
+        var orderLimit = Math.Clamp(maximumOrder, 0, 3);
 
         for (var order = -orderLimit; order <= orderLimit; order++)
         {
@@ -319,8 +393,14 @@ public sealed class RayTracer
         }
     }
 
-    private static double DiffractionIntensityFactor(int order) =>
-        Math.Max(0, 7 - Math.Abs(order)) / 8d;
+    private static double DiffractionIntensityFactor(int order) => Math.Abs(order) switch
+    {
+        0 => 0.9,
+        1 => 0.5,
+        2 => 0.25,
+        3 => 0.1,
+        _ => 0
+    };
 
     private static Vector2D RefractThroughIdealLens(Ray2D ray, Vector2D hitPoint, LensSegment lens)
     {
