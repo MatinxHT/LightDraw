@@ -23,6 +23,10 @@
 
 当前版本适合开发预览、课堂概念演示和技术验证，尚不建议用于精密工程计算或对数值误差敏感的科研工作。
 
+![optics](./assets/app-store/optics.png)
+![eletrostatic](./assets/app-store/eletrostatic.png)
+![magnetostatic](./assets/app-store/magnetostatic.png)
+
 ## 快速开始
 
 ### 环境要求
