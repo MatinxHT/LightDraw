@@ -20,7 +20,7 @@ public enum CanvasSelectionKind
 {
     PointLight, ParallelLight, Mirror, ConcaveSphericalMirror,
     ConvexSphericalMirror, BeamSplitter, Screen, Aperture,
-    ReflectionGrating, ConvexLens, ConcaveLens
+    ReflectionGrating, ConvexLens, ConcaveLens, Group, Multiple
 }
 
 public sealed record CanvasSelection(
@@ -31,7 +31,9 @@ public sealed record CanvasSelection(
     double? Radius = null, double? ArcAngleDegrees = null, double? SecondOriginX = null,
     double? SecondOriginY = null, double? EmissionAngleDegrees = null,
     double? WavelengthNanometers = null, LensDispersionMode? DispersionMode = null,
-    int? DispersionLevel = null);
+    int? DispersionLevel = null,
+    int MemberCount = 1, bool CanGroup = false, bool CanUngroup = false,
+    bool CanSetPrimary = false, string? ElementName = null, bool CanRename = false);
 
 internal enum SceneItemKind
 {
@@ -73,6 +75,9 @@ public sealed class OpticalCanvas : Control
     private CanvasTool _tool = CanvasTool.Pan;
     private Vector2D? _placementStart;
     private Vector2D? _placementPreview;
+    private Point? _marqueePointerStart;
+    private Vector2D? _marqueeStart;
+    private Vector2D? _marqueeCurrent;
 
     public OpticalCanvas()
     {
@@ -106,6 +111,9 @@ public sealed class OpticalCanvas : Control
         _editor.SetScene(scene);
         SetAndRaise(SceneProperty, ref _scene, _editor.Scene);
         SetAndRaise(ActiveToolProperty, ref _tool, CanvasTool.Pan);
+        _marqueePointerStart = null;
+        _marqueeStart = null;
+        _marqueeCurrent = null;
         CancelPlacement(false);
         Recalculate();
         SceneChanged?.Invoke(this, EventArgs.Empty);
@@ -124,6 +132,9 @@ public sealed class OpticalCanvas : Control
     {
         SetAndRaise(ActiveToolProperty, ref _tool, tool);
         if (tool != CanvasTool.Move) _editor.ClearSelection();
+        _marqueePointerStart = null;
+        _marqueeStart = null;
+        _marqueeCurrent = null;
         CancelPlacement(false);
         ToolStateChanged?.Invoke(this, EventArgs.Empty);
         InvalidateVisual();
@@ -161,13 +172,18 @@ public sealed class OpticalCanvas : Control
     public void SetSelectedLength(double value) => _editor.SetSelectedLength(value);
     public void SetSelectedOrigin(double x, double y) => _editor.SetSelectedOrigin(x, y);
     public void SetSelectedSecondOrigin(double x, double y) => _editor.SetSelectedSecondOrigin(x, y);
+    public void SetSelectedName(string value) => _editor.SetSelectedName(value);
+    public bool GroupSelection() => _editor.GroupSelection();
+    public bool UngroupSelection() => _editor.UngroupSelection();
+    public bool SetActiveMemberAsPrimary() => _editor.SetActiveMemberAsPrimary();
 
     public override void Render(DrawingContext context)
     {
         base.Render(context);
         context.Custom(new SkiaSceneDrawOperation(new Rect(Bounds.Size), _scene, _result, _pan, _zoom,
             _raysPerSource, _tool, _placementStart, _placementPreview,
-            _editor.SelectedKind, _editor.SelectedIndex));
+            _editor.SelectedKind, _editor.SelectedIndex, _editor.SelectedIds,
+            _editor.SelectedGroupId, _editor.ActiveElementId, _marqueeStart, _marqueeCurrent));
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
@@ -176,7 +192,7 @@ public sealed class OpticalCanvas : Control
         Focus();
         var pointerPosition = e.GetPosition(this);
         var properties = e.GetCurrentPoint(this).Properties;
-        if (properties.IsRightButtonPressed || properties.IsMiddleButtonPressed ||
+        if (properties.IsRightButtonPressed ||
             (_tool == CanvasTool.Pan && properties.IsLeftButtonPressed))
         {
             BeginPan(pointerPosition, e.Pointer);
@@ -184,10 +200,18 @@ public sealed class OpticalCanvas : Control
         else if (_tool == CanvasTool.Move && properties.IsLeftButtonPressed)
         {
             _editor.SetZoom(_zoom);
-            if (_editor.TryBeginMove(ScreenToWorld(pointerPosition)))
+            var world = ScreenToWorld(pointerPosition);
+            if (_editor.HitTest(world))
+            {
+                if (_editor.TryBeginMove(world)) e.Pointer.Capture(this);
+            }
+            else
+            {
+                _marqueePointerStart = pointerPosition;
+                _marqueeStart = world;
+                _marqueeCurrent = world;
                 e.Pointer.Capture(this);
-            else if (_editor.Selection is null)
-                BeginPan(pointerPosition, e.Pointer);
+            }
         }
         else if (_tool == CanvasTool.Delete && properties.IsLeftButtonPressed)
         {
@@ -243,6 +267,10 @@ public sealed class OpticalCanvas : Control
             _lastPointer = current;
         }
         else if (_editor.IsMoving) _editor.MoveSelectedItem(ScreenToWorld(current));
+        else if (_marqueeStart is not null)
+        {
+            _marqueeCurrent = ScreenToWorld(current);
+        }
         else if (_placementStart is not null) _placementPreview = ScreenToWorld(current);
         InvalidateVisual();
         e.Handled = true;
@@ -260,6 +288,21 @@ public sealed class OpticalCanvas : Control
         {
             _editor.EndMove();
             e.Pointer.Capture(null);
+        }
+        else if (_marqueeStart is { } marqueeStart)
+        {
+            var moved = _marqueePointerStart is { } pointerStart &&
+                        Math.Sqrt(Math.Pow(e.GetPosition(this).X - pointerStart.X, 2) +
+                                  Math.Pow(e.GetPosition(this).Y - pointerStart.Y, 2)) >= 4;
+            if (moved && _marqueeCurrent is { } marqueeCurrent)
+                _editor.SelectInRectangle(marqueeStart, marqueeCurrent);
+            else
+                _editor.ClearSelection();
+            _marqueePointerStart = null;
+            _marqueeStart = null;
+            _marqueeCurrent = null;
+            e.Pointer.Capture(null);
+            InvalidateVisual();
         }
         e.Handled = true;
     }

@@ -54,15 +54,28 @@
 	</Border>
 
 	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
-	  <Grid RowDefinitions="Auto,Auto">
+	  <Grid RowDefinitions="Auto,Auto,Auto">
 		<WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
 		  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,18,2" VerticalAlignment="Center">
-			<TextBlock Text="几何关系" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+			<TextBlock Text="元件属性" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
 			<Border Width="1" Height="24" Margin="4,0" Background="#26344C" />
 			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" />
+			<TextBlock Text="名称" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBox Width="220" MaxLength="120" PlaceholderText="Element name"
+					 IsEnabled="{Binding CanRenameSelectedElement}"
+					 Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 		  </StackPanel>
-		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedElement}">
-			<TextBlock Text="第一原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点；凹球面镜上圆弧的中点" />
+		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center">
+			<Button Classes="setting-inline" Content="组合" Command="{Binding GroupSelectedCommand}" IsEnabled="{Binding CanGroupSelection}" />
+			<Button Classes="setting-inline" Content="取消组合" Command="{Binding UngroupSelectedCommand}" IsEnabled="{Binding CanUngroupSelection}" />
+			<Button Classes="setting-inline" Content="设为主元件" Command="{Binding SetPrimaryElementCommand}" IsEnabled="{Binding CanSetPrimaryElement}" ToolTip.Tip="先在组合中单击目标成员，再将其设为主元件" />
+		  </StackPanel>
+		</WrapPanel>
+		<Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+			<TextBlock Text="几何关系" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding CanEditSelectedTransform}">
+			<TextBlock Text="第一原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点；组合时为主元件的第一原点" />
 			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
 			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -92,8 +105,9 @@
 			  <ComboBoxItem Content="270°" />
 			</ComboBox>
 		  </StackPanel>
-		</WrapPanel>
-		<Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+		  </WrapPanel>
+		</Border>
+		<Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
 		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
 			<TextBlock Text="元件参数" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLength}">
@@ -172,7 +186,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />
-			  <TextBlock Text="移动/编辑：空白处拖动画布&#x0a;元件：先单击任意位置选中&#x0a;第一原点：选中后拖拽平移&#x0a;白色圆点：选中后固定原点旋转&#x0a;长度：仅通过属性框修改&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			<TextBlock Text="移动/编辑：空白左拖框选，空白单击清空&#x0a;右键：随时拖动画布&#x0a;元件：先单击任意位置选中&#x0a;第一原点：选中后拖拽平移&#x0a;白色圆点：选中后固定原点旋转&#x0a;组合：单击成员选择整体&#x0a;设为主元件：先单击组合中的目标成员&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>

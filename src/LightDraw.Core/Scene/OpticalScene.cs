@@ -22,7 +22,9 @@ public sealed record LightSource(
     double WavelengthNanometers = 580,
     LightSourceKind Kind = LightSourceKind.Point,
     Vector2D? End = null,
-    LightSpectrumKind Spectrum = LightSpectrumKind.Monochromatic)
+    LightSpectrumKind Spectrum = LightSpectrumKind.Monochromatic,
+    Guid Id = default,
+    string? Name = null)
 {
     public const double MonochromaticWavelengthNanometers = 580;
     public const double CompositeBlueWavelengthNanometers = 450;
@@ -30,12 +32,14 @@ public sealed record LightSource(
     public const double CompositeRedWavelengthNanometers = 650;
 }
 
-public sealed record MirrorSegment(Vector2D Start, Vector2D End);
+public sealed record MirrorSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
 
 public sealed record ConcaveSphericalMirror(
     Vector2D Vertex,
     Vector2D CenterOfCurvature,
-    double ArcAngleDegrees = 180)
+    double ArcAngleDegrees = 180,
+    Guid Id = default,
+    string? Name = null)
 {
     [JsonIgnore]
     public double Radius => (CenterOfCurvature - Vertex).Length;
@@ -47,7 +51,9 @@ public sealed record ConcaveSphericalMirror(
 public sealed record ConvexSphericalMirror(
     Vector2D Vertex,
     Vector2D CenterOfCurvature,
-    double ArcAngleDegrees = 180)
+    double ArcAngleDegrees = 180,
+    Guid Id = default,
+    string? Name = null)
 {
     [JsonIgnore]
     public double Radius => (CenterOfCurvature - Vertex).Length;
@@ -56,16 +62,19 @@ public sealed record ConvexSphericalMirror(
     public double FocalLength => Radius / 2;
 }
 
-public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End);
+public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
 
-public sealed record ScreenSegment(Vector2D Start, Vector2D End);
+public sealed record ScreenSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
 
-public sealed record ApertureSegment(Vector2D Start, Vector2D End, double OpeningSize);
+public sealed record ApertureSegment(Vector2D Start, Vector2D End, double OpeningSize, Guid Id = default,
+    string? Name = null);
 
 public sealed record ReflectionGratingSegment(
     Vector2D Start,
     Vector2D End,
-    double GrooveDensityLinesPerMillimeter);
+    double GrooveDensityLinesPerMillimeter,
+    Guid Id = default,
+    string? Name = null);
 
 public enum LensKind
 {
@@ -86,7 +95,15 @@ public sealed record LensSegment(
     LensKind Kind,
     double FocalLength,
     LensDispersionMode DispersionMode = LensDispersionMode.None,
-    int DispersionLevel = 5);
+    int DispersionLevel = 5,
+    Guid Id = default,
+    string? Name = null);
+
+public sealed record ElementGroup(
+    Guid Id,
+    Guid[] MemberIds,
+    Guid PrimaryMemberId,
+    string? Name = null);
 
 public sealed record OpticalScene(
     string Name,
@@ -98,7 +115,8 @@ public sealed record OpticalScene(
     ReflectionGratingSegment[]? ReflectionGratings = null,
     BeamSplitterSegment[]? BeamSplitters = null,
     ConcaveSphericalMirror[]? ConcaveSphericalMirrors = null,
-    ConvexSphericalMirror[]? ConvexSphericalMirrors = null)
+    ConvexSphericalMirror[]? ConvexSphericalMirrors = null,
+    ElementGroup[]? Groups = null)
 {
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
@@ -120,6 +138,9 @@ public sealed record OpticalScene(
 
     [JsonIgnore]
     public ConvexSphericalMirror[] ConvexSphericalMirrorElements => ConvexSphericalMirrors ?? [];
+
+    [JsonIgnore]
+    public ElementGroup[] ElementGroups => Groups ?? [];
 
     public static OpticalScene CreateEmpty() => new(
         "空白场景",

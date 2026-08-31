@@ -31,6 +31,18 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedElement;
 
     [ObservableProperty]
+    private bool _canEditSelectedTransform;
+
+    [ObservableProperty]
+    private bool _canGroupSelection;
+
+    [ObservableProperty]
+    private bool _canUngroupSelection;
+
+    [ObservableProperty]
+    private bool _canSetPrimaryElement;
+
+    [ObservableProperty]
     private bool _hasSelectedLightSource;
 
     [ObservableProperty]
@@ -68,6 +80,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private string _selectedElementName = "未选择元件";
+
+    [ObservableProperty]
+    private string _selectedElementTitle = string.Empty;
+
+    [ObservableProperty]
+    private bool _canRenameSelectedElement;
 
     [ObservableProperty]
     private string _selectedAngleText = "当前角度 --";
@@ -142,6 +160,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? SetSelectedLengthRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
     public event Action<double, double>? SetSelectedSecondOriginRequested;
+    public event Action<string>? SetSelectedNameRequested;
+    public event EventHandler? GroupSelectionRequested;
+    public event EventHandler? UngroupSelectionRequested;
+    public event EventHandler? SetPrimaryElementRequested;
 
     partial void OnRayDensityChanged(int value)
     {
@@ -344,6 +366,15 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     partial void OnSelectedSecondOriginYChanged(decimal value) =>
         ApplySelectedSecondOrigin(SelectedSecondOriginX, value);
 
+    partial void OnSelectedElementTitleChanged(string value)
+    {
+        if (!_updatingSelection && CanRenameSelectedElement &&
+            !string.IsNullOrWhiteSpace(value) && value.Length <= 120)
+        {
+            SetSelectedNameRequested?.Invoke(value);
+        }
+    }
+
     partial void OnSelectedStandardAngleIndexChanged(int value)
     {
         if (_updatingSelection || value <= 0 || !CanRotateSelectedElement)
@@ -380,6 +411,15 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         var amount = (double)RotationStep;
         RotateSelectedRequested?.Invoke(direction == "Counterclockwise" ? -amount : amount);
     }
+
+    [RelayCommand]
+    private void GroupSelected() => GroupSelectionRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void UngroupSelected() => UngroupSelectionRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void SetPrimaryElement() => SetPrimaryElementRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
     private void ShowAbout() => AboutRequested?.Invoke(this, EventArgs.Empty);
@@ -466,7 +506,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         StatusText = tool switch
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 空白处拖动画布；先单击选中，再拖动第一原点平移元件；拖动白点旋转",
+            CanvasTool.Move => "移动或调整元件 · 空白左拖框选，空白单击清空；右键随时平移画布",
             CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };
@@ -478,6 +518,11 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         try
         {
             HasSelectedElement = selection is not null;
+            CanEditSelectedTransform = selection is not null && selection.Kind != CanvasSelectionKind.Multiple;
+            CanGroupSelection = selection?.CanGroup == true;
+            CanUngroupSelection = selection?.CanUngroup == true;
+            CanSetPrimaryElement = selection?.CanSetPrimary == true;
+            CanRenameSelectedElement = selection?.CanRename == true;
             HasSelectedLightSource = selection?.WavelengthNanometers is not null;
             HasSelectedPointLight = selection?.Kind == CanvasSelectionKind.PointLight;
             HasSelectedCentralAngle = selection?.ArcAngleDegrees is not null ||
@@ -493,6 +538,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             HasSelectedReflectionGrating = selection?.GrooveDensity is not null;
             HasSelectedLength = selection?.Length is not null;
             SelectedElementName = selection?.DisplayName ?? "未选择元件";
+            SelectedElementTitle = selection?.ElementName ?? string.Empty;
             SelectedAngleText = selection?.CanRotate == true
                 ? $"当前角度 {selection.AngleDegrees:F1}°"
                 : "当前角度 --";

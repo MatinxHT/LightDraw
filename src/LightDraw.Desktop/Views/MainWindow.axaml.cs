@@ -37,6 +37,10 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
             _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
+            _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
+            _viewModel.GroupSelectionRequested -= OnGroupSelectionRequested;
+            _viewModel.UngroupSelectionRequested -= OnUngroupSelectionRequested;
+            _viewModel.SetPrimaryElementRequested -= OnSetPrimaryElementRequested;
         }
 
         _viewModel = viewModel;
@@ -60,6 +64,10 @@ public sealed partial class MainWindow : Window
         _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
         _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
+        _viewModel.SetSelectedNameRequested += OnSetSelectedNameRequested;
+        _viewModel.GroupSelectionRequested += OnGroupSelectionRequested;
+        _viewModel.UngroupSelectionRequested += OnUngroupSelectionRequested;
+        _viewModel.SetPrimaryElementRequested += OnSetPrimaryElementRequested;
         Canvas.SimulationCompleted += OnSimulationCompleted;
         Canvas.ToolStateChanged += OnToolStateChanged;
         Canvas.SceneChanged += OnSceneChanged;
@@ -91,6 +99,10 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
             _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
+            _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
+            _viewModel.GroupSelectionRequested -= OnGroupSelectionRequested;
+            _viewModel.UngroupSelectionRequested -= OnUngroupSelectionRequested;
+            _viewModel.SetPrimaryElementRequested -= OnSetPrimaryElementRequested;
         }
 
         Canvas.SimulationCompleted -= OnSimulationCompleted;
@@ -164,6 +176,14 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedSecondOriginRequested(double x, double y) =>
         Canvas.SetSelectedSecondOrigin(x, y);
+
+    private void OnSetSelectedNameRequested(string name) => Canvas.SetSelectedName(name);
+
+    private void OnGroupSelectionRequested(object? sender, EventArgs e) => Canvas.GroupSelection();
+
+    private void OnUngroupSelectionRequested(object? sender, EventArgs e) => Canvas.UngroupSelection();
+
+    private void OnSetPrimaryElementRequested(object? sender, EventArgs e) => Canvas.SetActiveMemberAsPrimary();
 
     private void OnSceneChanged(object? sender, EventArgs e)
     {

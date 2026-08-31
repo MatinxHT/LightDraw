@@ -21,7 +21,12 @@ internal sealed class SkiaSceneDrawOperation(
     Vector2D? placementStart,
     Vector2D? placementPreview,
     SceneItemKind selectedKind,
-    int selectedIndex) : ICustomDrawOperation
+    int selectedIndex,
+    IReadOnlySet<Guid> selectedIds,
+    Guid? selectedGroupId,
+    Guid? activeElementId,
+    Vector2D? marqueeStart,
+    Vector2D? marqueeCurrent) : ICustomDrawOperation
 {
     private const string CoordinateUnit = "mm";
     private const double RotationHandleOffset = 100;
@@ -52,6 +57,8 @@ internal sealed class SkiaSceneDrawOperation(
         DrawReflectionGratings(canvas);
         DrawLenses(canvas);
         DrawSources(canvas);
+        DrawElementNames(canvas);
+        DrawSelectionOverlay(canvas);
         DrawPlacementPreview(canvas);
         DrawLegend(canvas);
         canvas.Restore();
@@ -279,7 +286,7 @@ internal sealed class SkiaSceneDrawOperation(
             var mirror = scene.Mirrors[index];
             canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), glow);
             canvas.DrawLine(ToScreen(mirror.Start), ToScreen(mirror.End), paint);
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, (mirror.Start + mirror.End) / 2,
                     selectedKind == SceneItemKind.Mirror && selectedIndex == index);
@@ -322,7 +329,7 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawArc(oval, startAngle, sweep, false, glow);
             canvas.DrawArc(oval, startAngle, sweep, false, paint);
 
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 canvas.DrawLine(ToScreen(mirror.Vertex), center, guide);
                 canvas.DrawCircle(ToScreen(mirror.Vertex), 4.5f, paint);
@@ -368,7 +375,7 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawArc(oval, startAngle, sweep, false, glow);
             canvas.DrawArc(oval, startAngle, sweep, false, paint);
 
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 canvas.DrawLine(ToScreen(mirror.Vertex), center, guide);
                 canvas.DrawCircle(ToScreen(mirror.Vertex), 4.5f, paint);
@@ -389,7 +396,7 @@ internal sealed class SkiaSceneDrawOperation(
             var screen = scene.ScreenElements[index];
             canvas.DrawLine(ToScreen(screen.Start), ToScreen(screen.End), glow);
             canvas.DrawLine(ToScreen(screen.Start), ToScreen(screen.End), paint);
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, (screen.Start + screen.End) / 2,
                     selectedKind == SceneItemKind.Screen && selectedIndex == index);
@@ -407,7 +414,7 @@ internal sealed class SkiaSceneDrawOperation(
             var beamSplitter = scene.BeamSplitterElements[index];
             canvas.DrawLine(ToScreen(beamSplitter.Start), ToScreen(beamSplitter.End), glow);
             canvas.DrawLine(ToScreen(beamSplitter.Start), ToScreen(beamSplitter.End), paint);
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, (beamSplitter.Start + beamSplitter.End) / 2,
                     selectedKind == SceneItemKind.BeamSplitter && selectedIndex == index);
@@ -447,7 +454,7 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawLine(ToScreen(openingEnd - normal * markerSize),
                 ToScreen(openingEnd + normal * markerSize), paint);
 
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, midpoint,
                     selectedKind == SceneItemKind.Aperture && selectedIndex == index);
@@ -484,7 +491,7 @@ internal sealed class SkiaSceneDrawOperation(
                     ToScreen(point + normal * markerSize), groovePaint);
             }
 
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, (grating.Start + grating.End) / 2,
                     selectedKind == SceneItemKind.ReflectionGrating && selectedIndex == index);
@@ -512,7 +519,7 @@ internal sealed class SkiaSceneDrawOperation(
             canvas.DrawLine(ToScreen(bodyStart), ToScreen(bodyEnd), glow);
             canvas.DrawLine(ToScreen(bodyStart), ToScreen(bodyEnd), paint);
             DrawLensArrows(canvas, lens, paint, arrowInset);
-            if (tool == CanvasTool.Move)
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
             {
                 DrawOrigin(canvas, (lens.Start + lens.End) / 2,
                     selectedKind == SceneItemKind.Lens && selectedIndex == index);
@@ -563,7 +570,7 @@ internal sealed class SkiaSceneDrawOperation(
                 var middle = (source.Position + end) / 2;
                 var direction = Vector2D.FromAngle(source.DirectionDegrees * Math.PI / 180);
                 DrawArrow(canvas, middle, middle + direction * (34 / zoom), outline);
-                if (tool == CanvasTool.Move)
+                if (tool == CanvasTool.Move && selectedIds.Count <= 1)
                 {
                     DrawOrigin(canvas, middle,
                         selectedKind == SceneItemKind.LightSource && selectedIndex == index);
@@ -575,7 +582,7 @@ internal sealed class SkiaSceneDrawOperation(
                 var position = ToScreen(source.Position);
                 canvas.DrawCircle(position, 8, fill);
                 canvas.DrawCircle(position, 12, outline);
-                if (tool == CanvasTool.Move)
+                if (tool == CanvasTool.Move && selectedIds.Count <= 1)
                 {
                     DrawOrigin(canvas, source.Position,
                         selectedKind == SceneItemKind.LightSource && selectedIndex == index);
@@ -583,6 +590,124 @@ internal sealed class SkiaSceneDrawOperation(
                 }
             }
         }
+    }
+
+    private void DrawSelectionOverlay(SKCanvas canvas)
+    {
+        if (tool != CanvasTool.Move) return;
+        using var selectionPaint = new SKPaint
+        {
+            Color = new SKColor(83, 214, 255, 220), StrokeWidth = 1.5f,
+            Style = SKPaintStyle.Stroke, IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([7, 5], 0)
+        };
+
+        if (selectedIds.Count > 1)
+        {
+            var bounds = SceneGeometry.Bounds(scene, selectedIds);
+            canvas.DrawRect(ToScreenRect(bounds, 8), selectionPaint);
+        }
+
+        if (selectedGroupId is { } groupId &&
+            scene.ElementGroups.FirstOrDefault(item => item.Id == groupId) is { } group &&
+            SceneGeometry.Find(scene, group.PrimaryMemberId) is { } primary)
+        {
+            var origin = SceneGeometry.Origin(scene, primary);
+            var angle = SceneGeometry.AngleDegrees(scene, primary) * Math.PI / 180;
+            var handle = origin + Vector2D.FromAngle(angle) * RotationHandleOffset;
+            DrawRotationPoint(canvas, origin, handle);
+            var point = ToScreen(origin);
+            using var primaryFill = new SKPaint
+            {
+                Color = new SKColor(83, 214, 255), Style = SKPaintStyle.Fill, IsAntialias = true
+            };
+            canvas.DrawCircle(point, 6.5f, primaryFill);
+            canvas.DrawLine(point.X - 10, point.Y, point.X + 10, point.Y, primaryFill);
+            canvas.DrawLine(point.X, point.Y - 10, point.X, point.Y + 10, primaryFill);
+
+            if (activeElementId is { } activeId && activeId != group.PrimaryMemberId &&
+                SceneGeometry.Find(scene, activeId) is { } active)
+            {
+                using var activePaint = new SKPaint
+                {
+                    Color = new SKColor(255, 178, 70), Style = SKPaintStyle.Stroke,
+                    StrokeWidth = 2.5f, IsAntialias = true
+                };
+                canvas.DrawCircle(ToScreen(SceneGeometry.Origin(scene, active)), 8, activePaint);
+            }
+        }
+
+        if (marqueeStart is { } start && marqueeCurrent is { } current)
+        {
+            using var fill = new SKPaint
+            {
+                Color = new SKColor(83, 214, 255, 28), Style = SKPaintStyle.Fill
+            };
+            var rect = ToScreenRect(WorldBounds.FromCorners(start, current), 0);
+            canvas.DrawRect(rect, fill);
+            canvas.DrawRect(rect, selectionPaint);
+        }
+    }
+
+    private void DrawElementNames(SKCanvas canvas)
+    {
+        using var font = new SKFont(SKTypeface.Default, 12);
+        using var shadow = new SKPaint
+        {
+            Color = new SKColor(5, 9, 17, 225), IsAntialias = true,
+            StrokeWidth = 3, Style = SKPaintStyle.Stroke, StrokeJoin = SKStrokeJoin.Round
+        };
+        using var textPaint = new SKPaint
+        {
+            Color = new SKColor(221, 231, 245, 235), IsAntialias = true
+        };
+
+        foreach (var item in SceneGeometry.Enumerate(scene))
+        {
+            var name = ElementName(item);
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            var bounds = SceneGeometry.Bounds(scene, item);
+            var anchor = ToScreen(new Vector2D((bounds.Left + bounds.Right) / 2, bounds.Top));
+            var baseline = anchor.Y - 8;
+            canvas.DrawText(name, anchor.X, baseline, SKTextAlign.Center, font, shadow);
+            canvas.DrawText(name, anchor.X, baseline, SKTextAlign.Center, font, textPaint);
+        }
+
+        using var groupPaint = new SKPaint
+        {
+            Color = new SKColor(125, 227, 255, 240), IsAntialias = true
+        };
+        foreach (var group in scene.ElementGroups)
+        {
+            if (string.IsNullOrWhiteSpace(group.Name)) continue;
+            var bounds = SceneGeometry.Bounds(scene, group.MemberIds);
+            var anchor = ToScreen(new Vector2D((bounds.Left + bounds.Right) / 2, bounds.Top));
+            var baseline = anchor.Y - 25;
+            canvas.DrawText(group.Name, anchor.X, baseline, SKTextAlign.Center, font, shadow);
+            canvas.DrawText(group.Name, anchor.X, baseline, SKTextAlign.Center, font, groupPaint);
+        }
+    }
+
+    private string? ElementName(SceneItemRef item) => item.Kind switch
+    {
+        SceneItemKind.LightSource => scene.LightSources[item.Index].Name,
+        SceneItemKind.Mirror => scene.Mirrors[item.Index].Name,
+        SceneItemKind.ConcaveSphericalMirror => scene.ConcaveSphericalMirrorElements[item.Index].Name,
+        SceneItemKind.ConvexSphericalMirror => scene.ConvexSphericalMirrorElements[item.Index].Name,
+        SceneItemKind.BeamSplitter => scene.BeamSplitterElements[item.Index].Name,
+        SceneItemKind.Screen => scene.ScreenElements[item.Index].Name,
+        SceneItemKind.Aperture => scene.ApertureElements[item.Index].Name,
+        SceneItemKind.ReflectionGrating => scene.ReflectionGratingElements[item.Index].Name,
+        SceneItemKind.Lens => scene.LensElements[item.Index].Name,
+        _ => null
+    };
+
+    private SKRect ToScreenRect(WorldBounds bounds, float padding)
+    {
+        var topLeft = ToScreen(new Vector2D(bounds.Left, bounds.Top));
+        var bottomRight = ToScreen(new Vector2D(bounds.Right, bounds.Bottom));
+        return new SKRect(topLeft.X - padding, topLeft.Y - padding,
+            bottomRight.X + padding, bottomRight.Y + padding);
     }
 
     private void DrawPlacementPreview(SKCanvas canvas)

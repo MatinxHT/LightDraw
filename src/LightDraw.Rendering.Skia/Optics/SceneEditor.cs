@@ -19,12 +19,19 @@ internal sealed class SceneEditor
     private long _lastMoveSimulationTimestamp;
     private SceneItemKind _selectedKind;
     private int _selectedIndex = -1;
+    private readonly HashSet<Guid> _selectedIds = [];
+    private Guid? _selectedGroupId;
+    private Guid? _activeElementId;
+    private Guid? _movingGroupId;
 
     public OpticalScene Scene => _scene;
     public CanvasSelection? Selection => CreateSelection();
     public SceneItemKind SelectedKind => _selectedKind;
     public int SelectedIndex => _selectedIndex;
-    public bool IsMoving => _movingKind != SceneItemKind.None;
+    public IReadOnlySet<Guid> SelectedIds => _selectedIds;
+    public Guid? SelectedGroupId => _selectedGroupId;
+    public Guid? ActiveElementId => _activeElementId;
+    public bool IsMoving => _movingKind != SceneItemKind.None || _movingGroupId is not null;
 
     public event EventHandler? SceneUpdated;
     public event EventHandler? SceneCommitted;
@@ -40,6 +47,10 @@ internal sealed class SceneEditor
         _movingIndex = -1;
         _moveChanged = false;
         _moveSimulationDirty = false;
+        _selectedIds.Clear();
+        _selectedGroupId = null;
+        _activeElementId = null;
+        _movingGroupId = null;
         ClearSelection();
     }
 
@@ -51,7 +62,9 @@ internal sealed class SceneEditor
         {
             LightSources = [.. _scene.LightSources,
                 new LightSource(position, 0, 360, ReferenceWavelength(spectrum),
-                    LightSourceKind.Point, Spectrum: spectrum)]
+                    LightSourceKind.Point, Spectrum: spectrum, Id: Guid.NewGuid(),
+                    Name: NextElementName(spectrum == LightSpectrumKind.Composite
+                        ? "Composite Point Source" : "Point Source"))]
         });
         CommitSelectedEdit();
     }
@@ -70,48 +83,57 @@ internal sealed class SceneEditor
                     ? LightSpectrumKind.Composite
                     : LightSpectrumKind.Monochromatic;
                 var source = new LightSource(start, DirectionDegrees(direction), 0,
-                    ReferenceWavelength(spectrum), LightSourceKind.ParallelLine, end, spectrum);
+                    ReferenceWavelength(spectrum), LightSourceKind.ParallelLine, end, spectrum,
+                    Guid.NewGuid(), NextElementName(spectrum == LightSpectrumKind.Composite
+                        ? "Composite Parallel Source" : "Parallel Source"));
                 UpdateScene(_scene with { LightSources = [.. _scene.LightSources, source] });
                 break;
             case CanvasTool.Mirror:
-                UpdateScene(_scene with { Mirrors = [.. _scene.Mirrors, new MirrorSegment(start, end)] });
+                UpdateScene(_scene with { Mirrors = [.. _scene.Mirrors,
+                    new MirrorSegment(start, end, Guid.NewGuid(), NextElementName("Mirror"))] });
                 break;
             case CanvasTool.ConcaveSphericalMirror:
                 UpdateScene(_scene with
                 {
                     ConcaveSphericalMirrors =
-                    [.. _scene.ConcaveSphericalMirrorElements, new ConcaveSphericalMirror(start, end)]
+                    [.. _scene.ConcaveSphericalMirrorElements, new ConcaveSphericalMirror(start, end,
+                        Id: Guid.NewGuid(), Name: NextElementName("Concave Spherical Mirror"))]
                 });
                 break;
             case CanvasTool.ConvexSphericalMirror:
                 UpdateScene(_scene with
                 {
                     ConvexSphericalMirrors =
-                    [.. _scene.ConvexSphericalMirrorElements, new ConvexSphericalMirror(start, end)]
+                    [.. _scene.ConvexSphericalMirrorElements, new ConvexSphericalMirror(start, end,
+                        Id: Guid.NewGuid(), Name: NextElementName("Convex Spherical Mirror"))]
                 });
                 break;
             case CanvasTool.BeamSplitter:
                 UpdateScene(_scene with
                 {
                     BeamSplitters =
-                    [.. _scene.BeamSplitterElements, new BeamSplitterSegment(start, end)]
+                    [.. _scene.BeamSplitterElements, new BeamSplitterSegment(start, end, Guid.NewGuid(),
+                        NextElementName("Beam Splitter"))]
                 });
                 break;
             case CanvasTool.Screen:
-                UpdateScene(_scene with { Screens = [.. _scene.ScreenElements, new ScreenSegment(start, end)] });
+                UpdateScene(_scene with { Screens = [.. _scene.ScreenElements,
+                    new ScreenSegment(start, end, Guid.NewGuid(), NextElementName("Screen"))] });
                 break;
             case CanvasTool.Aperture:
                 UpdateScene(_scene with
                 {
                     Apertures = [.. _scene.ApertureElements,
-                    new ApertureSegment(start, end, Math.Min(60, delta.Length * 0.3))]
+                    new ApertureSegment(start, end, Math.Min(60, delta.Length * 0.3), Guid.NewGuid(),
+                        NextElementName("Aperture"))]
                 });
                 break;
             case CanvasTool.ReflectionGrating:
                 UpdateScene(_scene with
                 {
                     ReflectionGratings = [.. _scene.ReflectionGratingElements,
-                    new ReflectionGratingSegment(start, end, 600)]
+                    new ReflectionGratingSegment(start, end, 600, Guid.NewGuid(),
+                        NextElementName("Reflection Grating"))]
                 });
                 break;
             case CanvasTool.ConvexLens:
@@ -120,7 +142,8 @@ internal sealed class SceneEditor
                 UpdateScene(_scene with
                 {
                     Lenses = [.. _scene.LensElements,
-                    new LensSegment(start, end, kind, DefaultLensFocalLength)]
+                    new LensSegment(start, end, kind, DefaultLensFocalLength, Id: Guid.NewGuid(),
+                        Name: NextElementName(kind == LensKind.Convex ? "Convex Lens" : "Concave Lens"))]
                 });
                 break;
             default:
@@ -135,6 +158,7 @@ internal sealed class SceneEditor
     {
         if (!IsMoving) return false;
         _movingKind = SceneItemKind.None;
+        _movingGroupId = null;
         _moveDragMode = MoveDragMode.None;
         _movingIndex = -1;
         var changed = _moveChanged;
@@ -155,28 +179,95 @@ internal sealed class SceneEditor
     private static OpticalScene Normalize(OpticalScene scene) => scene with
     {
         LightSources = (scene.LightSources ?? [])
-            .Select(source => source with
+            .Select((source, index) => source with
             {
+                Id = EnsureId(source.Id),
+                Name = NormalizeName(source.Name,
+                    source.Kind == LightSourceKind.Point
+                        ? source.Spectrum == LightSpectrumKind.Composite ? "Composite Point Source" : "Point Source"
+                        : source.Spectrum == LightSpectrumKind.Composite ? "Composite Parallel Source" : "Parallel Source",
+                    index + 1),
                 WavelengthNanometers = source.Spectrum == LightSpectrumKind.Composite
                     ? ReferenceWavelength(source.Spectrum)
                     : NormalizeMonochromaticWavelength(source.WavelengthNanometers)
             })
             .ToArray(),
-        Mirrors = scene.Mirrors ?? [],
-        ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements,
-        ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements,
-        Lenses = scene.LensElements.Select(lens => lens with
+        Mirrors = (scene.Mirrors ?? []).Select((item, index) => item with
+            { Id = EnsureId(item.Id), Name = NormalizeName(item.Name, "Mirror", index + 1) }).ToArray(),
+        ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements
+            .Select((item, index) => item with { Id = EnsureId(item.Id),
+                Name = NormalizeName(item.Name, "Concave Spherical Mirror", index + 1) }).ToArray(),
+        ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements
+            .Select((item, index) => item with { Id = EnsureId(item.Id),
+                Name = NormalizeName(item.Name, "Convex Spherical Mirror", index + 1) }).ToArray(),
+        Lenses = scene.LensElements.Select((lens, index) => lens with
         {
+            Id = EnsureId(lens.Id),
+            Name = NormalizeName(lens.Name, lens.Kind == LensKind.Convex ? "Convex Lens" : "Concave Lens", index + 1),
             DispersionMode = Enum.IsDefined(lens.DispersionMode)
                 ? lens.DispersionMode
                 : LensDispersionMode.None,
             DispersionLevel = Math.Clamp(lens.DispersionLevel, 0, 10)
         }).ToArray(),
-        Screens = scene.ScreenElements,
-        Apertures = scene.ApertureElements,
-        ReflectionGratings = scene.ReflectionGratingElements,
-        BeamSplitters = scene.BeamSplitterElements
+        Screens = scene.ScreenElements.Select((item, index) => item with { Id = EnsureId(item.Id),
+            Name = NormalizeName(item.Name, "Screen", index + 1) }).ToArray(),
+        Apertures = scene.ApertureElements.Select((item, index) => item with { Id = EnsureId(item.Id),
+            Name = NormalizeName(item.Name, "Aperture", index + 1) }).ToArray(),
+        ReflectionGratings = scene.ReflectionGratingElements
+            .Select((item, index) => item with { Id = EnsureId(item.Id),
+                Name = NormalizeName(item.Name, "Reflection Grating", index + 1) }).ToArray(),
+        BeamSplitters = scene.BeamSplitterElements.Select((item, index) => item with { Id = EnsureId(item.Id),
+            Name = NormalizeName(item.Name, "Beam Splitter", index + 1) }).ToArray(),
+        Groups = NormalizeGroups(scene)
     };
+
+    private static Guid EnsureId(Guid id) => id == Guid.Empty ? Guid.NewGuid() : id;
+
+    private static string NormalizeName(string? name, string baseName, int number) =>
+        string.IsNullOrWhiteSpace(name) ? $"{baseName} {number}" : name.Trim();
+
+    private string NextElementName(string baseName)
+    {
+        var names = EnumerateElementNames().ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (var number = 1; ; number++)
+        {
+            var candidate = $"{baseName} {number}";
+            if (!names.Contains(candidate)) return candidate;
+        }
+    }
+
+    private IEnumerable<string> EnumerateElementNames()
+    {
+        foreach (var item in _scene.LightSources) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.Mirrors) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ConcaveSphericalMirrorElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ConvexSphericalMirrorElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.BeamSplitterElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ScreenElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ApertureElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ReflectionGratingElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.LensElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ElementGroups) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+    }
+
+    private static ElementGroup[] NormalizeGroups(OpticalScene scene)
+    {
+        var valid = SceneGeometry.Enumerate(scene).Select(item => item.Id)
+            .Where(id => id != Guid.Empty).ToHashSet();
+        var claimed = new HashSet<Guid>();
+        return scene.ElementGroups.Select((group, index) =>
+        {
+            var members = (group.MemberIds ?? []).Where(id => valid.Contains(id) && claimed.Add(id))
+                .Distinct().ToArray();
+            return group with
+            {
+                Id = EnsureId(group.Id), MemberIds = members,
+                Name = NormalizeName(group.Name, "Group", index + 1),
+                PrimaryMemberId = members.Contains(group.PrimaryMemberId)
+                    ? group.PrimaryMemberId : members.FirstOrDefault()
+            };
+        }).Where(group => group.MemberIds.Length >= 2).ToArray();
+    }
 
     private static double ReferenceWavelength(LightSpectrumKind spectrum) =>
         spectrum == LightSpectrumKind.Composite
@@ -199,10 +290,85 @@ internal sealed class SceneEditor
         SetSelectedAngle(selection.AngleDegrees + degrees);
     }
 
+    public void SetSelectedName(string value)
+    {
+        var name = value.Trim();
+        if (name.Length == 0 || name.Length > 120) return;
+
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is not null)
+        {
+            UpdateScene(_scene with
+            {
+                Groups = _scene.ElementGroups.Select(group => group.Id == groupId
+                    ? group with { Name = name } : group).ToArray()
+            });
+            CommitSelectedEdit();
+            return;
+        }
+
+        switch (_selectedKind)
+        {
+            case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
+                _scene = _scene with { LightSources = _scene.LightSources.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                _scene = _scene with { Mirrors = _scene.Mirrors.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements):
+                _scene = _scene with { ConcaveSphericalMirrors = _scene.ConcaveSphericalMirrorElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.ConvexSphericalMirror when IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements):
+                _scene = _scene with { ConvexSphericalMirrors = _scene.ConvexSphericalMirrorElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                _scene = _scene with { BeamSplitters = _scene.BeamSplitterElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                _scene = _scene with { Screens = _scene.ScreenElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                _scene = _scene with { Apertures = _scene.ApertureElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                _scene = _scene with { ReflectionGratings = _scene.ReflectionGratingElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                _scene = _scene with { Lenses = _scene.LensElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
+            default:
+                return;
+        }
+
+        SceneUpdated?.Invoke(this, EventArgs.Empty);
+        CommitSelectedEdit();
+    }
+
     public void SetSelectedAngle(double degrees)
     {
         if (!double.IsFinite(degrees))
         {
+            return;
+        }
+
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is { } group &&
+            SceneGeometry.Find(_scene, group.PrimaryMemberId) is { } primary)
+        {
+            var current = SceneGeometry.AngleDegrees(_scene, primary);
+            var delta = NormalizeSignedDegrees(degrees - current);
+            if (Math.Abs(delta) <= 1e-9) return;
+            var pivot = SceneGeometry.Origin(_scene, primary);
+            UpdateScene(SceneGeometry.Rotate(_scene, group.MemberIds.ToHashSet(), pivot,
+                delta * Math.PI / 180));
+            CommitSelectedEdit();
             return;
         }
 
@@ -709,6 +875,13 @@ internal sealed class SceneEditor
             return;
         }
 
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is { } group)
+        {
+            UpdateScene(SceneGeometry.Translate(_scene, group.MemberIds.ToHashSet(), delta));
+            CommitSelectedEdit();
+            return;
+        }
+
         switch (_selectedKind)
         {
             case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
@@ -868,9 +1041,15 @@ internal sealed class SceneEditor
     }
     public bool TryBeginMove(Vector2D world)
     {
+        if (TryBeginGroupInteraction(world, out var beganGroupMove))
+        {
+            return beganGroupMove;
+        }
+
         var previouslySelectedKind = _selectedKind;
         var previouslySelectedIndex = _selectedIndex;
         _movingKind = SceneItemKind.None;
+        _movingGroupId = null;
         _moveDragMode = MoveDragMode.None;
         _movingIndex = -1;
 
@@ -989,6 +1168,7 @@ internal sealed class SceneEditor
             {
                 _selectedKind = _movingKind;
                 _selectedIndex = _movingIndex;
+                SelectSingleLegacyItem();
                 _movingKind = SceneItemKind.None;
                 _movingIndex = -1;
                 _moveDragMode = MoveDragMode.None;
@@ -1007,6 +1187,7 @@ internal sealed class SceneEditor
         {
             _selectedKind = _movingKind;
             _selectedIndex = _movingIndex;
+            SelectSingleLegacyItem();
             _movingKind = SceneItemKind.None;
             _movingIndex = -1;
             _moveDragMode = MoveDragMode.None;
@@ -1016,12 +1197,128 @@ internal sealed class SceneEditor
 
         _selectedKind = _movingKind;
         _selectedIndex = _movingIndex;
+        SelectSingleLegacyItem();
         _lastMoveWorld = world;
         _moveChanged = false;
         _moveSimulationDirty = false;
         _lastMoveSimulationTimestamp = 0;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
         InteractionStateChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    public bool HitTest(Vector2D world)
+    {
+        var tolerance = 12 / _zoom;
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is { } group &&
+            SceneGeometry.Find(_scene, group.PrimaryMemberId) is { } primary)
+        {
+            if ((world - SceneGeometry.Origin(_scene, primary)).Length <= tolerance ||
+                (world - GroupRotationHandle(primary)).Length <= tolerance)
+                return true;
+        }
+        if (GetSelectedLegacyItem() is { } selected &&
+            SelectedInteractionHandles(selected).Any(handle => (world - handle).Length <= tolerance))
+            return true;
+        return FindItemAt(world) is not null;
+    }
+
+    private IEnumerable<Vector2D> SelectedInteractionHandles(SceneItemRef item)
+    {
+        yield return SceneGeometry.Origin(_scene, item);
+        switch (item.Kind)
+        {
+            case SceneItemKind.LightSource:
+                var source = _scene.LightSources[item.Index];
+                yield return source.Kind == LightSourceKind.Point
+                    ? PointLightRotationHandle(source)
+                    : RotationHandle(source.Position, source.End!.Value);
+                break;
+            case SceneItemKind.ConcaveSphericalMirror:
+                var concave = _scene.ConcaveSphericalMirrorElements[item.Index];
+                yield return concave.CenterOfCurvature;
+                yield return SphericalMirrorRotationHandle(concave.Vertex, concave.CenterOfCurvature);
+                break;
+            case SceneItemKind.ConvexSphericalMirror:
+                var convex = _scene.ConvexSphericalMirrorElements[item.Index];
+                yield return convex.CenterOfCurvature;
+                yield return SphericalMirrorRotationHandle(convex.Vertex, convex.CenterOfCurvature);
+                break;
+            default:
+                var origin = SceneGeometry.Origin(_scene, item);
+                var radians = SceneGeometry.AngleDegrees(_scene, item) * Math.PI / 180;
+                yield return origin + Vector2D.FromAngle(radians).Perpendicular() * RotationHandleOffset;
+                break;
+        }
+    }
+
+    public void SelectInRectangle(Vector2D first, Vector2D second)
+    {
+        var rectangle = WorldBounds.FromCorners(first, second);
+        var selected = new HashSet<Guid>();
+        var handledGroups = new HashSet<Guid>();
+        foreach (var item in SceneGeometry.Enumerate(_scene))
+        {
+            var group = FindGroupContaining(item.Id);
+            if (group is not null)
+            {
+                if (!handledGroups.Add(group.Id)) continue;
+                if (rectangle.Contains(SceneGeometry.Bounds(_scene, group.MemberIds)))
+                    selected.UnionWith(group.MemberIds);
+            }
+            else if (rectangle.Contains(SceneGeometry.Bounds(_scene, item)))
+            {
+                selected.Add(item.Id);
+            }
+        }
+        ApplySelection(selected, Guid.Empty);
+    }
+
+    public bool GroupSelection()
+    {
+        if (_selectedIds.Count < 2) return false;
+        var members = _selectedIds.Where(id => SceneGeometry.Find(_scene, id) is not null)
+            .Distinct().ToArray();
+        if (members.Length < 2) return false;
+        var primary = _activeElementId is { } active && members.Contains(active) ? active : members[0];
+        var intersectingGroups = _scene.ElementGroups
+            .Where(group => group.MemberIds.Any(members.Contains)).Select(group => group.Id).ToHashSet();
+        var newGroup = new ElementGroup(Guid.NewGuid(), members, primary, NextElementName("Group"));
+        UpdateScene(_scene with
+        {
+            Groups = [.. _scene.ElementGroups.Where(group => !intersectingGroups.Contains(group.Id)), newGroup]
+        });
+        _selectedGroupId = newGroup.Id;
+        _activeElementId = primary;
+        ClearLegacySelection();
+        CommitSelectedEdit();
+        return true;
+    }
+
+    public bool UngroupSelection()
+    {
+        if (_selectedGroupId is not { } groupId || FindGroup(groupId) is not { } group) return false;
+        UpdateScene(_scene with { Groups = _scene.ElementGroups.Where(item => item.Id != groupId).ToArray() });
+        _selectedGroupId = null;
+        _selectedIds.Clear();
+        _selectedIds.UnionWith(group.MemberIds);
+        _activeElementId = group.PrimaryMemberId;
+        ClearLegacySelection();
+        CommitSelectedEdit();
+        return true;
+    }
+
+    public bool SetActiveMemberAsPrimary()
+    {
+        if (_selectedGroupId is not { } groupId || _activeElementId is not { } active ||
+            FindGroup(groupId) is not { } group || !group.MemberIds.Contains(active) ||
+            group.PrimaryMemberId == active) return false;
+        UpdateScene(_scene with
+        {
+            Groups = _scene.ElementGroups.Select(item => item.Id == groupId
+                ? item with { PrimaryMemberId = active } : item).ToArray()
+        });
+        CommitSelectedEdit();
         return true;
     }
 
@@ -1103,6 +1400,21 @@ internal sealed class SceneEditor
             Consider(DistanceToSegment(world, lens.Start, lens.End), SceneItemKind.Lens, index);
         }
 
+        var hitItem = SceneGeometry.Enumerate(_scene)
+            .FirstOrDefault(item => item.Kind == itemKind && item.Index == itemIndex);
+        if (hitItem.Id != Guid.Empty && FindGroupContaining(hitItem.Id) is { } hitGroup)
+        {
+            UpdateScene(RemoveItems(_scene, hitGroup.MemberIds.ToHashSet()) with
+            {
+                Groups = _scene.ElementGroups.Where(group => group.Id != hitGroup.Id).ToArray()
+            });
+            ClearSelection();
+            PreviewRequested?.Invoke(this, EventArgs.Empty);
+            SceneCommitted?.Invoke(this, EventArgs.Empty);
+            InteractionStateChanged?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
         switch (itemKind)
         {
             case SceneItemKind.LightSource:
@@ -1153,8 +1465,150 @@ internal sealed class SceneEditor
         InteractionStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private static OpticalScene RemoveItems(OpticalScene scene, IReadOnlySet<Guid> ids) => scene with
+    {
+        LightSources = scene.LightSources.Where(item => !ids.Contains(item.Id)).ToArray(),
+        Mirrors = scene.Mirrors.Where(item => !ids.Contains(item.Id)).ToArray(),
+        ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        BeamSplitters = scene.BeamSplitterElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        Screens = scene.ScreenElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        Apertures = scene.ApertureElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        ReflectionGratings = scene.ReflectionGratingElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        Lenses = scene.LensElements.Where(item => !ids.Contains(item.Id)).ToArray()
+    };
+
     private static T[] RemoveAt<T>(T[] items, int index) =>
         [.. items[..index], .. items[(index + 1)..]];
+
+    private bool TryBeginGroupInteraction(Vector2D world, out bool beganMove)
+    {
+        beganMove = false;
+        var tolerance = 12 / _zoom;
+        if (_selectedGroupId is { } selectedGroupId && FindGroup(selectedGroupId) is { } selectedGroup &&
+            SceneGeometry.Find(_scene, selectedGroup.PrimaryMemberId) is { } primary)
+        {
+            var origin = SceneGeometry.Origin(_scene, primary);
+            var handle = GroupRotationHandle(primary);
+            if ((world - origin).Length <= tolerance || (world - handle).Length <= tolerance)
+            {
+                _movingGroupId = selectedGroupId;
+                _moveDragMode = (world - handle).Length <= tolerance
+                    ? MoveDragMode.RotationHandle : MoveDragMode.Translate;
+                _lastMoveWorld = world;
+                _moveChanged = false;
+                _moveSimulationDirty = false;
+                _lastMoveSimulationTimestamp = 0;
+                beganMove = true;
+                InteractionStateChanged?.Invoke(this, EventArgs.Empty);
+                return true;
+            }
+        }
+
+        if (FindItemAt(world) is not { } hit || FindGroupContaining(hit.Id) is not { } group)
+            return false;
+
+        _selectedIds.Clear();
+        _selectedIds.UnionWith(group.MemberIds);
+        _selectedGroupId = group.Id;
+        _activeElementId = hit.Id;
+        ClearLegacySelection();
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    private SceneItemRef? FindItemAt(Vector2D world)
+    {
+        var bestDistance = 10 / _zoom;
+        SceneItemRef? best = null;
+        void Consider(double distance, SceneItemRef item)
+        {
+            if (distance > bestDistance) return;
+            bestDistance = distance;
+            best = item;
+        }
+
+        foreach (var item in SceneGeometry.Enumerate(_scene))
+        {
+            var distance = item.Kind switch
+            {
+                SceneItemKind.LightSource => _scene.LightSources[item.Index].Kind == LightSourceKind.ParallelLine &&
+                                             _scene.LightSources[item.Index].End is { } sourceEnd
+                    ? DistanceToSegment(world, _scene.LightSources[item.Index].Position, sourceEnd)
+                    : (world - _scene.LightSources[item.Index].Position).Length,
+                SceneItemKind.Mirror => DistanceToSegment(world, _scene.Mirrors[item.Index].Start,
+                    _scene.Mirrors[item.Index].End),
+                SceneItemKind.ConcaveSphericalMirror => DistanceToArc(world,
+                    _scene.ConcaveSphericalMirrorElements[item.Index]),
+                SceneItemKind.ConvexSphericalMirror => DistanceToArc(world,
+                    _scene.ConvexSphericalMirrorElements[item.Index].Vertex,
+                    _scene.ConvexSphericalMirrorElements[item.Index].CenterOfCurvature,
+                    _scene.ConvexSphericalMirrorElements[item.Index].ArcAngleDegrees),
+                SceneItemKind.BeamSplitter => DistanceToSegment(world,
+                    _scene.BeamSplitterElements[item.Index].Start, _scene.BeamSplitterElements[item.Index].End),
+                SceneItemKind.Screen => DistanceToSegment(world, _scene.ScreenElements[item.Index].Start,
+                    _scene.ScreenElements[item.Index].End),
+                SceneItemKind.Aperture => DistanceToSegment(world, _scene.ApertureElements[item.Index].Start,
+                    _scene.ApertureElements[item.Index].End),
+                SceneItemKind.ReflectionGrating => DistanceToSegment(world,
+                    _scene.ReflectionGratingElements[item.Index].Start,
+                    _scene.ReflectionGratingElements[item.Index].End),
+                SceneItemKind.Lens => DistanceToSegment(world, _scene.LensElements[item.Index].Start,
+                    _scene.LensElements[item.Index].End),
+                _ => double.PositiveInfinity
+            };
+            Consider(distance, item);
+        }
+        return best;
+    }
+
+    private ElementGroup? FindGroup(Guid id) => _scene.ElementGroups.FirstOrDefault(group => group.Id == id);
+    private ElementGroup? FindGroupContaining(Guid elementId) =>
+        _scene.ElementGroups.FirstOrDefault(group => group.MemberIds.Contains(elementId));
+
+    private Vector2D GroupRotationHandle(SceneItemRef primary) =>
+        SceneGeometry.Origin(_scene, primary) +
+        Vector2D.FromAngle(SceneGeometry.AngleDegrees(_scene, primary) * Math.PI / 180) * RotationHandleOffset;
+
+    private void SelectSingleLegacyItem()
+    {
+        if (GetSelectedLegacyItem() is not { } item) return;
+        _selectedIds.Clear();
+        _selectedIds.Add(item.Id);
+        _selectedGroupId = null;
+        _activeElementId = item.Id;
+    }
+
+    private SceneItemRef? GetSelectedLegacyItem() =>
+        SceneGeometry.Enumerate(_scene).FirstOrDefault(item =>
+            item.Kind == _selectedKind && item.Index == _selectedIndex) is { Id: var id } item && id != Guid.Empty
+            ? item : null;
+
+    private void ApplySelection(IEnumerable<Guid> ids, Guid activeId)
+    {
+        _selectedIds.Clear();
+        _selectedIds.UnionWith(ids);
+        var exactGroup = _scene.ElementGroups.FirstOrDefault(group =>
+            group.MemberIds.Length == _selectedIds.Count && group.MemberIds.All(_selectedIds.Contains));
+        _selectedGroupId = exactGroup?.Id;
+        _activeElementId = activeId != Guid.Empty
+            ? activeId
+            : exactGroup?.PrimaryMemberId ?? _selectedIds.FirstOrDefault();
+        ClearLegacySelection();
+        if (_selectedIds.Count == 1 && _selectedGroupId is null &&
+            SceneGeometry.Find(_scene, _selectedIds.First()) is { } item)
+        {
+            _selectedKind = item.Kind;
+            _selectedIndex = item.Index;
+        }
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ClearLegacySelection()
+    {
+        _selectedKind = SceneItemKind.None;
+        _selectedIndex = -1;
+    }
 
     private void FindTranslatableItem(Vector2D world, ref double bestDistance)
     {
@@ -1243,6 +1697,36 @@ internal sealed class SceneEditor
 
     public void MoveSelectedItem(Vector2D world)
     {
+        if (_movingGroupId is { } movingGroupId && FindGroup(movingGroupId) is { } movingGroup &&
+            SceneGeometry.Find(_scene, movingGroup.PrimaryMemberId) is { } primary)
+        {
+            var memberIds = movingGroup.MemberIds.ToHashSet();
+            if (_moveDragMode == MoveDragMode.Translate)
+            {
+                var groupDelta = world - _lastMoveWorld;
+                if (groupDelta.LengthSquared <= 1e-12) return;
+                _scene = SceneGeometry.Translate(_scene, memberIds, groupDelta);
+            }
+            else
+            {
+                var pivot = SceneGeometry.Origin(_scene, primary);
+                var direction = world - pivot;
+                if (direction.LengthSquared <= 1e-12) return;
+                var targetAngle = DirectionDegrees(direction);
+                var currentAngle = SceneGeometry.AngleDegrees(_scene, primary);
+                var deltaDegrees = NormalizeSignedDegrees(targetAngle - currentAngle);
+                if (Math.Abs(deltaDegrees) <= 1e-9) return;
+                _scene = SceneGeometry.Rotate(_scene, memberIds, pivot, deltaDegrees * Math.PI / 180);
+            }
+            _lastMoveWorld = world;
+            SceneUpdated?.Invoke(this, EventArgs.Empty);
+            _moveChanged = true;
+            _moveSimulationDirty = true;
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+            RecalculateDuringMoveIfDue();
+            return;
+        }
+
         var delta = world - _lastMoveWorld;
         if (delta.LengthSquared <= 1e-12)
         {
@@ -1573,6 +2057,22 @@ internal sealed class SceneEditor
 
     private CanvasSelection? CreateSelection()
     {
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is { } group &&
+            SceneGeometry.Find(_scene, group.PrimaryMemberId) is { } primary)
+        {
+            var origin = SceneGeometry.Origin(_scene, primary);
+            return new CanvasSelection(CanvasSelectionKind.Group, $"组合（{group.MemberIds.Length} 个元件）",
+                true, origin.X, origin.Y, SceneGeometry.AngleDegrees(_scene, primary), null, null,
+                MemberCount: group.MemberIds.Length, CanUngroup: true,
+                CanSetPrimary: _activeElementId is { } active && active != group.PrimaryMemberId,
+                ElementName: group.Name, CanRename: true);
+        }
+        if (_selectedIds.Count > 1)
+        {
+            return new CanvasSelection(CanvasSelectionKind.Multiple, $"已选择 {_selectedIds.Count} 个元件",
+                false, 0, 0, 0, null, null, MemberCount: _selectedIds.Count, CanGroup: true);
+        }
+
         switch (_selectedKind)
         {
             case SceneItemKind.LightSource when IsValidIndex(_selectedIndex, _scene.LightSources):
@@ -1590,7 +2090,8 @@ internal sealed class SceneEditor
                         SecondOriginY: RotationHandle(source.Position, sourceEnd).Y,
                         WavelengthNanometers: source.Spectrum == LightSpectrumKind.Monochromatic
                             ? source.WavelengthNanometers
-                            : null);
+                            : null,
+                        ElementName: source.Name, CanRename: true);
                 }
                 var pointLightHandle = PointLightRotationHandle(source);
                 return new CanvasSelection(CanvasSelectionKind.PointLight,
@@ -1602,7 +2103,8 @@ internal sealed class SceneEditor
                     EmissionAngleDegrees: Math.Clamp(Math.Abs(source.SpreadDegrees), 1, 360),
                     WavelengthNanometers: source.Spectrum == LightSpectrumKind.Monochromatic
                         ? source.WavelengthNanometers
-                        : null);
+                        : null,
+                    ElementName: source.Name, CanRename: true);
             case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
                 var mirror = _scene.Mirrors[_selectedIndex];
                 var mirrorOrigin = (mirror.Start + mirror.End) / 2;
@@ -1610,7 +2112,8 @@ internal sealed class SceneEditor
                     mirrorOrigin.X, mirrorOrigin.Y, SegmentAngleDegrees(mirror.Start, mirror.End), null,
                     (mirror.End - mirrorOrigin).Length * 2,
                     SecondOriginX: RotationHandle(mirror.Start, mirror.End).X,
-                    SecondOriginY: RotationHandle(mirror.Start, mirror.End).Y);
+                    SecondOriginY: RotationHandle(mirror.Start, mirror.End).Y,
+                    ElementName: mirror.Name, CanRename: true);
             case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
                 _selectedIndex, _scene.ConcaveSphericalMirrorElements):
                 var sphericalMirror = _scene.ConcaveSphericalMirrorElements[_selectedIndex];
@@ -1626,7 +2129,8 @@ internal sealed class SceneEditor
                     Radius: sphericalMirror.Radius,
                     ArcAngleDegrees: sphericalMirror.ArcAngleDegrees,
                     SecondOriginX: sphericalMirror.CenterOfCurvature.X,
-                    SecondOriginY: sphericalMirror.CenterOfCurvature.Y);
+                    SecondOriginY: sphericalMirror.CenterOfCurvature.Y,
+                    ElementName: sphericalMirror.Name, CanRename: true);
             case SceneItemKind.ConvexSphericalMirror when IsValidIndex(
                 _selectedIndex, _scene.ConvexSphericalMirrorElements):
                 var convexSphericalMirror = _scene.ConvexSphericalMirrorElements[_selectedIndex];
@@ -1643,7 +2147,8 @@ internal sealed class SceneEditor
                     Radius: convexSphericalMirror.Radius,
                     ArcAngleDegrees: convexSphericalMirror.ArcAngleDegrees,
                     SecondOriginX: convexSphericalMirror.CenterOfCurvature.X,
-                    SecondOriginY: convexSphericalMirror.CenterOfCurvature.Y);
+                    SecondOriginY: convexSphericalMirror.CenterOfCurvature.Y,
+                    ElementName: convexSphericalMirror.Name, CanRename: true);
             case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
                 var beamSplitter = _scene.BeamSplitterElements[_selectedIndex];
                 var beamSplitterOrigin = (beamSplitter.Start + beamSplitter.End) / 2;
@@ -1652,7 +2157,8 @@ internal sealed class SceneEditor
                     SegmentAngleDegrees(beamSplitter.Start, beamSplitter.End), null,
                     (beamSplitter.End - beamSplitterOrigin).Length * 2,
                     SecondOriginX: RotationHandle(beamSplitter.Start, beamSplitter.End).X,
-                    SecondOriginY: RotationHandle(beamSplitter.Start, beamSplitter.End).Y);
+                    SecondOriginY: RotationHandle(beamSplitter.Start, beamSplitter.End).Y,
+                    ElementName: beamSplitter.Name, CanRename: true);
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screen = _scene.ScreenElements[_selectedIndex];
                 var screenOrigin = (screen.Start + screen.End) / 2;
@@ -1660,7 +2166,8 @@ internal sealed class SceneEditor
                     screenOrigin.X, screenOrigin.Y, SegmentAngleDegrees(screen.Start, screen.End), null,
                     (screen.End - screenOrigin).Length * 2,
                     SecondOriginX: RotationHandle(screen.Start, screen.End).X,
-                    SecondOriginY: RotationHandle(screen.Start, screen.End).Y);
+                    SecondOriginY: RotationHandle(screen.Start, screen.End).Y,
+                    ElementName: screen.Name, CanRename: true);
             case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
                 var aperture = _scene.ApertureElements[_selectedIndex];
                 var apertureOrigin = (aperture.Start + aperture.End) / 2;
@@ -1668,7 +2175,8 @@ internal sealed class SceneEditor
                     apertureOrigin.X, apertureOrigin.Y, SegmentAngleDegrees(aperture.Start, aperture.End), null,
                     (aperture.End - apertureOrigin).Length * 2, aperture.OpeningSize,
                     SecondOriginX: RotationHandle(aperture.Start, aperture.End).X,
-                    SecondOriginY: RotationHandle(aperture.Start, aperture.End).Y);
+                    SecondOriginY: RotationHandle(aperture.Start, aperture.End).Y,
+                    ElementName: aperture.Name, CanRename: true);
             case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
                 var grating = _scene.ReflectionGratingElements[_selectedIndex];
                 var gratingOrigin = (grating.Start + grating.End) / 2;
@@ -1677,7 +2185,8 @@ internal sealed class SceneEditor
                     (grating.End - gratingOrigin).Length * 2, null,
                     grating.GrooveDensityLinesPerMillimeter,
                     SecondOriginX: RotationHandle(grating.Start, grating.End).X,
-                    SecondOriginY: RotationHandle(grating.Start, grating.End).Y);
+                    SecondOriginY: RotationHandle(grating.Start, grating.End).Y,
+                    ElementName: grating.Name, CanRename: true);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;
@@ -1691,7 +2200,8 @@ internal sealed class SceneEditor
                     SecondOriginX: RotationHandle(lens.Start, lens.End).X,
                     SecondOriginY: RotationHandle(lens.Start, lens.End).Y,
                     DispersionMode: lens.DispersionMode,
-                    DispersionLevel: lens.DispersionLevel);
+                    DispersionLevel: lens.DispersionLevel,
+                    ElementName: lens.Name, CanRename: true);
             default:
                 return null;
         }
@@ -1700,13 +2210,16 @@ internal sealed class SceneEditor
 
     public void ClearSelection()
     {
-        if (_selectedKind == SceneItemKind.None && _selectedIndex < 0)
+        if (_selectedKind == SceneItemKind.None && _selectedIndex < 0 && _selectedIds.Count == 0)
         {
             return;
         }
 
         _selectedKind = SceneItemKind.None;
         _selectedIndex = -1;
+        _selectedIds.Clear();
+        _selectedGroupId = null;
+        _activeElementId = null;
         SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -1741,6 +2254,12 @@ internal sealed class SceneEditor
     {
         var normalized = degrees % 360;
         return normalized < 0 ? normalized + 360 : normalized;
+    }
+
+    private static double NormalizeSignedDegrees(double degrees)
+    {
+        var normalized = NormalizeDegrees(degrees);
+        return normalized > 180 ? normalized - 360 : normalized;
     }
 
     private void RecalculateDuringMoveIfDue()
