@@ -7,6 +7,7 @@ namespace LightDraw.Rendering.Skia.Optics;
 internal sealed class SceneEditor
 {
     private const double RotationHandleOffset = 100;
+    private const double DefaultLensFocalLength = 300;
     private OpticalScene _scene = OpticalScene.CreateEmpty();
     private double _zoom = 1;
     private SceneItemKind _movingKind;
@@ -119,7 +120,7 @@ internal sealed class SceneEditor
                 UpdateScene(_scene with
                 {
                     Lenses = [.. _scene.LensElements,
-                    new LensSegment(start, end, kind, Math.Max(50, delta.Length * 0.75))]
+                    new LensSegment(start, end, kind, DefaultLensFocalLength)]
                 });
                 break;
             default:
@@ -828,6 +829,8 @@ internal sealed class SceneEditor
     }
     public bool TryBeginMove(Vector2D world)
     {
+        var previouslySelectedKind = _selectedKind;
+        var previouslySelectedIndex = _selectedIndex;
         _movingKind = SceneItemKind.None;
         _moveDragMode = MoveDragMode.None;
         _movingIndex = -1;
@@ -958,6 +961,17 @@ internal sealed class SceneEditor
         if (_movingKind == SceneItemKind.None)
         {
             ClearSelection();
+            return false;
+        }
+
+        if (_movingKind != previouslySelectedKind || _movingIndex != previouslySelectedIndex)
+        {
+            _selectedKind = _movingKind;
+            _selectedIndex = _movingIndex;
+            _movingKind = SceneItemKind.None;
+            _movingIndex = -1;
+            _moveDragMode = MoveDragMode.None;
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
             return false;
         }
 

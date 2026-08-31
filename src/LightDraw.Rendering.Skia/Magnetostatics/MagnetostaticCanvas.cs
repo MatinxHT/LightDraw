@@ -322,7 +322,7 @@ public sealed class MagnetostaticCanvas : Control
         base.OnPointerPressed(e); Focus(); var screen = e.GetPosition(this); var props = e.GetCurrentPoint(this).Properties;
         if (props.IsRightButtonPressed || props.IsMiddleButtonPressed ||
             (_activeTool == MagnetostaticTool.Pan && props.IsLeftButtonPressed))
-        { _isPanning = true; _lastPointer = screen; e.Pointer.Capture(this); }
+            BeginPan(screen, e.Pointer);
         else if (props.IsLeftButtonPressed)
         {
             var world = ToWorld(screen); var hit = HitTest(world);
@@ -363,7 +363,9 @@ public sealed class MagnetostaticCanvas : Control
                     _loopCenter = null; SelectTool(MagnetostaticTool.Move);
                     SetSelection(MagnetostaticSelectionKind.VerticalCircularCurrentLoop,
                         _scene.VerticalLoopElements.Length - 1); break;
-                case MagnetostaticTool.Move: BeginMove(hit, world, e); break;
+                case MagnetostaticTool.Move:
+                    if (!BeginMove(hit, world, e.Pointer)) BeginPan(screen, e.Pointer);
+                    break;
                 case MagnetostaticTool.Delete when hit is { } element:
                     DeleteElement(element); SelectTool(MagnetostaticTool.Pan); break;
             }
@@ -404,11 +406,16 @@ public sealed class MagnetostaticCanvas : Control
         _conductorStart = null; _loopCenter = null; SelectTool(MagnetostaticTool.Pan); e.Handled = true;
     }
 
-    private void BeginMove(ElementHit? hit, Vector2D world, PointerPressedEventArgs e)
+    private void BeginPan(Point screen, IPointer pointer)
     {
-        if (hit is not { } element) { SetSelection(null, -1); return; }
+        _isPanning = true; _lastPointer = screen; pointer.Capture(this);
+    }
+    private bool BeginMove(ElementHit? hit, Vector2D world, IPointer pointer)
+    {
+        if (hit is not { } element) { SetSelection(null, -1); return false; }
+        var wasSelected = _selectedKind == element.Kind && _selectedIndex == element.Index;
         SetSelection(element.Kind, element.Index);
-        if (element.Mode == DragMode.Body) return;
+        if (!wasSelected || element.Mode == DragMode.Body) return true;
         _isMoving = true; _moveChanged = _moveSimulationDirty = false; _lastMoveSimulationTimestamp = 0;
         _dragStart = world; _dragMode = element.Mode;
         if (element.Kind == MagnetostaticSelectionKind.PlanarIdealConstantCurrentConductor)
@@ -428,7 +435,8 @@ public sealed class MagnetostaticCanvas : Control
             _dragOriginalVerticalLoop = _scene.VerticalLoopElements[element.Index];
             _moveOffset = _dragOriginalVerticalLoop.Center - world;
         }
-        e.Pointer.Capture(this);
+        pointer.Capture(this);
+        return true;
     }
     private void MoveSelection(MagnetostaticSelection selection, Vector2D world)
     {

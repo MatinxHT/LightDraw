@@ -109,7 +109,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     public void UpdateToolState(MagnetostaticTool tool) => StatusText = tool switch
     {
         MagnetostaticTool.Pan => "平移工具 · 按住左键拖动画布，滚轮缩放",
-        MagnetostaticTool.Move => "移动/编辑 · 拖动第一原点平移；拖动垂直圆环的第二原点旋转",
+        MagnetostaticTool.Move => "移动/编辑 · 空白处拖动画布；先单击选中，再拖动第一原点平移；第二原点旋转",
         MagnetostaticTool.Delete => "删除工具 · 单击电流导体后自动返回平移工具",
         MagnetostaticTool.PlanarIdealConstantCurrentConductor => "平面理想恒定电流导体 · 第一次点击起点，第二次点击终点",
         MagnetostaticTool.VerticalInfiniteCurrentConductor => "竖直面无限长恒定电流导体 · 在画布中单击放置",

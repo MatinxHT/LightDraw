@@ -420,7 +420,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         StatusText = tool switch
         {
             CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 仅拖动第一原点平移；拖动白点旋转；长度仅通过属性框修改",
+            CanvasTool.Move => "移动或调整元件 · 空白处拖动画布；先单击选中，再拖动第一原点平移元件；拖动白点旋转",
             CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
             _ => PlacementStatus(tool, isPlacing)
         };

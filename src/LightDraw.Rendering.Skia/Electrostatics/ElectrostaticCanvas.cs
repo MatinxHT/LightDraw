@@ -178,7 +178,7 @@ public sealed class ElectrostaticCanvas : Control
     {
         base.OnPointerPressed(e); Focus(); var screen = e.GetPosition(this); var props = e.GetCurrentPoint(this).Properties;
         if (props.IsRightButtonPressed || props.IsMiddleButtonPressed || (_activeTool == ElectrostaticTool.Pan && props.IsLeftButtonPressed))
-        { _isPanning = true; _lastPointer = screen; e.Pointer.Capture(this); }
+            BeginPan(screen, e.Pointer);
         else if (props.IsLeftButtonPressed)
         {
             var world = ToWorld(screen); var hit = HitTest(world);
@@ -192,7 +192,9 @@ public sealed class ElectrostaticCanvas : Control
                 case ElectrostaticTool.ChargedPlate when (world - _plateStart.Value).Length >= 10:
                     CommitScene(_scene with { Plates = [.. _scene.PlateElements, new ChargedPlate(_plateStart.Value, world)] });
                     _plateStart = null; SelectTool(ElectrostaticTool.Move); SetSelection(ElectrostaticSelectionKind.ChargedPlate, _scene.PlateElements.Length - 1); break;
-                case ElectrostaticTool.Move: BeginMove(hit, world, e); break;
+                case ElectrostaticTool.Move:
+                    if (!BeginMove(hit, world, e.Pointer)) BeginPan(screen, e.Pointer);
+                    break;
                 case ElectrostaticTool.Delete when hit is { } h: DeleteElement(h); SelectTool(ElectrostaticTool.Pan); break;
             }
         }
@@ -228,16 +230,22 @@ public sealed class ElectrostaticCanvas : Control
         base.OnKeyDown(e); if (e.Key != Key.Escape) return; _plateStart = null; SelectTool(ElectrostaticTool.Pan); e.Handled = true;
     }
 
-    private void BeginMove(ElementHit? hit, Vector2D world, PointerPressedEventArgs e)
+    private void BeginPan(Point screen, IPointer pointer)
     {
-        if (hit is not { } h) { SetSelection(null, -1); return; }
+        _isPanning = true; _lastPointer = screen; pointer.Capture(this);
+    }
+    private bool BeginMove(ElementHit? hit, Vector2D world, IPointer pointer)
+    {
+        if (hit is not { } h) { SetSelection(null, -1); return false; }
+        var wasSelected = _selectedKind == h.Kind && _selectedIndex == h.Index;
         SetSelection(h.Kind, h.Index);
-        if (h.Mode != DragMode.Origin) return;
+        if (!wasSelected || h.Mode != DragMode.Origin) return true;
         _isMoving = true; _moveChanged = _moveSimulationDirty = false;
         _lastMoveSimulationTimestamp = 0; _dragStart = world;
         if (h.Kind == ElectrostaticSelectionKind.PointCharge) _moveOffset = _scene.Charges[h.Index].Position - world;
         else _dragOriginalPlate = _scene.PlateElements[h.Index];
-        e.Pointer.Capture(this);
+        pointer.Capture(this);
+        return true;
     }
     private void MoveSelection(ElectrostaticSelection s, Vector2D world)
     {

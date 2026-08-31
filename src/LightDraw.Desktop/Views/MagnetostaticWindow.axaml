@@ -116,7 +116,7 @@
           <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PlanarCircularCurrentLoop}" Content="○ 平面环形恒定电流" Command="{Binding SelectToolCommand}" CommandParameter="PlanarCircularCurrentLoop" />
           <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=VerticalCircularCurrentLoop}" Content="◯ 垂直面环形恒定电流" Command="{Binding SelectToolCommand}" CommandParameter="VerticalCircularCurrentLoop" />
           <Separator Margin="0,16,0,14" />
-          <TextBlock Text="线形和环形元件均按毕奥-萨伐尔定律叠加。&#x0a;&#x0a;平面圆环：圆弧箭头逆时针为正；· / × 显示法向磁场。&#x0a;&#x0a;垂直圆环：实线半环位于绘图面以上，虚线半环位于绘图面以下；绿色曲线显示平面内磁感线。拖动白色第二原点可固定圆心旋转。&#x0a;&#x0a;负电流使方向反转。" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
+          <TextBlock Text="线形和环形元件均按毕奥-萨伐尔定律叠加。&#x0a;&#x0a;移动/编辑工具下可在空白处拖动画布；先单击元件任意位置选中，再拖动第一原点平移。&#x0a;&#x0a;平面圆环：圆弧箭头逆时针为正；· / × 显示法向磁场。&#x0a;&#x0a;垂直圆环：实线半环位于绘图面以上，虚线半环位于绘图面以下；绿色曲线显示平面内磁感线。选中后拖动白色第二原点可固定圆心旋转。&#x0a;&#x0a;负电流使方向反转。" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
         </StackPanel>
       </Grid>
     </Border>

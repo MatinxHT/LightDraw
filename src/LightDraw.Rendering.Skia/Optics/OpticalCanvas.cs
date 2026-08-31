@@ -175,14 +175,15 @@ public sealed class OpticalCanvas : Control
         if (properties.IsRightButtonPressed || properties.IsMiddleButtonPressed ||
             (_tool == CanvasTool.Pan && properties.IsLeftButtonPressed))
         {
-            _isPanning = true;
-            _lastPointer = pointerPosition;
-            e.Pointer.Capture(this);
+            BeginPan(pointerPosition, e.Pointer);
         }
         else if (_tool == CanvasTool.Move && properties.IsLeftButtonPressed)
         {
             _editor.SetZoom(_zoom);
-            if (_editor.TryBeginMove(ScreenToWorld(pointerPosition))) e.Pointer.Capture(this);
+            if (_editor.TryBeginMove(ScreenToWorld(pointerPosition)))
+                e.Pointer.Capture(this);
+            else if (_editor.Selection is null)
+                BeginPan(pointerPosition, e.Pointer);
         }
         else if (_tool == CanvasTool.Delete && properties.IsLeftButtonPressed)
         {
@@ -219,6 +220,13 @@ public sealed class OpticalCanvas : Control
         }
         InvalidateVisual();
         e.Handled = true;
+    }
+
+    private void BeginPan(Point pointerPosition, IPointer pointer)
+    {
+        _isPanning = true;
+        _lastPointer = pointerPosition;
+        pointer.Capture(this);
     }
 
     protected override void OnPointerMoved(PointerEventArgs e)

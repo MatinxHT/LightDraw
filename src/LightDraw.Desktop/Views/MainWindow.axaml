@@ -159,7 +159,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
 
 			<Separator Margin="0,16,0,14" />
-			  <TextBlock Text="第一原点：按住拖拽平移&#x0a;白色圆点：固定原点旋转&#x0a;长度：仅通过属性框修改&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			  <TextBlock Text="移动/编辑：空白处拖动画布&#x0a;元件：先单击任意位置选中&#x0a;第一原点：选中后拖拽平移&#x0a;白色圆点：选中后固定原点旋转&#x0a;长度：仅通过属性框修改&#x0a;球面镜第二原点：只旋转&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>
