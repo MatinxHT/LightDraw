@@ -14,7 +14,7 @@ public enum ElectrostaticTool { Pan, Move, Delete, PointCharge, ChargedPlate }
 public enum ElectrostaticSelectionKind { PointCharge, ChargedPlate }
 public sealed record ElectrostaticSelection(ElectrostaticSelectionKind Kind, int Index, double X, double Y,
     double? ChargeNanocoulombs = null, double? PotentialVolts = null, double? Length = null,
-    double? AngleDegrees = null);
+    double? AngleDegrees = null, string? Name = null);
 
 public sealed class ElectrostaticCanvas : Control
 {
@@ -74,7 +74,8 @@ public sealed class ElectrostaticCanvas : Control
             if (_selectedKind == ElectrostaticSelectionKind.PointCharge && IsIndex(_selectedIndex, _scene.Charges))
             {
                 var q = _scene.Charges[_selectedIndex];
-                return new(_selectedKind.Value, _selectedIndex, q.Position.X, q.Position.Y, q.ChargeNanocoulombs);
+                return new(_selectedKind.Value, _selectedIndex, q.Position.X, q.Position.Y,
+                    q.ChargeNanocoulombs, Name: q.Name);
             }
             if (_selectedKind == ElectrostaticSelectionKind.ChargedPlate && IsIndex(_selectedIndex, _scene.PlateElements))
             {
@@ -82,7 +83,8 @@ public sealed class ElectrostaticCanvas : Control
                 var center = (p.Start + p.End) / 2;
                 return new(_selectedKind.Value, _selectedIndex, center.X, center.Y, null,
                     p.PotentialVolts, (p.End - p.Start).Length,
-                    NormalizeDegrees(Math.Atan2(p.End.Y - p.Start.Y, p.End.X - p.Start.X) * 180 / Math.PI));
+                    NormalizeDegrees(Math.Atan2(p.End.Y - p.Start.Y, p.End.X - p.Start.X) * 180 / Math.PI),
+                    p.Name);
             }
             return null;
         }
@@ -97,7 +99,7 @@ public sealed class ElectrostaticCanvas : Control
     {
         ArgumentNullException.ThrowIfNull(scene);
         if (ReferenceEquals(scene, _scene)) return;
-        SetAndRaise(SceneProperty, ref _scene, scene); SetSelection(null, -1); Recalculate();
+        SetAndRaise(SceneProperty, ref _scene, NormalizeNames(scene)); SetSelection(null, -1); Recalculate();
     }
     public void SelectTool(ElectrostaticTool tool)
     {
@@ -164,6 +166,23 @@ public sealed class ElectrostaticCanvas : Control
             items[s.Index] = p with { Start = p.Start + d, End = p.End + d }; CommitScene(_scene with { Plates = items });
         }
     }
+    public void SetSelectedName(string value)
+    {
+        var name = value.Trim();
+        if (name.Length is 0 or > 120 || Selection is not { } selection) return;
+        if (selection.Kind == ElectrostaticSelectionKind.PointCharge)
+        {
+            var items = _scene.Charges.ToArray();
+            items[selection.Index] = items[selection.Index] with { Name = name };
+            CommitScene(_scene with { Charges = items });
+        }
+        else
+        {
+            var items = _scene.PlateElements.ToArray();
+            items[selection.Index] = items[selection.Index] with { Name = name };
+            CommitScene(_scene with { Plates = items });
+        }
+    }
 
     public override void Render(DrawingContext context)
     {
@@ -185,12 +204,14 @@ public sealed class ElectrostaticCanvas : Control
             switch (_activeTool)
             {
                 case ElectrostaticTool.PointCharge:
-                    CommitScene(_scene with { Charges = [.. _scene.Charges, new PointCharge(world)] });
+                    CommitScene(_scene with { Charges = [.. _scene.Charges,
+                        new PointCharge(world, Name: NextName("Point Charge"))] });
                     SelectTool(ElectrostaticTool.Move); SetSelection(ElectrostaticSelectionKind.PointCharge, _scene.Charges.Length - 1); break;
                 case ElectrostaticTool.ChargedPlate when _plateStart is null:
                     _plateStart = world; _platePreviewEnd = world; break;
                 case ElectrostaticTool.ChargedPlate when (world - _plateStart.Value).Length >= 10:
-                    CommitScene(_scene with { Plates = [.. _scene.PlateElements, new ChargedPlate(_plateStart.Value, world)] });
+                    CommitScene(_scene with { Plates = [.. _scene.PlateElements,
+                        new ChargedPlate(_plateStart.Value, world, Name: NextName("Charged Plate"))] });
                     _plateStart = null; SelectTool(ElectrostaticTool.Move); SetSelection(ElectrostaticSelectionKind.ChargedPlate, _scene.PlateElements.Length - 1); break;
                 case ElectrostaticTool.Move:
                     if (!BeginMove(hit, world, e.Pointer)) BeginPan(screen, e.Pointer);
@@ -302,6 +323,7 @@ public sealed class ElectrostaticCanvas : Control
         var pen = p.PotentialVolts > 1e-9 ? PositivePlatePen : p.PotentialVolts < -1e-9 ? NegativePlatePen : ZeroPlatePen;
         var centerWorld = (p.Start + p.End) / 2;
         c.DrawLine(pen, ToScreen(p.Start), ToScreen(p.End)); var center = ToScreen(centerWorld);
+        c.DrawText(Text(p.Name ?? string.Empty, 12), new(center.X + 7, center.Y - 39));
         c.DrawText(Text($"{p.PotentialVolts:G5} V", 11), new(center.X + 7, center.Y - 21));
         if (_activeTool == ElectrostaticTool.Move) DrawHandle(c, centerWorld);
         if (_selectedKind != ElectrostaticSelectionKind.ChargedPlate || _selectedIndex != index) return;
@@ -313,6 +335,7 @@ public sealed class ElectrostaticCanvas : Control
         var center = ToScreen(q.Position); var brush = q.ChargeNanocoulombs > 0 ? PositiveBrush : q.ChargeNanocoulombs < 0 ? NegativeBrush : NeutralBrush;
         c.DrawEllipse(brush, null, center, 12, 12); c.DrawLine(ChargeSignPen, new(center.X - 5, center.Y), new(center.X + 5, center.Y));
         if (q.ChargeNanocoulombs > 0) c.DrawLine(ChargeSignPen, new(center.X, center.Y - 5), new(center.X, center.Y + 5));
+        c.DrawText(Text(q.Name ?? string.Empty, 12), new(center.X + 16, center.Y - 20));
         if (_selectedKind == ElectrostaticSelectionKind.PointCharge && _selectedIndex == index) c.DrawEllipse(null, SelectionPen, center, 17, 17);
     }
 
@@ -340,6 +363,29 @@ public sealed class ElectrostaticCanvas : Control
     { if (_selectedKind == kind && _selectedIndex == index) return; _selectedKind = kind; _selectedIndex = index; SelectionChanged?.Invoke(this, EventArgs.Empty); InvalidateVisual(); }
     private void CommitScene(ElectrostaticScene scene)
     { SetAndRaise(SceneProperty, ref _scene, scene); Recalculate(); SceneChanged?.Invoke(this, EventArgs.Empty); SelectionChanged?.Invoke(this, EventArgs.Empty); }
+    private static ElectrostaticScene NormalizeNames(ElectrostaticScene scene) => scene with
+    {
+        Charges = (scene.Charges ?? []).Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Point Charge {index + 1}" : item.Name.Trim()
+        }).ToArray(),
+        Plates = scene.PlateElements.Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Charged Plate {index + 1}" : item.Name.Trim()
+        }).ToArray()
+    };
+    private string NextName(string baseName)
+    {
+        var names = _scene.Charges.Select(item => item.Name)
+            .Concat(_scene.PlateElements.Select(item => item.Name))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (var number = 1; ; number++)
+        {
+            var candidate = $"{baseName} {number}";
+            if (!names.Contains(candidate)) return candidate;
+        }
+    }
     private void Recalculate()
     { _result = _simulator.Simulate(_scene, new(_linesPerCharge)); SimulationCompleted?.Invoke(this, EventArgs.Empty); InvalidateVisual(); }
     private void RecalculateDuringMoveIfDue()

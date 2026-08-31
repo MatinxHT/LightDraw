@@ -16,6 +16,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     [ObservableProperty] private bool _hasSelectedPlate;
     [ObservableProperty] private bool _hasSelection;
     [ObservableProperty] private string _selectedElementName = "未选择元件";
+    [ObservableProperty] private string _selectedElementTitle = string.Empty;
     [ObservableProperty] private decimal _selectedCharge = 1;
     [ObservableProperty] private decimal _selectedPotential;
     [ObservableProperty] private decimal _selectedPlateLength = 100;
@@ -32,6 +33,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     public event Action<double>? SetSelectedPlateLengthRequested;
     public event Action<double>? SetSelectedPlateAngleRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
+    public event Action<string>? SetSelectedNameRequested;
 
     partial void OnLinesPerChargeChanged(int value)
     {
@@ -92,6 +94,11 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
 
     partial void OnSelectedOriginXChanged(decimal value) => ApplyOrigin(value, SelectedOriginY);
     partial void OnSelectedOriginYChanged(decimal value) => ApplyOrigin(SelectedOriginX, value);
+    partial void OnSelectedElementTitleChanged(string value)
+    {
+        if (!_updatingSelection && HasSelection && !string.IsNullOrWhiteSpace(value) && value.Length <= 120)
+            SetSelectedNameRequested?.Invoke(value);
+    }
 
     [RelayCommand]
     private void SelectTool(string? value)
@@ -139,6 +146,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
                 selection.Kind == ElectrostaticSelectionKind.PointCharge
                     ? $"点电荷 #{selection.Index + 1}"
                     : $"带电平板 #{selection.Index + 1}";
+            SelectedElementTitle = selection?.Name ?? string.Empty;
             if (selection is not null)
             {
                 if (selection.ChargeNanocoulombs is { } charge) SelectedCharge = (decimal)charge;

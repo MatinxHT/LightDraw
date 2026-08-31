@@ -222,14 +222,32 @@ public sealed class MagnetostaticSimulator
         // of an ideal infinitely long straight conductor.
         var firstRadius = options.FirstFieldLineRadius;
         var outerRadius = 2 * (firstRadius + (baseCount - 1) * options.FieldLineRadiusStep);
-        var activeConductors = conductors.Where(conductor => Math.Abs(conductor.CurrentAmperes) > 1e-12).ToArray();
-        var activeLoops = loops.Where(loop => Math.Abs(loop.CurrentAmperes) > 1e-12 && loop.Radius > 1e-6).ToArray();
+        var activeConductors = conductors.Where(conductor => Math.Abs(conductor.CurrentAmperes) > 1e-12)
+            .OrderBy(conductor => conductor.Position.X)
+            .ThenBy(conductor => conductor.Position.Y)
+            .ThenBy(conductor => conductor.CurrentAmperes)
+            .ToArray();
+        var activeLoops = loops.Where(loop => Math.Abs(loop.CurrentAmperes) > 1e-12 && loop.Radius > 1e-6)
+            .OrderBy(loop => loop.Center.X)
+            .ThenBy(loop => loop.Center.Y)
+            .ThenBy(loop => loop.AngleDegrees)
+            .ThenBy(loop => loop.Radius)
+            .ThenBy(loop => loop.CurrentAmperes)
+            .ToArray();
         if (activeConductors.Length == 0 && activeLoops.Length == 0) return lines;
         var sourceCenters = activeConductors.Select(conductor => conductor.Position)
             .Concat(activeLoops.Select(loop => loop.Center)).ToArray();
         var sceneCenter = sourceCenters.Aggregate(Vector2D.Zero, (sum, center) => sum + center) / sourceCenters.Length;
         var sceneRadius = sourceCenters.Max(center => (center - sceneCenter).Length);
         var maximumDistance = sceneRadius + outerRadius * 4;
+
+        if (activeLoops.Length == 0)
+        {
+            var contourTracer = new MagneticFieldContourTracer();
+            var contourDistance = sceneRadius + outerRadius * 2;
+            return contourTracer.Trace(activeConductors, sceneCenter, contourDistance, density, options,
+                point => MagneticFieldInPlaneAt(point, activeConductors, [], options));
+        }
 
         for (var conductorIndex = 0; conductorIndex < activeConductors.Length; conductorIndex++)
         {
@@ -241,7 +259,10 @@ public sealed class MagnetostaticSimulator
             {
                 var ratio = count == 1 ? 0 : (double)lineIndex / (count - 1);
                 var radius = firstRadius * Math.Pow(outerRadius / firstRadius, ratio);
-                var seedAngle = 2 * Math.PI * ((conductorIndex * 0.61803398875) % 1);
+                var outward = conductor.Position - sceneCenter;
+                var seedAngle = outward.LengthSquared > 1e-12
+                    ? Math.Atan2(outward.Y, outward.X)
+                    : 0;
                 var seed = FindClearSeed(conductor.Position, radius, seedAngle,
                     activeConductors, activeLoops, options.CoreRadius);
                 var line = TraceSuperposedFieldLine(seed, sceneCenter, maximumDistance,
@@ -263,7 +284,7 @@ public sealed class MagnetostaticSimulator
                 // requested closed/diverging field-line presentation.
                 var fraction = count == 1 ? 0 : (double)lineIndex / (count - 1);
                 var signedOffset = (fraction * 2 - 1) * loop.Radius * 0.82;
-                var bias = normal * (options.CoreRadius * (1.5 + loopIndex * 0.15));
+                var bias = normal * (options.CoreRadius * 1.5);
                 var seed = loop.Center + axis * signedOffset + bias;
                 var line = TraceSuperposedFieldLine(seed, sceneCenter, maximumDistance,
                     activeConductors, activeLoops, options);

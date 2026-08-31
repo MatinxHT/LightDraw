@@ -17,6 +17,7 @@ public sealed partial class MagnetostaticWindow : Window
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
         _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
+        _viewModel.SetSelectedNameRequested += OnSetSelectedNameRequested;
         Canvas.SceneChanged += OnSceneChanged;
         Canvas.SimulationCompleted += OnSimulationCompleted;
         Canvas.ToolStateChanged += OnToolStateChanged;
@@ -34,6 +35,7 @@ public sealed partial class MagnetostaticWindow : Window
         _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
         _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
         _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
+        _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
         Canvas.SceneChanged -= OnSceneChanged;
         Canvas.SimulationCompleted -= OnSimulationCompleted;
         Canvas.ToolStateChanged -= OnToolStateChanged;
@@ -48,6 +50,7 @@ public sealed partial class MagnetostaticWindow : Window
     private void OnSetSelectedAngleRequested(double value) => Canvas.SetSelectedAngle(value);
     private void OnSetSelectedOriginRequested(double x, double y) => Canvas.SetSelectedOrigin(x, y);
     private void OnSetSelectedSecondOriginRequested(double x, double y) => Canvas.SetSelectedSecondOrigin(x, y);
+    private void OnSetSelectedNameRequested(string name) => Canvas.SetSelectedName(name);
     private void OnSceneChanged(object? sender, EventArgs e) => _viewModel.CurrentScene = Canvas.Scene;
     private void OnSimulationCompleted(object? sender, EventArgs e) => _viewModel.UpdateSimulation(Canvas.SimulationResult);
     private void OnToolStateChanged(object? sender, EventArgs e) => _viewModel.UpdateToolState(Canvas.ActiveTool);

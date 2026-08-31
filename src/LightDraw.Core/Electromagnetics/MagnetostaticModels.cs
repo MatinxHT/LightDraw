@@ -9,16 +9,19 @@ namespace LightDraw.Core.Electromagnetics;
 public sealed record PlanarIdealConstantCurrentConductor(
     Vector2D Start,
     Vector2D End,
-    double CurrentAmperes = 1);
+    double CurrentAmperes = 1,
+    string? Name = null);
 
 /// <summary>An ideal infinitely long conductor perpendicular to the drawing plane.</summary>
-public sealed record VerticalInfiniteCurrentConductor(Vector2D Position, double CurrentAmperes = 1);
+public sealed record VerticalInfiniteCurrentConductor(Vector2D Position, double CurrentAmperes = 1,
+    string? Name = null);
 
 /// <summary>An ideal circular current loop lying in the drawing plane.</summary>
 public sealed record PlanarCircularCurrentLoop(
     Vector2D Center,
     double Radius = 80,
-    double CurrentAmperes = 1);
+    double CurrentAmperes = 1,
+    string? Name = null);
 
 /// <summary>
 /// An ideal circular current loop in a plane perpendicular to the drawing plane. Angle identifies
@@ -28,7 +31,8 @@ public sealed record VerticalCircularCurrentLoop(
     Vector2D Center,
     double Radius = 80,
     double AngleDegrees = 0,
-    double CurrentAmperes = 1);
+    double CurrentAmperes = 1,
+    string? Name = null);
 
 public sealed record MagnetostaticScene(
     string Name,

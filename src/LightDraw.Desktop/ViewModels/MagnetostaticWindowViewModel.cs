@@ -18,6 +18,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     [ObservableProperty] private bool _hasSelectedLoop;
     [ObservableProperty] private bool _hasSelectedSecondOrigin;
     [ObservableProperty] private string _selectedElementName = "未选择元件";
+    [ObservableProperty] private string _selectedElementTitle = string.Empty;
     [ObservableProperty] private decimal _selectedCurrent = 1;
     [ObservableProperty] private decimal _selectedLength = 100;
     [ObservableProperty] private decimal _selectedRadius = 80;
@@ -37,6 +38,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
     public event Action<double, double>? SetSelectedSecondOriginRequested;
+    public event Action<string>? SetSelectedNameRequested;
 
     partial void OnMarkerDensityChanged(int value)
     {
@@ -81,6 +83,11 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     partial void OnSelectedOriginYChanged(decimal value) => ApplyOrigin(SelectedOriginX, value);
     partial void OnSelectedSecondOriginXChanged(decimal value) => ApplySecondOrigin(value, SelectedSecondOriginY);
     partial void OnSelectedSecondOriginYChanged(decimal value) => ApplySecondOrigin(SelectedSecondOriginX, value);
+    partial void OnSelectedElementTitleChanged(string value)
+    {
+        if (!_updatingSelection && HasSelection && !string.IsNullOrWhiteSpace(value) && value.Length <= 120)
+            SetSelectedNameRequested?.Invoke(value);
+    }
 
     [RelayCommand]
     private void RotateSelected(string? direction)
@@ -141,6 +148,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
                     $"平面环形恒定电流 #{selection.Index + 1}",
                 _ => $"垂直面环形恒定电流 #{selection.Index + 1}"
             };
+            SelectedElementTitle = selection?.Name ?? string.Empty;
             if (selection is null) return;
             SelectedCurrent = (decimal)selection.CurrentAmperes;
             if (selection.Length is { } length) SelectedLength = (decimal)length;

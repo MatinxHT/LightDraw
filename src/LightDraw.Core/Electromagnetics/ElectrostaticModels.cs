@@ -3,10 +3,10 @@ using LightDraw.Core.Geometry;
 namespace LightDraw.Core.Electromagnetics;
 
 /// <summary>A point charge in vacuum. Charge is expressed in nanocoulombs for convenient classroom input.</summary>
-public sealed record PointCharge(Vector2D Position, double ChargeNanocoulombs = 1);
+public sealed record PointCharge(Vector2D Position, double ChargeNanocoulombs = 1, string? Name = null);
 
 /// <summary>A finite conducting plate held at a prescribed potential relative to infinity.</summary>
-public sealed record ChargedPlate(Vector2D Start, Vector2D End, double PotentialVolts = 0);
+public sealed record ChargedPlate(Vector2D Start, Vector2D End, double PotentialVolts = 0, string? Name = null);
 
 public sealed record ElectrostaticScene(string Name, PointCharge[] Charges, ChargedPlate[]? Plates = null)
 {

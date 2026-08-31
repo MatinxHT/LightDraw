@@ -44,10 +44,19 @@
     </Border>
 
     <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
-      <Grid RowDefinitions="Auto,Auto">
+      <Grid RowDefinitions="Auto,Auto,Auto">
         <WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-          <TextBlock Text="几何约束" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+          <TextBlock Text="元件属性" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
           <TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" Margin="0,2,18,2" />
+          <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
+            <TextBlock Text="名称" Foreground="#9EB0CA" VerticalAlignment="Center" />
+            <TextBox Width="220" MaxLength="120" PlaceholderText="Element name"
+                     Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+          </StackPanel>
+        </WrapPanel>
+        <Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+          <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <TextBlock Text="几何关系" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
           <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
           <TextBlock Text="中心" Foreground="#9EB0CA" VerticalAlignment="Center" />
           <TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -73,8 +82,9 @@
               <ComboBoxItem Content="270°" />
             </ComboBox>
           </StackPanel>
-        </WrapPanel>
-        <Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+          </WrapPanel>
+        </Border>
+        <Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
           <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock Text="元件参数" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedPlate}" Margin="0,2,18,2">

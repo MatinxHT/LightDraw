@@ -37,7 +37,8 @@ public sealed record MagnetostaticSelection(
     double? AngleDegrees = null,
     double? Radius = null,
     double? SecondOriginX = null,
-    double? SecondOriginY = null);
+    double? SecondOriginY = null,
+    string? Name = null);
 
 public sealed class MagnetostaticCanvas : Control
 {
@@ -109,21 +110,21 @@ public sealed class MagnetostaticCanvas : Control
                 return new(_selectedKind.Value, _selectedIndex, center.X, center.Y, conductor.CurrentAmperes,
                     (conductor.End - conductor.Start).Length,
                     NormalizeDegrees(Math.Atan2(conductor.End.Y - conductor.Start.Y,
-                        conductor.End.X - conductor.Start.X) * 180 / Math.PI));
+                        conductor.End.X - conductor.Start.X) * 180 / Math.PI), Name: conductor.Name);
             }
             if (_selectedKind == MagnetostaticSelectionKind.VerticalInfiniteCurrentConductor &&
                 IsIndex(_selectedIndex, _scene.VerticalConductorElements))
             {
                 var conductor = _scene.VerticalConductorElements[_selectedIndex];
                 return new(_selectedKind.Value, _selectedIndex, conductor.Position.X, conductor.Position.Y,
-                    conductor.CurrentAmperes);
+                    conductor.CurrentAmperes, Name: conductor.Name);
             }
             if (_selectedKind == MagnetostaticSelectionKind.PlanarCircularCurrentLoop &&
                 IsIndex(_selectedIndex, _scene.PlanarLoopElements))
             {
                 var loop = _scene.PlanarLoopElements[_selectedIndex];
                 return new(_selectedKind.Value, _selectedIndex, loop.Center.X, loop.Center.Y,
-                    loop.CurrentAmperes, Radius: loop.Radius);
+                    loop.CurrentAmperes, Radius: loop.Radius, Name: loop.Name);
             }
             if (_selectedKind == MagnetostaticSelectionKind.VerticalCircularCurrentLoop &&
                 IsIndex(_selectedIndex, _scene.VerticalLoopElements))
@@ -132,7 +133,7 @@ public sealed class MagnetostaticCanvas : Control
                 var secondOrigin = VerticalLoopRotationHandle(loop);
                 return new(_selectedKind.Value, _selectedIndex, loop.Center.X, loop.Center.Y,
                     loop.CurrentAmperes, AngleDegrees: NormalizeDegrees(loop.AngleDegrees), Radius: loop.Radius,
-                    SecondOriginX: secondOrigin.X, SecondOriginY: secondOrigin.Y);
+                    SecondOriginX: secondOrigin.X, SecondOriginY: secondOrigin.Y, Name: loop.Name);
             }
             return null;
         }
@@ -147,7 +148,7 @@ public sealed class MagnetostaticCanvas : Control
     {
         ArgumentNullException.ThrowIfNull(scene);
         if (ReferenceEquals(scene, _scene)) return;
-        SetAndRaise(SceneProperty, ref _scene, scene); SetSelection(null, -1); Recalculate();
+        SetAndRaise(SceneProperty, ref _scene, NormalizeNames(scene)); SetSelection(null, -1); Recalculate();
     }
     public void SelectTool(MagnetostaticTool tool)
     {
@@ -285,6 +286,34 @@ public sealed class MagnetostaticCanvas : Control
             CommitScene(_scene with { VerticalLoops = items });
         }
     }
+    public void SetSelectedName(string value)
+    {
+        var name = value.Trim();
+        if (name.Length is 0 or > 120 || Selection is not { } selection) return;
+        switch (selection.Kind)
+        {
+            case MagnetostaticSelectionKind.PlanarIdealConstantCurrentConductor:
+                var conductors = _scene.Conductors.ToArray();
+                conductors[selection.Index] = conductors[selection.Index] with { Name = name };
+                CommitScene(_scene with { Conductors = conductors });
+                break;
+            case MagnetostaticSelectionKind.VerticalInfiniteCurrentConductor:
+                var verticalConductors = _scene.VerticalConductorElements.ToArray();
+                verticalConductors[selection.Index] = verticalConductors[selection.Index] with { Name = name };
+                CommitScene(_scene with { VerticalConductors = verticalConductors });
+                break;
+            case MagnetostaticSelectionKind.PlanarCircularCurrentLoop:
+                var planarLoops = _scene.PlanarLoopElements.ToArray();
+                planarLoops[selection.Index] = planarLoops[selection.Index] with { Name = name };
+                CommitScene(_scene with { PlanarLoops = planarLoops });
+                break;
+            case MagnetostaticSelectionKind.VerticalCircularCurrentLoop:
+                var verticalLoops = _scene.VerticalLoopElements.ToArray();
+                verticalLoops[selection.Index] = verticalLoops[selection.Index] with { Name = name };
+                CommitScene(_scene with { VerticalLoops = verticalLoops });
+                break;
+        }
+    }
 
     public override void Render(DrawingContext context)
     {
@@ -331,13 +360,15 @@ public sealed class MagnetostaticCanvas : Control
                 case MagnetostaticTool.PlanarIdealConstantCurrentConductor when _conductorStart is null:
                     _conductorStart = world; _conductorPreviewEnd = world; break;
                 case MagnetostaticTool.PlanarIdealConstantCurrentConductor when (world - _conductorStart.Value).Length >= 10:
-                    CommitScene(_scene with { Conductors = [.. _scene.Conductors, new(_conductorStart.Value, world)] });
+                    CommitScene(_scene with { Conductors = [.. _scene.Conductors,
+                        new(_conductorStart.Value, world, Name: NextName("Planar Conductor"))] });
                     _conductorStart = null; SelectTool(MagnetostaticTool.Move);
                     SetSelection(MagnetostaticSelectionKind.PlanarIdealConstantCurrentConductor, _scene.Conductors.Length - 1); break;
                 case MagnetostaticTool.VerticalInfiniteCurrentConductor:
                     CommitScene(_scene with
                     {
-                        VerticalConductors = [.. _scene.VerticalConductorElements, new VerticalInfiniteCurrentConductor(world)]
+                        VerticalConductors = [.. _scene.VerticalConductorElements,
+                            new VerticalInfiniteCurrentConductor(world, Name: NextName("Vertical Conductor"))]
                     });
                     SelectTool(MagnetostaticTool.Move);
                     SetSelection(MagnetostaticSelectionKind.VerticalInfiniteCurrentConductor,
@@ -349,7 +380,8 @@ public sealed class MagnetostaticCanvas : Control
                     CommitScene(_scene with
                     {
                         PlanarLoops = [.. _scene.PlanarLoopElements,
-                            new PlanarCircularCurrentLoop(_loopCenter.Value, (world - _loopCenter.Value).Length)]
+                            new PlanarCircularCurrentLoop(_loopCenter.Value, (world - _loopCenter.Value).Length,
+                                Name: NextName("Planar Current Loop"))]
                     });
                     _loopCenter = null; SelectTool(MagnetostaticTool.Move);
                     SetSelection(MagnetostaticSelectionKind.PlanarCircularCurrentLoop,
@@ -358,7 +390,8 @@ public sealed class MagnetostaticCanvas : Control
                     CommitScene(_scene with
                     {
                         VerticalLoops = [.. _scene.VerticalLoopElements,
-                            new VerticalCircularCurrentLoop(_loopCenter.Value, (world - _loopCenter.Value).Length)]
+                            new VerticalCircularCurrentLoop(_loopCenter.Value, (world - _loopCenter.Value).Length,
+                                Name: NextName("Vertical Current Loop"))]
                     });
                     _loopCenter = null; SelectTool(MagnetostaticTool.Move);
                     SetSelection(MagnetostaticSelectionKind.VerticalCircularCurrentLoop,
@@ -548,6 +581,7 @@ public sealed class MagnetostaticCanvas : Control
         if (Math.Abs(conductor.CurrentAmperes) > 1e-12)
             DrawArrowHead(context, pen, center, currentDirection, 11, 5);
         var centerScreen = ToScreen(center);
+        context.DrawText(Text(conductor.Name ?? string.Empty, 12), new(centerScreen.X + 8, centerScreen.Y - 40));
         context.DrawText(Text($"I = {conductor.CurrentAmperes:G5} A", 11), new(centerScreen.X + 8, centerScreen.Y - 22));
         if (_activeTool == MagnetostaticTool.Move) DrawHandle(context, center);
         if (_selectedKind == MagnetostaticSelectionKind.PlanarIdealConstantCurrentConductor && _selectedIndex == index)
@@ -568,6 +602,7 @@ public sealed class MagnetostaticCanvas : Control
         }
         else
             context.DrawLine(SelectionPen, new(center.X - 5, center.Y), new(center.X + 5, center.Y));
+        context.DrawText(Text(conductor.Name ?? string.Empty, 12), new(center.X + 16, center.Y - 38));
         context.DrawText(Text($"I = {conductor.CurrentAmperes:G5} A", 11), new(center.X + 16, center.Y - 20));
         if (_selectedKind == MagnetostaticSelectionKind.VerticalInfiniteCurrentConductor && _selectedIndex == index)
             context.DrawEllipse(null, SelectionPen, center, 17, 17);
@@ -583,6 +618,8 @@ public sealed class MagnetostaticCanvas : Control
             var direction = radial.Perpendicular() * Math.Sign(loop.CurrentAmperes);
             DrawArrowHead(context, pen, loop.Center + radial * loop.Radius, direction, 11, 5);
         }
+        context.DrawText(Text(loop.Name ?? string.Empty, 12),
+            new(center.X - loop.Radius * _zoom, center.Y - loop.Radius * _zoom - 22));
         context.DrawText(Text($"I = {loop.CurrentAmperes:G5} A", 11), new(center.X + 10, center.Y - 20));
         if (_activeTool == MagnetostaticTool.Move) DrawHandle(context, loop.Center);
         if (_selectedKind == MagnetostaticSelectionKind.PlanarCircularCurrentLoop && _selectedIndex == index)
@@ -604,6 +641,8 @@ public sealed class MagnetostaticCanvas : Control
             DrawArrowHead(context, pen, point, tangent.Normalized() * Math.Sign(loop.CurrentAmperes), 11, 5);
         }
         var center = ToScreen(loop.Center);
+        context.DrawText(Text(loop.Name ?? string.Empty, 12),
+            new(center.X - loop.Radius * _zoom, center.Y - loop.Radius * .38 * _zoom - 22));
         context.DrawText(Text($"I = {loop.CurrentAmperes:G5} A", 11), new(center.X + 10, center.Y - 20));
         if (_activeTool == MagnetostaticTool.Move)
         {
@@ -723,6 +762,39 @@ public sealed class MagnetostaticCanvas : Control
     {
         SetAndRaise(SceneProperty, ref _scene, scene); Recalculate();
         SceneChanged?.Invoke(this, EventArgs.Empty); SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+    private static MagnetostaticScene NormalizeNames(MagnetostaticScene scene) => scene with
+    {
+        Conductors = (scene.Conductors ?? []).Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Planar Conductor {index + 1}" : item.Name.Trim()
+        }).ToArray(),
+        VerticalConductors = scene.VerticalConductorElements.Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Vertical Conductor {index + 1}" : item.Name.Trim()
+        }).ToArray(),
+        PlanarLoops = scene.PlanarLoopElements.Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Planar Current Loop {index + 1}" : item.Name.Trim()
+        }).ToArray(),
+        VerticalLoops = scene.VerticalLoopElements.Select((item, index) => item with
+        {
+            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Vertical Current Loop {index + 1}" : item.Name.Trim()
+        }).ToArray()
+    };
+    private string NextName(string baseName)
+    {
+        var names = _scene.Conductors.Select(item => item.Name)
+            .Concat(_scene.VerticalConductorElements.Select(item => item.Name))
+            .Concat(_scene.PlanarLoopElements.Select(item => item.Name))
+            .Concat(_scene.VerticalLoopElements.Select(item => item.Name))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (var number = 1; ; number++)
+        {
+            var candidate = $"{baseName} {number}";
+            if (!names.Contains(candidate)) return candidate;
+        }
     }
     private void Recalculate()
     {
