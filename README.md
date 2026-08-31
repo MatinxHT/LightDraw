@@ -28,6 +28,7 @@
 当前版本适合开发预览、课堂概念演示和技术验证，尚不建议用于精密工程计算或对数值误差敏感的科研工作。
 
 ![optics](./assets/app-store/optics.png)
+![optics2](./assets/app-store/optics2.png)
 ![eletrostatic](./assets/app-store/eletrostatic.png)
 ![magnetostatic](./assets/app-store/magnetostatic.png)
 
