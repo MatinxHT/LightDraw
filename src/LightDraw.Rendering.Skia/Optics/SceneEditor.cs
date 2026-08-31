@@ -165,7 +165,13 @@ internal sealed class SceneEditor
         Mirrors = scene.Mirrors ?? [],
         ConcaveSphericalMirrors = scene.ConcaveSphericalMirrorElements,
         ConvexSphericalMirrors = scene.ConvexSphericalMirrorElements,
-        Lenses = scene.LensElements,
+        Lenses = scene.LensElements.Select(lens => lens with
+        {
+            DispersionMode = Enum.IsDefined(lens.DispersionMode)
+                ? lens.DispersionMode
+                : LensDispersionMode.None,
+            DispersionLevel = Math.Clamp(lens.DispersionLevel, 0, 10)
+        }).ToArray(),
         Screens = scene.ScreenElements,
         Apertures = scene.ApertureElements,
         ReflectionGratings = scene.ReflectionGratingElements,
@@ -528,6 +534,39 @@ internal sealed class SceneEditor
 
         gratings[_selectedIndex] = grating with { GrooveDensityLinesPerMillimeter = clamped };
         UpdateScene(_scene with { ReflectionGratings = gratings });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedLensDispersionMode(LensDispersionMode mode)
+    {
+        if (!Enum.IsDefined(mode) || _selectedKind != SceneItemKind.Lens ||
+            !IsValidIndex(_selectedIndex, _scene.LensElements))
+        {
+            return;
+        }
+
+        var lenses = (LensSegment[])_scene.LensElements.Clone();
+        var lens = lenses[_selectedIndex];
+        if (lens.DispersionMode == mode) return;
+        lenses[_selectedIndex] = lens with { DispersionMode = mode };
+        UpdateScene(_scene with { Lenses = lenses });
+        CommitSelectedEdit();
+    }
+
+    public void SetSelectedLensDispersionLevel(int level)
+    {
+        if (_selectedKind != SceneItemKind.Lens ||
+            !IsValidIndex(_selectedIndex, _scene.LensElements))
+        {
+            return;
+        }
+
+        var clamped = Math.Clamp(level, 0, 10);
+        var lenses = (LensSegment[])_scene.LensElements.Clone();
+        var lens = lenses[_selectedIndex];
+        if (lens.DispersionLevel == clamped) return;
+        lenses[_selectedIndex] = lens with { DispersionLevel = clamped };
+        UpdateScene(_scene with { Lenses = lenses });
         CommitSelectedEdit();
     }
 
@@ -1650,7 +1689,9 @@ internal sealed class SceneEditor
                     lensOrigin.X, lensOrigin.Y, SegmentAngleDegrees(lens.Start, lens.End), lens.FocalLength,
                     (lens.End - lensOrigin).Length * 2,
                     SecondOriginX: RotationHandle(lens.Start, lens.End).X,
-                    SecondOriginY: RotationHandle(lens.Start, lens.End).Y);
+                    SecondOriginY: RotationHandle(lens.Start, lens.End).Y,
+                    DispersionMode: lens.DispersionMode,
+                    DispersionLevel: lens.DispersionLevel);
             default:
                 return null;
         }

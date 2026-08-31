@@ -112,9 +112,22 @@
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
-			  <TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="球面镜焦距始终等于半径的一半" />
+			  <TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="透镜以 550 nm 绿光焦距为基准；球面镜焦距始终等于半径的一半" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			</StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}">
+			  <TextBlock Text="色散" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="正常色散：蓝光焦距短、红光焦距长；反常色散则相反" />
+			  <ComboBox Width="108" SelectedIndex="{Binding SelectedLensDispersionModeIndex, Mode=TwoWay}">
+				<ComboBoxItem Content="理想（无色散）" />
+				<ComboBoxItem Content="正常色散" />
+				<ComboBoxItem Content="反常色散" />
+			  </ComboBox>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}" IsEnabled="{Binding HasSelectedDispersiveLens}">
+			  <TextBlock Text="色散等级" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="范围 0～10；每级使 450/650 nm 焦距相对 550 nm 基准变化 5%" />
+			  <TextBox Width="48" HorizontalContentAlignment="Right" Text="{Binding SelectedLensDispersionLevel, Mode=TwoWay}" />
+			  <TextBlock Text="0–10" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
 			  <TextBlock Text="半径" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="曲率半径；修改后焦距自动更新为 R/2" />
@@ -147,8 +160,8 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositePointLight}" Content="◉ 复色点光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositePointLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositeParallelLight}" Content="▤ 复色平行光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositeParallelLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
 			<TextBlock Text="透镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" ToolTip.Tip="默认焦距 300 mm、理想无色散；选中后可设置色散模式和等级" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" ToolTip.Tip="默认焦距 300 mm、理想无色散；选中后可设置色散模式和等级" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="┃ ┃ 光阑" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
 			<TextBlock Text="反射镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />

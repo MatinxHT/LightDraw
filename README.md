@@ -80,11 +80,11 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 
 ## 场景文件格式
 
-场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `10`，并可继续读取版本 `1`～`9`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
+场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `11`，并可继续读取版本 `1`～`10`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
 
 ```json
 {
-  "dataVersion": 10,
+  "dataVersion": 11,
   "scene": {
     "name": "双镜面反射演示",
     "lightSources": [
@@ -135,6 +135,16 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
         "openingSize": 60
       }
     ],
+    "lenses": [
+      {
+        "start": { "x": 210, "y": -120 },
+        "end": { "x": 210, "y": 120 },
+        "kind": "convex",
+        "focalLength": 300,
+        "dispersionMode": "normal",
+        "dispersionLevel": 5
+      }
+    ],
     "reflectionGratings": [
       {
         "start": { "x": 240, "y": -170 },
@@ -163,7 +173,9 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 - `screens[].start/end`：有限线段光屏的两个端点；命中光屏后光线立即终止传播。
 - `apertures[].start/end`：光阑外部线段的两个端点；`openingSize` 为中央通孔大小。
 - `reflectionGratings[].start/end`：反射光栅的两个端点；`grooveDensityLinesPerMillimeter` 为刻线密度（线/mm）。
-- `lenses[].start/end`：理想薄透镜的两个端点，另含 `kind` 与 `focalLength`；新建凸、凹透镜的默认焦距均为 300 mm，聚散性质由 `kind` 决定。
+- `lenses[].start/end`：薄透镜的两个端点，另含 `kind` 与 `focalLength`；新建凸、凹透镜的默认基准焦距均为 300 mm，聚散性质由 `kind` 决定。`dispersionMode` 可取 `none`、`normal`、`anomalous`，分别表示理想无色散、正常色散和反常色散；`dispersionLevel` 范围为 0～10，默认 5，仅在色散模式下生效。旧场景缺少这两个字段时迁移为 `none` 和 `5`。
+
+色散透镜以 550 nm 绿光焦距为 `f₀`。令 `t = clamp((λ - 550) / 100, -1, 1)`、`s = dispersionLevel × 0.05`，正常色散使用 `f(λ) = f₀ × (1 + st)`，反常色散使用 `f(λ) = f₀ × (1 - st)`。因此正常色散下蓝光焦距较短、红光焦距较长，反常色散则相反。等级 5、基准焦距 300 mm 时，正常色散的 450/550/650 nm 焦距分别为 225/300/375 mm。复色光第一次命中色散透镜时拆分为三个等强分量，后续透镜按各分量波长继续计算，不会重复拆分。
 
 反射光栅采用切向波矢形式的光栅方程。计算时先将波长从纳米换算为毫米：`λ(mm) = λ(nm) × 10⁻⁶`，再按 `sin βₘ = sin α + mλ/d` 求可传播级次，其中 `d` 为光栅常数。仅追踪 0、±1、±2、±3 级。单色光始终使用用户设置的真实波长计算衍射角；绘制颜色则与参考表做绝对差最小匹配：390 nm 紫色、450 nm 蓝色、550 nm 绿色、580 nm 黄色、650 nm 红色，因此默认 580 nm 显示为黄色。若目标波长恰好位于两个参考值的中点，则以黄色 580 nm 为系统重心，选择两个候选颜色中更靠近 580 nm 的一侧。复色光在分光前以黄色绘制，其无色散的 0 级也保留为一条黄色混合光；只有 ±1、±2、±3 级会将固定的 450、550、650 nm 分量分别以蓝、绿、红色绘制，并按各自波长计算色散角。三个分量的初始强度比为 1:1:1；0 级光强为入射混合光的 90%，+1 与 -1 级的各波长分量为对应入射分量的 50%，+2 与 -2 级各为 25%，+3 与 -3 级各为 10%。另设全场景线段数量上限以控制交互性能。
 

@@ -46,6 +46,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedLens;
 
     [ObservableProperty]
+    private bool _hasSelectedThinLens;
+
+    [ObservableProperty]
+    private bool _hasSelectedDispersiveLens;
+
+    [ObservableProperty]
     private bool _hasSelectedSphericalMirror;
 
     [ObservableProperty]
@@ -68,6 +74,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private decimal _selectedFocalLength = 100;
+
+    [ObservableProperty]
+    private int _selectedLensDispersionModeIndex;
+
+    [ObservableProperty]
+    private int _selectedLensDispersionLevel = 5;
 
     [ObservableProperty]
     private decimal _selectedSphericalMirrorRadius = 200;
@@ -118,6 +130,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? RotateSelectedRequested;
     public event Action<double>? SetSelectedAngleRequested;
     public event Action<double>? SetSelectedFocalLengthRequested;
+    public event Action<LensDispersionMode>? SetSelectedLensDispersionModeRequested;
+    public event Action<int>? SetSelectedLensDispersionLevelRequested;
     public event Action<double>? SetSelectedSphericalMirrorRadiusRequested;
     public event Action<double>? SetSelectedSphericalMirrorArcAngleRequested;
     public event Action<double>? SetSelectedPointLightEmissionAngleRequested;
@@ -171,6 +185,38 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         if (!_updatingSelection && HasSelectedSphericalMirror)
         {
             SetSelectedSphericalMirrorRadiusRequested?.Invoke((double)clamped);
+        }
+    }
+
+    partial void OnSelectedLensDispersionModeIndexChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, 2);
+        if (clamped != value)
+        {
+            SelectedLensDispersionModeIndex = clamped;
+            return;
+        }
+
+        var mode = (LensDispersionMode)clamped;
+        HasSelectedDispersiveLens = HasSelectedThinLens && mode != LensDispersionMode.None;
+        if (!_updatingSelection && HasSelectedThinLens)
+        {
+            SetSelectedLensDispersionModeRequested?.Invoke(mode);
+        }
+    }
+
+    partial void OnSelectedLensDispersionLevelChanged(int value)
+    {
+        var clamped = Math.Clamp(value, 0, 10);
+        if (clamped != value)
+        {
+            SelectedLensDispersionLevel = clamped;
+            return;
+        }
+
+        if (!_updatingSelection && HasSelectedThinLens)
+        {
+            SetSelectedLensDispersionLevelRequested?.Invoke(clamped);
         }
     }
 
@@ -438,6 +484,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
                                       selection?.EmissionAngleDegrees is not null;
             CanRotateSelectedElement = selection?.CanRotate == true;
             HasSelectedLens = selection?.FocalLength is not null;
+            HasSelectedThinLens = selection?.DispersionMode is not null;
+            HasSelectedDispersiveLens = selection?.DispersionMode is not null and not LensDispersionMode.None;
             HasSelectedSphericalMirror = selection?.Kind is CanvasSelectionKind.ConcaveSphericalMirror
                 or CanvasSelectionKind.ConvexSphericalMirror;
             HasSelectedSecondOrigin = selection?.SecondOriginX is not null && selection.SecondOriginY is not null;
@@ -465,6 +513,14 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             if (selection?.FocalLength is { } focalLength)
             {
                 SelectedFocalLength = (decimal)focalLength;
+            }
+            if (selection?.DispersionMode is { } dispersionMode)
+            {
+                SelectedLensDispersionModeIndex = (int)dispersionMode;
+            }
+            if (selection?.DispersionLevel is { } dispersionLevel)
+            {
+                SelectedLensDispersionLevel = dispersionLevel;
             }
             if (selection?.Radius is { } radius)
             {

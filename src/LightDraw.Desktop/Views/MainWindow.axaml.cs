@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using LightDraw.Core.Scene;
 using LightDraw.Desktop.ViewModels;
 
 namespace LightDraw.Desktop.Views;
@@ -24,6 +25,8 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedLensDispersionModeRequested -= OnSetSelectedLensDispersionModeRequested;
+            _viewModel.SetSelectedLensDispersionLevelRequested -= OnSetSelectedLensDispersionLevelRequested;
             _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
             _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
             _viewModel.SetSelectedPointLightEmissionAngleRequested -= OnSetSelectedPointLightEmissionAngleRequested;
@@ -45,6 +48,8 @@ public sealed partial class MainWindow : Window
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
+        _viewModel.SetSelectedLensDispersionModeRequested += OnSetSelectedLensDispersionModeRequested;
+        _viewModel.SetSelectedLensDispersionLevelRequested += OnSetSelectedLensDispersionLevelRequested;
         _viewModel.SetSelectedSphericalMirrorRadiusRequested += OnSetSelectedSphericalMirrorRadiusRequested;
         _viewModel.SetSelectedSphericalMirrorArcAngleRequested += OnSetSelectedSphericalMirrorArcAngleRequested;
         _viewModel.SetSelectedPointLightEmissionAngleRequested += OnSetSelectedPointLightEmissionAngleRequested;
@@ -74,6 +79,8 @@ public sealed partial class MainWindow : Window
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedLensDispersionModeRequested -= OnSetSelectedLensDispersionModeRequested;
+            _viewModel.SetSelectedLensDispersionLevelRequested -= OnSetSelectedLensDispersionLevelRequested;
             _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
             _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
             _viewModel.SetSelectedPointLightEmissionAngleRequested -= OnSetSelectedPointLightEmissionAngleRequested;
@@ -121,6 +128,12 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedFocalLengthRequested(double focalLength) =>
         Canvas.SetSelectedFocalLength(focalLength);
+
+    private void OnSetSelectedLensDispersionModeRequested(LensDispersionMode mode) =>
+        Canvas.SetSelectedLensDispersionMode(mode);
+
+    private void OnSetSelectedLensDispersionLevelRequested(int level) =>
+        Canvas.SetSelectedLensDispersionLevel(level);
 
     private void OnSetSelectedSphericalMirrorRadiusRequested(double radius) =>
         Canvas.SetSelectedSphericalMirrorRadius(radius);

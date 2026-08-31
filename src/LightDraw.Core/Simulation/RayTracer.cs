@@ -6,6 +6,16 @@ namespace LightDraw.Core.Simulation;
 
 public sealed class RayTracer
 {
+    private const double LensReferenceWavelengthNanometers = 550;
+    private const double LensDispersionWavelengthStepNanometers = 100;
+    private const double LensDispersionPerLevel = 0.05;
+    private static readonly double[] CompositeWavelengths =
+    [
+        LightSource.CompositeBlueWavelengthNanometers,
+        LightSource.CompositeGreenWavelengthNanometers,
+        LightSource.CompositeRedWavelengthNanometers
+    ];
+
     public SimulationResult Trace(OpticalScene scene, SimulationOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(scene);
@@ -132,6 +142,34 @@ public sealed class RayTracer
                                 diffractedRay.SpectrumState),
                                 bounce + 1));
                             diffractedRayCount++;
+                        }
+                    }
+
+                    break;
+                }
+
+                if (nearestHit.Kind == OpticalHitKind.Lens &&
+                    nearestHit.GetElement<LensSegment>() is { } dispersiveLens &&
+                    HasActiveDispersion(dispersiveLens) &&
+                    ray.SpectrumState == RaySpectrumState.Composite)
+                {
+                    if (bounce < options.MaximumReflections)
+                    {
+                        foreach (var wavelength in CompositeWavelengths)
+                        {
+                            if (output.Count + pending.Count >= options.MaximumSegments) break;
+                            var component = ray with
+                            {
+                                WavelengthNanometers = wavelength,
+                                SpectrumState = RaySpectrumState.DispersedComponent
+                            };
+                            var direction = RefractThroughIdealLens(component, hitPoint, dispersiveLens);
+                            pending.Enqueue((component with
+                            {
+                                Origin = hitPoint + direction * (options.IntersectionEpsilon * 32),
+                                Direction = direction
+                            }, bounce + 1));
+                            refractedRayCount++;
                         }
                     }
 
@@ -412,12 +450,32 @@ public sealed class RayTracer
             opticalAxis = -opticalAxis;
         }
 
-        var focalLength = Math.Max(1, Math.Abs(lens.FocalLength));
+        var focalLength = EffectiveLensFocalLength(lens, ray.WavelengthNanometers);
         var forwardComponent = Math.Max(1e-9, ray.Direction.Dot(opticalAxis));
         var incomingSlope = ray.Direction.Dot(tangent) / forwardComponent;
         var height = (hitPoint - midpoint).Dot(tangent);
         var opticalPower = lens.Kind == LensKind.Convex ? -height / focalLength : height / focalLength;
         return (opticalAxis + tangent * (incomingSlope + opticalPower)).Normalized();
+    }
+
+    private static bool HasActiveDispersion(LensSegment lens) =>
+        lens.DispersionMode is LensDispersionMode.Normal or LensDispersionMode.Anomalous &&
+        lens.DispersionLevel > 0;
+
+    private static double EffectiveLensFocalLength(LensSegment lens, double wavelengthNanometers)
+    {
+        var baseFocalLength = Math.Max(1, Math.Abs(lens.FocalLength));
+        if (!HasActiveDispersion(lens) || !double.IsFinite(wavelengthNanometers))
+        {
+            return baseFocalLength;
+        }
+
+        var wavelengthOffset = Math.Clamp(
+            (wavelengthNanometers - LensReferenceWavelengthNanometers) /
+            LensDispersionWavelengthStepNanometers, -1, 1);
+        var modeDirection = lens.DispersionMode == LensDispersionMode.Normal ? 1d : -1d;
+        var strength = Math.Clamp(lens.DispersionLevel, 0, 10) * LensDispersionPerLevel;
+        return Math.Max(1, baseFocalLength * (1 + modeDirection * strength * wavelengthOffset));
     }
 
     private static bool TryIntersect(Ray2D ray, Vector2D start, Vector2D end, double epsilon,

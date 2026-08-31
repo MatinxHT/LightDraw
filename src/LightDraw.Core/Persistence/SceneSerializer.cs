@@ -6,7 +6,7 @@ namespace LightDraw.Core.Persistence;
 
 public static class SceneSerializer
 {
-    public const int CurrentDataVersion = 10;
+    public const int CurrentDataVersion = 11;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -20,7 +20,7 @@ public static class SceneSerializer
     {
         ArgumentNullException.ThrowIfNull(scene);
         ArgumentNullException.ThrowIfNull(stream);
-        scene = NormalizeLightSources(scene);
+        scene = NormalizeScene(scene);
         await JsonSerializer.SerializeAsync(
             stream,
             new SceneDocument(CurrentDataVersion, scene),
@@ -34,16 +34,16 @@ public static class SceneSerializer
         var document = await JsonSerializer.DeserializeAsync<SceneDocument>(stream, Options, cancellationToken)
             ?? throw new InvalidDataException("场景文件为空或格式无效。");
 
-        if (document.DataVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or CurrentDataVersion))
+        if (document.DataVersion is < 1 or > CurrentDataVersion)
         {
             throw new InvalidDataException($"暂不支持场景数据版本 {document.DataVersion}。");
         }
 
         var scene = document.Scene ?? throw new InvalidDataException("场景文件缺少 scene 节点。");
-        return NormalizeLightSources(scene);
+        return NormalizeScene(scene);
     }
 
-    private static OpticalScene NormalizeLightSources(OpticalScene scene) => scene with
+    private static OpticalScene NormalizeScene(OpticalScene scene) => scene with
     {
         LightSources = (scene.LightSources ?? [])
             .Select(source => source with
@@ -51,6 +51,15 @@ public static class SceneSerializer
                 WavelengthNanometers = source.Spectrum == LightSpectrumKind.Composite
                     ? LightSource.CompositeGreenWavelengthNanometers
                     : NormalizeMonochromaticWavelength(source.WavelengthNanometers)
+            })
+            .ToArray(),
+        Lenses = scene.LensElements
+            .Select(lens => lens with
+            {
+                DispersionMode = Enum.IsDefined(lens.DispersionMode)
+                    ? lens.DispersionMode
+                    : LensDispersionMode.None,
+                DispersionLevel = Math.Clamp(lens.DispersionLevel, 0, 10)
             })
             .ToArray()
     };

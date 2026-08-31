@@ -30,7 +30,8 @@ public sealed record CanvasSelection(
     double? ApertureOpening = null, double? GrooveDensity = null,
     double? Radius = null, double? ArcAngleDegrees = null, double? SecondOriginX = null,
     double? SecondOriginY = null, double? EmissionAngleDegrees = null,
-    double? WavelengthNanometers = null);
+    double? WavelengthNanometers = null, LensDispersionMode? DispersionMode = null,
+    int? DispersionLevel = null);
 
 internal enum SceneItemKind
 {
@@ -147,6 +148,9 @@ public sealed class OpticalCanvas : Control
     public void RotateSelectedBy(double degrees) => _editor.RotateSelectedBy(degrees);
     public void SetSelectedAngle(double degrees) => _editor.SetSelectedAngle(degrees);
     public void SetSelectedFocalLength(double value) => _editor.SetSelectedFocalLength(value);
+    public void SetSelectedLensDispersionMode(LensDispersionMode value) =>
+        _editor.SetSelectedLensDispersionMode(value);
+    public void SetSelectedLensDispersionLevel(int value) => _editor.SetSelectedLensDispersionLevel(value);
     public void SetSelectedSphericalMirrorRadius(double value) => _editor.SetSelectedSphericalMirrorRadius(value);
     public void SetSelectedSphericalMirrorArcAngle(double value) => _editor.SetSelectedSphericalMirrorArcAngle(value);
     public void SetSelectedPointLightEmissionAngle(double value) => _editor.SetSelectedPointLightEmissionAngle(value);

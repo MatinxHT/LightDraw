@@ -73,11 +73,20 @@ public enum LensKind
     Concave
 }
 
+public enum LensDispersionMode
+{
+    None,
+    Normal,
+    Anomalous
+}
+
 public sealed record LensSegment(
     Vector2D Start,
     Vector2D End,
     LensKind Kind,
-    double FocalLength);
+    double FocalLength,
+    LensDispersionMode DispersionMode = LensDispersionMode.None,
+    int DispersionLevel = 5);
 
 public sealed record OpticalScene(
     string Name,
