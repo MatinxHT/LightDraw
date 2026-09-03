@@ -32,14 +32,16 @@ public sealed record LightSource(
     public const double CompositeRedWavelengthNanometers = 650;
 }
 
-public sealed record MirrorSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
+public sealed record MirrorSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null,
+    bool IsTemporarilyHidden = false);
 
 public sealed record ConcaveSphericalMirror(
     Vector2D Vertex,
     Vector2D CenterOfCurvature,
     double ArcAngleDegrees = 180,
     Guid Id = default,
-    string? Name = null)
+    string? Name = null,
+    bool IsTemporarilyHidden = false)
 {
     [JsonIgnore]
     public double Radius => (CenterOfCurvature - Vertex).Length;
@@ -53,7 +55,8 @@ public sealed record ConvexSphericalMirror(
     Vector2D CenterOfCurvature,
     double ArcAngleDegrees = 180,
     Guid Id = default,
-    string? Name = null)
+    string? Name = null,
+    bool IsTemporarilyHidden = false)
 {
     [JsonIgnore]
     public double Radius => (CenterOfCurvature - Vertex).Length;
@@ -62,19 +65,22 @@ public sealed record ConvexSphericalMirror(
     public double FocalLength => Radius / 2;
 }
 
-public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
+public sealed record BeamSplitterSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null,
+    bool IsTemporarilyHidden = false);
 
-public sealed record ScreenSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null);
+public sealed record ScreenSegment(Vector2D Start, Vector2D End, Guid Id = default, string? Name = null,
+    bool IsTemporarilyHidden = false);
 
 public sealed record ApertureSegment(Vector2D Start, Vector2D End, double OpeningSize, Guid Id = default,
-    string? Name = null);
+    string? Name = null, bool IsTemporarilyHidden = false);
 
 public sealed record ReflectionGratingSegment(
     Vector2D Start,
     Vector2D End,
     double GrooveDensityLinesPerMillimeter,
     Guid Id = default,
-    string? Name = null);
+    string? Name = null,
+    bool IsTemporarilyHidden = false);
 
 public enum LensKind
 {
@@ -97,7 +103,8 @@ public sealed record LensSegment(
     LensDispersionMode DispersionMode = LensDispersionMode.None,
     int DispersionLevel = 5,
     Guid Id = default,
-    string? Name = null);
+    string? Name = null,
+    bool IsTemporarilyHidden = false);
 
 public sealed record ElementGroup(
     Guid Id,

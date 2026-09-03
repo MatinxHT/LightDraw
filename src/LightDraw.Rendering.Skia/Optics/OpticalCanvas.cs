@@ -33,7 +33,8 @@ public sealed record CanvasSelection(
     double? WavelengthNanometers = null, LensDispersionMode? DispersionMode = null,
     int? DispersionLevel = null,
     int MemberCount = 1, bool CanGroup = false, bool CanUngroup = false,
-    bool CanSetPrimary = false, string? ElementName = null, bool CanRename = false);
+    bool CanSetPrimary = false, string? ElementName = null, bool CanRename = false,
+    bool CanTemporarilyHide = false, bool IsTemporarilyHidden = false);
 
 internal enum SceneItemKind
 {
@@ -170,6 +171,7 @@ public sealed class OpticalCanvas : Control
     public void SetSelectedGrooveDensity(double value) => _editor.SetSelectedGrooveDensity(value);
     public void SetSelectedWavelength(double value) => _editor.SetSelectedWavelength(value);
     public void SetSelectedLength(double value) => _editor.SetSelectedLength(value);
+    public void SetSelectedTemporarilyHidden(bool value) => _editor.SetSelectedTemporarilyHidden(value);
     public void SetSelectedOrigin(double x, double y) => _editor.SetSelectedOrigin(x, y);
     public void SetSelectedSecondOrigin(double x, double y) => _editor.SetSelectedSecondOrigin(x, y);
     public void SetSelectedName(string value) => _editor.SetSelectedName(value);

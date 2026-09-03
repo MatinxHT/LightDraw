@@ -235,7 +235,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var mirror in scene.Mirrors)
+        foreach (var mirror in scene.Mirrors.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, mirror.Start, mirror.End, epsilon, out var distance))
             {
@@ -243,7 +243,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var mirror in scene.ConcaveSphericalMirrorElements)
+        foreach (var mirror in scene.ConcaveSphericalMirrorElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, mirror, epsilon, out var distance))
             {
@@ -251,7 +251,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var mirror in scene.ConvexSphericalMirrorElements)
+        foreach (var mirror in scene.ConvexSphericalMirrorElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, mirror, epsilon, out var distance))
             {
@@ -259,7 +259,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var lens in scene.LensElements)
+        foreach (var lens in scene.LensElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, lens.Start, lens.End, epsilon, out var distance))
             {
@@ -267,7 +267,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var screen in scene.ScreenElements)
+        foreach (var screen in scene.ScreenElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, screen.Start, screen.End, epsilon, out var distance))
             {
@@ -275,7 +275,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var aperture in scene.ApertureElements)
+        foreach (var aperture in scene.ApertureElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (!TryIntersect(ray, aperture.Start, aperture.End, epsilon, out var distance))
             {
@@ -289,7 +289,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var grating in scene.ReflectionGratingElements)
+        foreach (var grating in scene.ReflectionGratingElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, grating.Start, grating.End, epsilon, out var distance))
             {
@@ -297,7 +297,7 @@ public sealed class RayTracer
             }
         }
 
-        foreach (var beamSplitter in scene.BeamSplitterElements)
+        foreach (var beamSplitter in scene.BeamSplitterElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, beamSplitter.Start, beamSplitter.End, epsilon, out var distance))
             {

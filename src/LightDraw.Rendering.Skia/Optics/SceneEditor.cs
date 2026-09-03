@@ -352,6 +352,82 @@ internal sealed class SceneEditor
         CommitSelectedEdit();
     }
 
+    public void SetSelectedTemporarilyHidden(bool value)
+    {
+        if (_selectedGroupId is { } groupId && FindGroup(groupId) is { } group)
+        {
+            var memberIds = group.MemberIds
+                .Where(id => SceneGeometry.Find(_scene, id) is { } item && item.Kind != SceneItemKind.LightSource)
+                .ToHashSet();
+            if (memberIds.Count == 0)
+            {
+                return;
+            }
+
+            UpdateScene(_scene with
+            {
+                Mirrors = _scene.Mirrors.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                ConcaveSphericalMirrors = _scene.ConcaveSphericalMirrorElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                ConvexSphericalMirrors = _scene.ConvexSphericalMirrorElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                BeamSplitters = _scene.BeamSplitterElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                Screens = _scene.ScreenElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                Apertures = _scene.ApertureElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                ReflectionGratings = _scene.ReflectionGratingElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                Lenses = _scene.LensElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray()
+            });
+            CommitSelectedEdit();
+            return;
+        }
+
+        switch (_selectedKind)
+        {
+            case SceneItemKind.Mirror when IsValidIndex(_selectedIndex, _scene.Mirrors):
+                UpdateScene(_scene with { Mirrors = _scene.Mirrors.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(_selectedIndex, _scene.ConcaveSphericalMirrorElements):
+                UpdateScene(_scene with { ConcaveSphericalMirrors = _scene.ConcaveSphericalMirrorElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.ConvexSphericalMirror when IsValidIndex(_selectedIndex, _scene.ConvexSphericalMirrorElements):
+                UpdateScene(_scene with { ConvexSphericalMirrors = _scene.ConvexSphericalMirrorElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
+                UpdateScene(_scene with { BeamSplitters = _scene.BeamSplitterElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
+                UpdateScene(_scene with { Screens = _scene.ScreenElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
+                UpdateScene(_scene with { Apertures = _scene.ApertureElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
+                UpdateScene(_scene with { ReflectionGratings = _scene.ReflectionGratingElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
+                UpdateScene(_scene with { Lenses = _scene.LensElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            default:
+                return;
+        }
+
+        CommitSelectedEdit();
+    }
+
     public void SetSelectedAngle(double degrees)
     {
         if (!double.IsFinite(degrees))
@@ -2048,6 +2124,19 @@ internal sealed class SceneEditor
         SceneUpdated?.Invoke(this, EventArgs.Empty);
     }
 
+    private bool IsTemporarilyHidden(SceneItemRef item) => item.Kind switch
+    {
+        SceneItemKind.Mirror => _scene.Mirrors[item.Index].IsTemporarilyHidden,
+        SceneItemKind.ConcaveSphericalMirror => _scene.ConcaveSphericalMirrorElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.ConvexSphericalMirror => _scene.ConvexSphericalMirrorElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.BeamSplitter => _scene.BeamSplitterElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.Screen => _scene.ScreenElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.Aperture => _scene.ApertureElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.ReflectionGrating => _scene.ReflectionGratingElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.Lens => _scene.LensElements[item.Index].IsTemporarilyHidden,
+        _ => false
+    };
+
     private void CommitSelectedEdit()
     {
         PreviewRequested?.Invoke(this, EventArgs.Empty);
@@ -2061,11 +2150,19 @@ internal sealed class SceneEditor
             SceneGeometry.Find(_scene, group.PrimaryMemberId) is { } primary)
         {
             var origin = SceneGeometry.Origin(_scene, primary);
+            var hideableMembers = group.MemberIds
+                .Select(id => SceneGeometry.Find(_scene, id))
+                .Where(item => item is { Kind: not SceneItemKind.LightSource })
+                .Select(item => item!.Value)
+                .ToArray();
             return new CanvasSelection(CanvasSelectionKind.Group, $"组合（{group.MemberIds.Length} 个元件）",
                 true, origin.X, origin.Y, SceneGeometry.AngleDegrees(_scene, primary), null, null,
                 MemberCount: group.MemberIds.Length, CanUngroup: true,
                 CanSetPrimary: _activeElementId is { } active && active != group.PrimaryMemberId,
-                ElementName: group.Name, CanRename: true);
+                ElementName: group.Name, CanRename: true,
+                CanTemporarilyHide: hideableMembers.Length > 0,
+                IsTemporarilyHidden: hideableMembers.Length > 0 &&
+                    hideableMembers.All(IsTemporarilyHidden));
         }
         if (_selectedIds.Count > 1)
         {
@@ -2113,7 +2210,8 @@ internal sealed class SceneEditor
                     (mirror.End - mirrorOrigin).Length * 2,
                     SecondOriginX: RotationHandle(mirror.Start, mirror.End).X,
                     SecondOriginY: RotationHandle(mirror.Start, mirror.End).Y,
-                    ElementName: mirror.Name, CanRename: true);
+                    ElementName: mirror.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: mirror.IsTemporarilyHidden);
             case SceneItemKind.ConcaveSphericalMirror when IsValidIndex(
                 _selectedIndex, _scene.ConcaveSphericalMirrorElements):
                 var sphericalMirror = _scene.ConcaveSphericalMirrorElements[_selectedIndex];
@@ -2130,7 +2228,8 @@ internal sealed class SceneEditor
                     ArcAngleDegrees: sphericalMirror.ArcAngleDegrees,
                     SecondOriginX: sphericalMirror.CenterOfCurvature.X,
                     SecondOriginY: sphericalMirror.CenterOfCurvature.Y,
-                    ElementName: sphericalMirror.Name, CanRename: true);
+                    ElementName: sphericalMirror.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: sphericalMirror.IsTemporarilyHidden);
             case SceneItemKind.ConvexSphericalMirror when IsValidIndex(
                 _selectedIndex, _scene.ConvexSphericalMirrorElements):
                 var convexSphericalMirror = _scene.ConvexSphericalMirrorElements[_selectedIndex];
@@ -2148,7 +2247,8 @@ internal sealed class SceneEditor
                     ArcAngleDegrees: convexSphericalMirror.ArcAngleDegrees,
                     SecondOriginX: convexSphericalMirror.CenterOfCurvature.X,
                     SecondOriginY: convexSphericalMirror.CenterOfCurvature.Y,
-                    ElementName: convexSphericalMirror.Name, CanRename: true);
+                    ElementName: convexSphericalMirror.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: convexSphericalMirror.IsTemporarilyHidden);
             case SceneItemKind.BeamSplitter when IsValidIndex(_selectedIndex, _scene.BeamSplitterElements):
                 var beamSplitter = _scene.BeamSplitterElements[_selectedIndex];
                 var beamSplitterOrigin = (beamSplitter.Start + beamSplitter.End) / 2;
@@ -2158,7 +2258,8 @@ internal sealed class SceneEditor
                     (beamSplitter.End - beamSplitterOrigin).Length * 2,
                     SecondOriginX: RotationHandle(beamSplitter.Start, beamSplitter.End).X,
                     SecondOriginY: RotationHandle(beamSplitter.Start, beamSplitter.End).Y,
-                    ElementName: beamSplitter.Name, CanRename: true);
+                    ElementName: beamSplitter.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: beamSplitter.IsTemporarilyHidden);
             case SceneItemKind.Screen when IsValidIndex(_selectedIndex, _scene.ScreenElements):
                 var screen = _scene.ScreenElements[_selectedIndex];
                 var screenOrigin = (screen.Start + screen.End) / 2;
@@ -2167,7 +2268,8 @@ internal sealed class SceneEditor
                     (screen.End - screenOrigin).Length * 2,
                     SecondOriginX: RotationHandle(screen.Start, screen.End).X,
                     SecondOriginY: RotationHandle(screen.Start, screen.End).Y,
-                    ElementName: screen.Name, CanRename: true);
+                    ElementName: screen.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: screen.IsTemporarilyHidden);
             case SceneItemKind.Aperture when IsValidIndex(_selectedIndex, _scene.ApertureElements):
                 var aperture = _scene.ApertureElements[_selectedIndex];
                 var apertureOrigin = (aperture.Start + aperture.End) / 2;
@@ -2176,7 +2278,8 @@ internal sealed class SceneEditor
                     (aperture.End - apertureOrigin).Length * 2, aperture.OpeningSize,
                     SecondOriginX: RotationHandle(aperture.Start, aperture.End).X,
                     SecondOriginY: RotationHandle(aperture.Start, aperture.End).Y,
-                    ElementName: aperture.Name, CanRename: true);
+                    ElementName: aperture.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: aperture.IsTemporarilyHidden);
             case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
                 var grating = _scene.ReflectionGratingElements[_selectedIndex];
                 var gratingOrigin = (grating.Start + grating.End) / 2;
@@ -2186,7 +2289,8 @@ internal sealed class SceneEditor
                     grating.GrooveDensityLinesPerMillimeter,
                     SecondOriginX: RotationHandle(grating.Start, grating.End).X,
                     SecondOriginY: RotationHandle(grating.Start, grating.End).Y,
-                    ElementName: grating.Name, CanRename: true);
+                    ElementName: grating.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: grating.IsTemporarilyHidden);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;
@@ -2201,7 +2305,8 @@ internal sealed class SceneEditor
                     SecondOriginY: RotationHandle(lens.Start, lens.End).Y,
                     DispersionMode: lens.DispersionMode,
                     DispersionLevel: lens.DispersionLevel,
-                    ElementName: lens.Name, CanRename: true);
+                    ElementName: lens.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: lens.IsTemporarilyHidden);
             default:
                 return null;
         }

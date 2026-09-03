@@ -79,6 +79,12 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _hasSelectedLength;
 
     [ObservableProperty]
+    private bool _canTemporarilyHideSelectedElement;
+
+    [ObservableProperty]
+    private bool _isSelectedElementTemporarilyHidden;
+
+    [ObservableProperty]
     private string _selectedElementName = "未选择元件";
 
     [ObservableProperty]
@@ -158,12 +164,21 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     public event Action<double>? SetSelectedGrooveDensityRequested;
     public event Action<double>? SetSelectedWavelengthRequested;
     public event Action<double>? SetSelectedLengthRequested;
+    public event Action<bool>? SetSelectedTemporarilyHiddenRequested;
     public event Action<double, double>? SetSelectedOriginRequested;
     public event Action<double, double>? SetSelectedSecondOriginRequested;
     public event Action<string>? SetSelectedNameRequested;
     public event EventHandler? GroupSelectionRequested;
     public event EventHandler? UngroupSelectionRequested;
     public event EventHandler? SetPrimaryElementRequested;
+
+    partial void OnIsSelectedElementTemporarilyHiddenChanged(bool value)
+    {
+        if (!_updatingSelection && CanTemporarilyHideSelectedElement)
+        {
+            SetSelectedTemporarilyHiddenRequested?.Invoke(value);
+        }
+    }
 
     partial void OnRayDensityChanged(int value)
     {
@@ -537,6 +552,8 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             HasSelectedAperture = selection?.ApertureOpening is not null;
             HasSelectedReflectionGrating = selection?.GrooveDensity is not null;
             HasSelectedLength = selection?.Length is not null;
+            CanTemporarilyHideSelectedElement = selection?.CanTemporarilyHide == true;
+            IsSelectedElementTemporarilyHidden = selection?.IsTemporarilyHidden == true;
             SelectedElementName = selection?.DisplayName ?? "未选择元件";
             SelectedElementTitle = selection?.ElementName ?? string.Empty;
             SelectedAngleText = selection?.CanRotate == true

@@ -81,11 +81,11 @@ dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
 
 ## 场景文件格式
 
-场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `11`，并可继续读取版本 `1`～`10`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
+场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `13`，并可继续读取版本 `1`～`12`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
 
 ```json
 {
-  "dataVersion": 11,
+  "dataVersion": 13,
   "scene": {
     "name": "双镜面反射演示",
     "lightSources": [

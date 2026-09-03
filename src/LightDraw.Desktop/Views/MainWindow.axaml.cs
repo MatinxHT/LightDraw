@@ -35,6 +35,7 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
+            _viewModel.SetSelectedTemporarilyHiddenRequested -= OnSetSelectedTemporarilyHiddenRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
             _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
             _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
@@ -62,6 +63,7 @@ public sealed partial class MainWindow : Window
         _viewModel.SetSelectedGrooveDensityRequested += OnSetSelectedGrooveDensityRequested;
         _viewModel.SetSelectedWavelengthRequested += OnSetSelectedWavelengthRequested;
         _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
+        _viewModel.SetSelectedTemporarilyHiddenRequested += OnSetSelectedTemporarilyHiddenRequested;
         _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
         _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
         _viewModel.SetSelectedNameRequested += OnSetSelectedNameRequested;
@@ -97,6 +99,7 @@ public sealed partial class MainWindow : Window
             _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
             _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
             _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
+            _viewModel.SetSelectedTemporarilyHiddenRequested -= OnSetSelectedTemporarilyHiddenRequested;
             _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
             _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
             _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
@@ -170,6 +173,9 @@ public sealed partial class MainWindow : Window
 
     private void OnSetSelectedLengthRequested(double length) =>
         Canvas.SetSelectedLength(length);
+
+    private void OnSetSelectedTemporarilyHiddenRequested(bool isHidden) =>
+        Canvas.SetSelectedTemporarilyHidden(isHidden);
 
     private void OnSetSelectedOriginRequested(double x, double y) =>
         Canvas.SetSelectedOrigin(x, y);

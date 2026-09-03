@@ -6,7 +6,7 @@ namespace LightDraw.Core.Persistence;
 
 public static class SceneSerializer
 {
-    public const int CurrentDataVersion = 12;
+    public const int CurrentDataVersion = 13;
 
     private static readonly JsonSerializerOptions Options = new()
     {

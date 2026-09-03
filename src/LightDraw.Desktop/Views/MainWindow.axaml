@@ -64,6 +64,9 @@
 			<TextBox Width="220" MaxLength="120" PlaceholderText="Element name"
 					 IsEnabled="{Binding CanRenameSelectedElement}"
 					 Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+			<CheckBox Content="暂时隐藏" IsVisible="{Binding CanTemporarilyHideSelectedElement}"
+					  IsChecked="{Binding IsSelectedElementTemporarilyHidden, Mode=TwoWay}"
+					  ToolTip.Tip="保留元件绘制，但不参与光线追迹，光线将直接穿过该元件" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center">
 			<Button Classes="setting-inline" Content="组合" Command="{Binding GroupSelectedCommand}" IsEnabled="{Binding CanGroupSelection}" />
