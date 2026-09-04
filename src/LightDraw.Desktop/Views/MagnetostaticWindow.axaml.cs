@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using LightDraw.Desktop.Services;
 using LightDraw.Desktop.ViewModels;
 
 namespace LightDraw.Desktop.Views;
@@ -22,6 +23,7 @@ public sealed partial class MagnetostaticWindow : Window
         Canvas.SimulationCompleted += OnSimulationCompleted;
         Canvas.ToolStateChanged += OnToolStateChanged;
         Canvas.SelectionChanged += OnSelectionChanged;
+        LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
         _viewModel.UpdateSelection(Canvas.Selection);
         _viewModel.UpdateSimulation(Canvas.SimulationResult);
     }
@@ -40,6 +42,7 @@ public sealed partial class MagnetostaticWindow : Window
         Canvas.SimulationCompleted -= OnSimulationCompleted;
         Canvas.ToolStateChanged -= OnToolStateChanged;
         Canvas.SelectionChanged -= OnSelectionChanged;
+        LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
         base.OnClosed(e);
     }
 
@@ -55,4 +58,5 @@ public sealed partial class MagnetostaticWindow : Window
     private void OnSimulationCompleted(object? sender, EventArgs e) => _viewModel.UpdateSimulation(Canvas.SimulationResult);
     private void OnToolStateChanged(object? sender, EventArgs e) => _viewModel.UpdateToolState(Canvas.ActiveTool);
     private void OnSelectionChanged(object? sender, EventArgs e) => _viewModel.UpdateSelection(Canvas.Selection);
+    private void OnLanguageChanged(object? sender, EventArgs e) => _viewModel.RefreshLanguage();
 }

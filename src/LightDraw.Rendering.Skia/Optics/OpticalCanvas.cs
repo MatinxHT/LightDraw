@@ -13,14 +13,14 @@ public enum CanvasTool
 {
     Pan, Move, Delete, PointLight, ParallelLight, CompositePointLight, CompositeParallelLight, Mirror,
     ConcaveSphericalMirror, ConvexSphericalMirror, BeamSplitter,
-    Screen, Aperture, ReflectionGrating, ConvexLens, ConcaveLens
+    Screen, Aperture, ReflectionGrating, ConcaveGrating, ConvexLens, ConcaveLens
 }
 
 public enum CanvasSelectionKind
 {
     PointLight, ParallelLight, Mirror, ConcaveSphericalMirror,
     ConvexSphericalMirror, BeamSplitter, Screen, Aperture,
-    ReflectionGrating, ConvexLens, ConcaveLens, Group, Multiple
+    ReflectionGrating, ConcaveGrating, ConvexLens, ConcaveLens, Group, Multiple
 }
 
 public sealed record CanvasSelection(
@@ -39,7 +39,7 @@ public sealed record CanvasSelection(
 internal enum SceneItemKind
 {
     None, LightSource, Mirror, ConcaveSphericalMirror, ConvexSphericalMirror,
-    BeamSplitter, Screen, Aperture, ReflectionGrating, Lens
+    BeamSplitter, Screen, Aperture, ReflectionGrating, ConcaveGrating, Lens
 }
 
 internal enum MoveDragMode

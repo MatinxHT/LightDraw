@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Electromagnetics;
+using LightDraw.Desktop.Services;
 using LightDraw.Rendering.Skia.Magnetostatics;
 
 namespace LightDraw.Desktop.ViewModels;
@@ -8,6 +9,7 @@ namespace LightDraw.Desktop.ViewModels;
 public sealed partial class MagnetostaticWindowViewModel : ObservableObject
 {
     private bool _updatingSelection;
+    private MagnetostaticSelection? _selection;
 
     [ObservableProperty] private MagnetostaticScene _currentScene = MagnetostaticScene.CreateEmpty();
     [ObservableProperty] private MagnetostaticTool _activeTool = MagnetostaticTool.Pan;
@@ -17,7 +19,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     [ObservableProperty] private bool _hasSelectedRotatableElement;
     [ObservableProperty] private bool _hasSelectedLoop;
     [ObservableProperty] private bool _hasSelectedSecondOrigin;
-    [ObservableProperty] private string _selectedElementName = "未选择元件";
+    [ObservableProperty] private string _selectedElementName = T("Selection.None");
     [ObservableProperty] private string _selectedElementTitle = string.Empty;
     [ObservableProperty] private decimal _selectedCurrent = 1;
     [ObservableProperty] private decimal _selectedLength = 100;
@@ -29,7 +31,7 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     [ObservableProperty] private decimal _selectedOriginY;
     [ObservableProperty] private decimal _selectedSecondOriginX;
     [ObservableProperty] private decimal _selectedSecondOriginY;
-    [ObservableProperty] private string _statusText = "真空静磁场 · 就绪";
+    [ObservableProperty] private string _statusText = T("Status.Ready");
 
     public event EventHandler? ResetViewRequested;
     public event Action<double>? SetSelectedCurrentRequested;
@@ -105,28 +107,29 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     private void ResetScene()
     {
         CurrentScene = MagnetostaticScene.CreateEmpty(); ActiveTool = MagnetostaticTool.Pan;
-        UpdateSelection(null); StatusText = "已重置为空白静磁场";
+        UpdateSelection(null); StatusText = T("Status.MagneticReset");
     }
     [RelayCommand]
     private void ResetView()
     {
-        ResetViewRequested?.Invoke(this, EventArgs.Empty); StatusText = "视图已复位";
+        ResetViewRequested?.Invoke(this, EventArgs.Empty); StatusText = T("Status.ViewReset");
     }
 
     public void UpdateToolState(MagnetostaticTool tool) => StatusText = tool switch
     {
-        MagnetostaticTool.Pan => "平移工具 · 按住左键拖动画布，滚轮缩放",
-        MagnetostaticTool.Move => "移动/编辑 · 空白处拖动画布；先单击选中，再拖动第一原点平移；第二原点旋转",
-        MagnetostaticTool.Delete => "删除工具 · 单击电流导体后自动返回平移工具",
-        MagnetostaticTool.PlanarIdealConstantCurrentConductor => "平面理想恒定电流导体 · 第一次点击起点，第二次点击终点",
-        MagnetostaticTool.VerticalInfiniteCurrentConductor => "竖直面无限长恒定电流导体 · 在画布中单击放置",
-        MagnetostaticTool.PlanarCircularCurrentLoop => "平面环形恒定电流 · 第一次点击圆心，第二次点击确定半径",
-        MagnetostaticTool.VerticalCircularCurrentLoop => "垂直面环形恒定电流 · 第一次点击圆心，第二次点击确定半径",
+        MagnetostaticTool.Pan => T("Status.PanZoom"),
+        MagnetostaticTool.Move => T("Status.MagneticMove"),
+        MagnetostaticTool.Delete => T("Status.MagneticDelete"),
+        MagnetostaticTool.PlanarIdealConstantCurrentConductor => T("Status.PlacePlanarConductor"),
+        MagnetostaticTool.VerticalInfiniteCurrentConductor => T("Status.PlaceVerticalConductor"),
+        MagnetostaticTool.PlanarCircularCurrentLoop => T("Status.PlacePlanarLoop"),
+        MagnetostaticTool.VerticalCircularCurrentLoop => T("Status.PlaceVerticalLoop"),
         _ => StatusText
     };
 
     public void UpdateSelection(MagnetostaticSelection? selection)
     {
+        _selection = selection;
         _updatingSelection = true;
         try
         {
@@ -138,15 +141,15 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
             HasSelectedLoop = selection?.Kind is MagnetostaticSelectionKind.PlanarCircularCurrentLoop or
                 MagnetostaticSelectionKind.VerticalCircularCurrentLoop;
             HasSelectedSecondOrigin = selection?.SecondOriginX is not null && selection.SecondOriginY is not null;
-            SelectedElementName = selection is null ? "未选择元件" : selection.Kind switch
+            SelectedElementName = selection is null ? T("Selection.None") : selection.Kind switch
             {
                 MagnetostaticSelectionKind.PlanarIdealConstantCurrentConductor =>
-                    $"平面理想恒定电流导体 #{selection.Index + 1}",
+                    F("Selection.PlanarConductor", selection.Index + 1),
                 MagnetostaticSelectionKind.VerticalInfiniteCurrentConductor =>
-                    $"竖直面无限长恒定电流导体 #{selection.Index + 1}",
+                    F("Selection.VerticalConductor", selection.Index + 1),
                 MagnetostaticSelectionKind.PlanarCircularCurrentLoop =>
-                    $"平面环形恒定电流 #{selection.Index + 1}",
-                _ => $"垂直面环形恒定电流 #{selection.Index + 1}"
+                    F("Selection.PlanarLoop", selection.Index + 1),
+                _ => F("Selection.VerticalLoop", selection.Index + 1)
             };
             SelectedElementTitle = selection?.Name ?? string.Empty;
             if (selection is null) return;
@@ -172,12 +175,16 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     {
         var closedCount = result.FieldLines.Count(line => line.IsClosed);
         var divergingCount = result.FieldLines.Count - closedCount;
-        StatusText = $"{CurrentScene.Name} · {CurrentScene.Conductors.Length} 根平面导体 · " +
-                     $"{CurrentScene.VerticalConductorElements.Length} 根竖直无限长导体 · " +
-                     $"{CurrentScene.PlanarLoopElements.Length} 个平面圆环 / " +
-                     $"{CurrentScene.VerticalLoopElements.Length} 个垂直圆环 · " +
-                     $"{result.Samples.Count} 个方向标记 / 磁感线 {closedCount} 条闭合、{divergingCount} 条延伸 · " +
-                     $"计算 {result.Elapsed.TotalMilliseconds:F2} ms";
+        StatusText = F("Status.MagneticSimulation", CurrentScene.Name, CurrentScene.Conductors.Length,
+            CurrentScene.VerticalConductorElements.Length, CurrentScene.PlanarLoopElements.Length,
+            CurrentScene.VerticalLoopElements.Length, result.Samples.Count, closedCount, divergingCount,
+            result.Elapsed.TotalMilliseconds);
+    }
+
+    public void RefreshLanguage()
+    {
+        UpdateSelection(_selection);
+        UpdateToolState(ActiveTool);
     }
 
     private void ApplyOrigin(decimal x, decimal y)
@@ -196,4 +203,8 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
             if (Math.Abs(normalized - index * 90) <= 1e-6) return index + 1;
         return 0;
     }
+
+    private static string T(string key) => LocalizationService.Instance.Get(key);
+
+    private static string F(string key, params object[] values) => string.Format(T(key), values);
 }

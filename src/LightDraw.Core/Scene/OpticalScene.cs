@@ -82,6 +82,22 @@ public sealed record ReflectionGratingSegment(
     string? Name = null,
     bool IsTemporarilyHidden = false);
 
+public sealed record ConcaveGrating(
+    Vector2D Vertex,
+    Vector2D CenterOfCurvature,
+    double ArcAngleDegrees = 180,
+    double GrooveDensityLinesPerMillimeter = 600,
+    Guid Id = default,
+    string? Name = null,
+    bool IsTemporarilyHidden = false)
+{
+    [JsonIgnore]
+    public double Radius => (CenterOfCurvature - Vertex).Length;
+
+    [JsonIgnore]
+    public double FocalLength => Radius / 2;
+}
+
 public enum LensKind
 {
     Convex,
@@ -123,7 +139,8 @@ public sealed record OpticalScene(
     BeamSplitterSegment[]? BeamSplitters = null,
     ConcaveSphericalMirror[]? ConcaveSphericalMirrors = null,
     ConvexSphericalMirror[]? ConvexSphericalMirrors = null,
-    ElementGroup[]? Groups = null)
+    ElementGroup[]? Groups = null,
+    ConcaveGrating[]? ConcaveGratings = null)
 {
     [JsonIgnore]
     public LensSegment[] LensElements => Lenses ?? [];
@@ -145,6 +162,9 @@ public sealed record OpticalScene(
 
     [JsonIgnore]
     public ConvexSphericalMirror[] ConvexSphericalMirrorElements => ConvexSphericalMirrors ?? [];
+
+    [JsonIgnore]
+    public ConcaveGrating[] ConcaveGratingElements => ConcaveGratings ?? [];
 
     [JsonIgnore]
     public ElementGroup[] ElementGroups => Groups ?? [];

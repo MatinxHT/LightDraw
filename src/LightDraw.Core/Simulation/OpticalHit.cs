@@ -11,6 +11,7 @@ internal enum OpticalHitKind
     Screen,
     Aperture,
     ReflectionGrating,
+    ConcaveGrating,
     BeamSplitter
 }
 

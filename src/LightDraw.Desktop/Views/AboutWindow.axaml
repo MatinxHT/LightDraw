@@ -2,7 +2,7 @@
     x:Class="LightDraw.Desktop.Views.AboutWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Title="关于光绘课堂"
+    Title="{DynamicResource About.Title}"
     Width="580"
     Height="700"
     MinWidth="520"
@@ -23,14 +23,14 @@
                         <TextBlock
                             FontSize="20"
                             FontWeight="SemiBold"
-                            Text="光绘课堂 (LightDraw)" />
+                            Text="{DynamicResource App.Title}" />
                         <TextBlock x:Name="VersionText" Foreground="#7DE3FF" />
                     </StackPanel>
                 </StackPanel>
 
                 <TextBlock
                     Foreground="#B7C5DA"
-                    Text="面向物理课堂、实验演示和物理学习的二维光学、静电场与静磁场绘图、仿真工具。"
+                    Text="{DynamicResource About.Description}"
                     TextWrapping="Wrap" />
 
                 <Border
@@ -40,10 +40,10 @@
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="8">
-                        <TextBlock FontWeight="SemiBold" Text="项目仓库" />
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Repository}" />
                         <TextBlock
                             Foreground="#9EB0CA"
-                            Text="欢迎查看源代码、提交问题或参与改进。"
+                            Text="{DynamicResource About.RepositoryDescription}"
                             TextWrapping="Wrap" />
                         <HyperlinkButton
                             Padding="0"
@@ -61,41 +61,41 @@
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="12">
-                        <TextBlock FontWeight="SemiBold" Text="主要仿真方法" />
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Methods}" />
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
                                 Foreground="#7DE3FF"
-                                Text="光学仿真 · 二维几何光线追迹" />
+                                Text="{DynamicResource About.OpticsHeading}" />
                             <TextBlock
                                 Foreground="#9EB0CA"
-                                Text="从光源离散发射光线，计算光线与光学元件的最近交点，并依据反射定律、理想薄透镜近轴模型和光栅方程继续传播。只考虑几何光学，不考虑波动光学效应，甚至三棱镜色散这种需要设置截止常数确定色散角度的也不是很想做。"
+                                Text="{DynamicResource About.OpticsDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
                                 Foreground="#7DE3FF"
-                                Text="静电场仿真 · 库仑叠加与数值积分" />
+                                Text="{DynamicResource About.ElectroHeading}" />
                             <TextBlock
                                 Foreground="#9EB0CA"
-                                Text="按库仑定律叠加点电荷的电势和电场；有限导体板采用边界元离散并求解感应电荷，再使用四阶 Runge–Kutta 方法沿电场方向追踪电场线。"
+                                Text="{DynamicResource About.ElectroDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
                                 Foreground="#7DE3FF"
-                                Text="静磁场仿真 · 毕奥-萨伐尔叠加" />
+                                Text="{DynamicResource About.MagneticHeading}" />
                             <TextBlock
                                 Foreground="#9EB0CA"
-                                Text="支持平面及竖直无限长直导体、平面及垂直面环形电流。所有电流元均按毕奥-萨伐尔定律积分并矢量叠加：平面法向磁场以圆点和叉号表示；垂直直导线以磁矢势等磁通线绘制，含垂直圆环时沿真实叠加场积分追踪。所有方向均遵循右手定则。"
+                                Text="{DynamicResource About.MagneticDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <TextBlock
                             FontSize="12"
                             Foreground="#7F93B2"
-                            Text="仿真面向课堂演示和概念学习，不替代精密工程或科研计算。"
+                            Text="{DynamicResource About.Disclaimer}"
                             TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
@@ -107,11 +107,11 @@
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="7">
-                        <TextBlock FontWeight="SemiBold" Text="授权许可" />
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.License}" />
                         <TextBlock Foreground="#7DE3FF" Text="PolyForm Noncommercial License 1.0.0" />
                         <TextBlock
                             Foreground="#9EB0CA"
-                            Text="本软件仅授权用于非商业用途。许可条款：&#x0a;https://polyformproject.org/licenses/noncommercial/1.0.0"
+                            Text="{DynamicResource About.LicenseDescription}"
                             TextWrapping="Wrap" />
                         <TextBlock
                             FontSize="12"
@@ -128,11 +128,11 @@
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="9">
-                        <TextBlock FontWeight="SemiBold" Text="技术支持及鸣谢" />
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Acknowledgements}" />
                         <TextBlock
                             Foreground="#9EB0CA"
                             LineHeight="22"
-                            Text="佛山市南海区大沥高级中学&#x0a;佛山市南海区桂城中学&#x0a;佛山市南海区罗村高级中学物理科组&#x0a;佛山大学物理与光电工程学院光源与照明系&#x0a;佛山市升阳光学科技有限公司"
+                            Text="{DynamicResource About.Institutions}"
                             TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
@@ -144,13 +144,13 @@
                 VerticalAlignment="Center"
                 FontSize="12"
                 Foreground="#687D9D"
-                Text="基于 .NET 10、Avalonia 和 SkiaSharp 构建" />
+                Text="{DynamicResource About.BuiltWith}" />
             <Button
                 Grid.Column="1"
                 MinWidth="88"
                 HorizontalAlignment="Right"
                 Click="OnCloseClicked"
-                Content="关闭"
+                Content="{DynamicResource About.Close}"
                 IsCancel="True"
                 IsDefault="True" />
         </Grid>

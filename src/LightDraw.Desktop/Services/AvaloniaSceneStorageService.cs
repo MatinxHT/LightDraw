@@ -11,9 +11,9 @@ public sealed class AvaloniaSceneStorageService(Window owner) : ISceneStorageSer
     {
         var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "打开 LightDraw 场景",
+            Title = LocalizationService.Instance.Get("Storage.OpenTitle"),
             AllowMultiple = false,
-            FileTypeFilter = [SceneFileType]
+            FileTypeFilter = [CreateSceneFileType()]
         });
 
         if (files.Count == 0)
@@ -31,10 +31,10 @@ public sealed class AvaloniaSceneStorageService(Window owner) : ISceneStorageSer
     {
         var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = "保存 LightDraw 场景",
+            Title = LocalizationService.Instance.Get("Storage.SaveTitle"),
             SuggestedFileName = "lightdraw-scene",
             DefaultExtension = "lightdraw.json",
-            FileTypeChoices = [SceneFileType]
+            FileTypeChoices = [CreateSceneFileType()]
         });
 
         if (file is null)
@@ -49,7 +49,8 @@ public sealed class AvaloniaSceneStorageService(Window owner) : ISceneStorageSer
         return file.Name;
     }
 
-    private static FilePickerFileType SceneFileType { get; } = new("LightDraw 场景")
+    private static FilePickerFileType CreateSceneFileType() => new(
+        LocalizationService.Instance.Get("Storage.SceneType"))
     {
         Patterns = ["*.lightdraw.json", "*.json"],
         AppleUniformTypeIdentifiers = ["public.json"],

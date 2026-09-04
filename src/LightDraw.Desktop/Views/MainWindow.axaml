@@ -4,7 +4,7 @@
 		xmlns:vm="using:LightDraw.Desktop.ViewModels"
 		x:Class="LightDraw.Desktop.Views.MainWindow"
 		x:DataType="vm:MainWindowViewModel"
-		Title="光绘课堂 (LightDraw)"
+		Title="{DynamicResource App.Title}"
 		Icon="/Assets/Icons/LightDraw.ico"
 		Width="1480"
 		Height="800"
@@ -17,38 +17,44 @@
 		<StackPanel Orientation="Horizontal" Spacing="10">
 		  <Image Width="40" Height="40" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
 		  <StackPanel>
-			<TextBlock Text="光绘课堂 (LightDraw)" FontSize="18" FontWeight="SemiBold" />
-			<TextBlock Text="几何光学教学与绘图" FontSize="11" Foreground="#91A4C2" />
+			<TextBlock Text="{DynamicResource App.Title}" FontSize="18" FontWeight="SemiBold" />
+			<TextBlock Text="{DynamicResource Main.Subtitle}" FontSize="11" Foreground="#91A4C2" />
 		  </StackPanel>
 		  <Border Width="1" Height="30" Margin="10,0,4,0" Background="#26344C" />
-		  <Button Classes="toolbar-inline" Content="↯ 打开静电场仿真" Command="{Binding OpenElectrostaticSimulationCommand}" />
-		  <Button Classes="toolbar-inline" Content="⌁ 打开静磁场仿真" Command="{Binding OpenMagnetostaticSimulationCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenElectrostatic}" Command="{Binding OpenElectrostaticSimulationCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenMagnetostatic}" Command="{Binding OpenMagnetostaticSimulationCommand}" />
 		</StackPanel>
-		<TextBlock Grid.Column="2" Text=".NET 10 · Avalonia · SkiaSharp" Foreground="#7F93B2" VerticalAlignment="Center" />
+		<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+		  <TextBlock Text="语言Language：" Foreground="#7F93B2" VerticalAlignment="Center" />
+		  <ComboBox Width="245" SelectedIndex="{Binding SelectedLanguageIndex, Mode=TwoWay}">
+			<ComboBoxItem Content="简体中文 Simplified Chinese （zh-CN）" />
+			<ComboBoxItem Content="English(en-us)" />
+		  </ComboBox>
+		</StackPanel>
 	  </Grid>
 	</Border>
 
 	<Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,10" Background="#0F1A2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
 	  <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto">
 		<StackPanel Orientation="Horizontal" Spacing="6">
-		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="✥ 平移界面" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
-		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="✣ 移动/编辑" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
-		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="× 删除" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="{DynamicResource Common.Pan}" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="{DynamicResource Common.Move}" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
+		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="{DynamicResource Common.Delete}" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
 		</StackPanel>
 		<Border Grid.Column="1" Width="1" Margin="14,4" Background="#26344C" />
-		<TextBlock Grid.Column="2" Text="统一模拟配置" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
-		<TextBlock Grid.Column="3" Text="每个光源的光线数量" Foreground="#7F93B2" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
+		<TextBlock Grid.Column="2" Text="{DynamicResource Common.SimulationSettings}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+		<TextBlock Grid.Column="3" Text="{DynamicResource Main.RaysPerSource}" Foreground="#7F93B2" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
 		<Grid Grid.Column="4" ColumnDefinitions="*,42" MinWidth="120" VerticalAlignment="Center">
 		  <Slider Minimum="1" Maximum="1000" Value="{Binding RayDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
 		  <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#7DE3FF" />
 		</Grid>
 		<Border Grid.Column="5" Width="1" Margin="14,4" Background="#26344C" />
 		<StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
-		  <Button Classes="toolbar-inline" Content="⌂ 重置场景" Command="{Binding ResetSceneCommand}" />
-		  <Button Classes="toolbar-inline" Content="◎ 适合窗口" Command="{Binding ResetViewCommand}" />
-		  <Button Classes="toolbar-inline" Content="打开场景…" Command="{Binding OpenSceneCommand}" />
-		  <Button Classes="toolbar-inline" Content="保存场景…" Command="{Binding SaveSceneCommand}" />
-		  <Button Classes="toolbar-inline" Content="关于程序" Command="{Binding ShowAboutCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenScene}" Command="{Binding OpenSceneCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.SaveScene}" Command="{Binding SaveSceneCommand}" />
+		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.About}" Command="{Binding ShowAboutCommand}" />
 		</StackPanel>
 	  </Grid>
 	</Border>
@@ -57,28 +63,28 @@
 	  <Grid RowDefinitions="Auto,Auto,Auto">
 		<WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
 		  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,18,2" VerticalAlignment="Center">
-			<TextBlock Text="元件属性" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.ElementProperties}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
 			<Border Width="1" Height="24" Margin="4,0" Background="#26344C" />
 			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" />
-			<TextBlock Text="名称" Foreground="#9EB0CA" VerticalAlignment="Center" />
-			<TextBox Width="220" MaxLength="120" PlaceholderText="Element name"
+			<TextBlock Text="{DynamicResource Common.Name}" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBox Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
 					 IsEnabled="{Binding CanRenameSelectedElement}"
 					 Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-			<CheckBox Content="暂时隐藏" IsVisible="{Binding CanTemporarilyHideSelectedElement}"
+			<CheckBox Content="{DynamicResource Main.Hidden}" IsVisible="{Binding CanTemporarilyHideSelectedElement}"
 					  IsChecked="{Binding IsSelectedElementTemporarilyHidden, Mode=TwoWay}"
-					  ToolTip.Tip="保留元件绘制，但不参与光线追迹，光线将直接穿过该元件" />
+					  ToolTip.Tip="{DynamicResource Tip.Hidden}" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center">
-			<Button Classes="setting-inline" Content="组合" Command="{Binding GroupSelectedCommand}" IsEnabled="{Binding CanGroupSelection}" />
-			<Button Classes="setting-inline" Content="取消组合" Command="{Binding UngroupSelectedCommand}" IsEnabled="{Binding CanUngroupSelection}" />
-			<Button Classes="setting-inline" Content="设为主元件" Command="{Binding SetPrimaryElementCommand}" IsEnabled="{Binding CanSetPrimaryElement}" ToolTip.Tip="先在组合中单击目标成员，再将其设为主元件" />
+			<Button Classes="setting-inline" Content="{DynamicResource Main.Group}" Command="{Binding GroupSelectedCommand}" IsEnabled="{Binding CanGroupSelection}" />
+			<Button Classes="setting-inline" Content="{DynamicResource Main.Ungroup}" Command="{Binding UngroupSelectedCommand}" IsEnabled="{Binding CanUngroupSelection}" />
+			<Button Classes="setting-inline" Content="{DynamicResource Main.SetPrimary}" Command="{Binding SetPrimaryElementCommand}" IsEnabled="{Binding CanSetPrimaryElement}" ToolTip.Tip="{DynamicResource Tip.SetPrimary}" />
 		  </StackPanel>
 		</WrapPanel>
 		<Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
 		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-			<TextBlock Text="几何关系" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.Geometry}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding CanEditSelectedTransform}">
-			<TextBlock Text="第一原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点；组合时为主元件的第一原点" />
+			<TextBlock Text="{DynamicResource Common.FirstOrigin}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FirstOrigin}" />
 			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
 			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -86,7 +92,7 @@
 			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSecondOrigin}">
-			<TextBlock Text="第二原点" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="球面镜为曲率圆心；其余元件为距第一原点 100 mm 的白色旋转点" />
+			<TextBlock Text="{DynamicResource Common.SecondOrigin}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.SecondOrigin}" />
 			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
 			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -94,14 +100,14 @@
 			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" VerticalAlignment="Center" IsEnabled="{Binding CanRotateSelectedElement}">
-			<TextBlock Text="旋转步进" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="#9EB0CA" VerticalAlignment="Center" />
 			<TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
 			<TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
-			<Button Classes="setting-inline" Content="↶ 逆时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
-			<Button Classes="setting-inline" Content="↷ 顺时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
+			<Button Classes="setting-inline" Content="{DynamicResource Common.Counterclockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
+			<Button Classes="setting-inline" Content="{DynamicResource Common.Clockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
 			<TextBlock Text="{Binding SelectedAngleText}" MinWidth="98" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="2,0" />
 			<ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
-			  <ComboBoxItem Content="自定义" IsEnabled="False" />
+			  <ComboBoxItem Content="{DynamicResource Common.Custom}" IsEnabled="False" />
 			  <ComboBoxItem Content="0°" />
 			  <ComboBoxItem Content="90°" />
 			  <ComboBoxItem Content="180°" />
@@ -112,54 +118,54 @@
 		</Border>
 		<Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
 		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-			<TextBlock Text="元件参数" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.ElementParameters}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLength}">
-			  <TextBlock Text="长度" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="元件原点到任一端点的距离 × 2" />
+			  <TextBlock Text="{DynamicResource Common.Length}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Length}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedLightSource}">
-			  <TextBlock Text="波长" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="单色光源波长；光栅按此真实波长计算衍射角" />
-			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" ToolTip.Tip="默认 580 nm；显示颜色按最近参考波长匹配，中值时选择更靠近黄色 580 nm 的一侧" />
+			  <TextBlock Text="{DynamicResource Main.Wavelength}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Wavelength}" />
+			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" ToolTip.Tip="{DynamicResource Tip.WavelengthValue}" />
 			  <TextBlock Text="nm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedAperture}">
-			  <TextBlock Text="通孔" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="光阑中央允许光线通过的开口大小" />
+			  <TextBlock Text="{DynamicResource Main.ApertureOpening}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Aperture}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedApertureOpening, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
-			  <TextBlock Text="焦距" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="透镜以 550 nm 绿光焦距为基准；球面镜焦距始终等于半径的一半" />
+			  <TextBlock Text="{DynamicResource Main.FocalLength}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FocalLength}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}">
-			  <TextBlock Text="色散" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="正常色散：蓝光焦距短、红光焦距长；反常色散则相反" />
+			  <TextBlock Text="{DynamicResource Main.Dispersion}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Dispersion}" />
 			  <ComboBox Width="108" SelectedIndex="{Binding SelectedLensDispersionModeIndex, Mode=TwoWay}">
-				<ComboBoxItem Content="理想（无色散）" />
-				<ComboBoxItem Content="正常色散" />
-				<ComboBoxItem Content="反常色散" />
+				<ComboBoxItem Content="{DynamicResource Main.NoDispersion}" />
+				<ComboBoxItem Content="{DynamicResource Main.NormalDispersion}" />
+				<ComboBoxItem Content="{DynamicResource Main.AnomalousDispersion}" />
 			  </ComboBox>
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}" IsEnabled="{Binding HasSelectedDispersiveLens}">
-			  <TextBlock Text="色散等级" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="范围 0～10；每级使 450/650 nm 焦距相对 550 nm 基准变化 5%" />
+			  <TextBlock Text="{DynamicResource Main.DispersionLevel}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.DispersionLevel}" />
 			  <TextBox Width="48" HorizontalContentAlignment="Right" Text="{Binding SelectedLensDispersionLevel, Mode=TwoWay}" />
 			  <TextBlock Text="0–10" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
-			  <TextBlock Text="半径" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="曲率半径；修改后焦距自动更新为 R/2" />
+			  <TextBlock Text="{DynamicResource Common.Radius}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Radius}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay}" />
 			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedCentralAngle}">
-			  <TextBlock Text="圆心角" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="点光源：发射范围，默认 360°；球面镜：镜面圆弧大小，默认 180°" />
+			  <TextBlock Text="{DynamicResource Main.CentralAngle}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.CentralAngle}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedCentralAngle, Mode=TwoWay}" />
 			  <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedReflectionGrating}">
-			  <TextBlock Text="刻线密度" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="反射光栅每毫米的刻线数量" />
+			  <TextBlock Text="{DynamicResource Main.GrooveDensity}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.GrooveDensity}" />
 			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedGrooveDensity, Mode=TwoWay}" />
-			  <TextBlock Text="线/mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="{DynamicResource Main.LinesPerMillimeter}" Foreground="#7F93B2" VerticalAlignment="Center" />
 			</StackPanel>
 		  </WrapPanel>
 		</Border>
@@ -168,28 +174,29 @@
 
 	<Border Grid.Row="3" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
 	  <Grid RowDefinitions="Auto,*">
-		<TextBlock Text="创建工具" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
+		<TextBlock Text="{DynamicResource Main.CreateTools}" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
 		  <StackPanel Spacing="2">
-			<TextBlock Text="光源类" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="● 单色点光源" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" ToolTip.Tip="默认 580 nm；选中后可修改波长" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="▥ 单色平行光源" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" ToolTip.Tip="默认 580 nm；选中后可修改波长" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositePointLight}" Content="◉ 复色点光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositePointLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositeParallelLight}" Content="▤ 复色平行光源" Command="{Binding SelectToolCommand}" CommandParameter="CompositeParallelLight" ToolTip.Tip="等强混合 450、550、650 nm；分光前显示为黄色" />
-			<TextBlock Text="透镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="◉ 凸透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" ToolTip.Tip="默认焦距 300 mm、理想无色散；选中后可设置色散模式和等级" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content=")( 凹透镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" ToolTip.Tip="默认焦距 300 mm、理想无色散；选中后可设置色散模式和等级" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="┃ ┃ 光阑" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
-			<TextBlock Text="反射镜类" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="／ 平面反光镜" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="◖ 理想凹球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="◗ 理想凸球面镜" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="第一次点击镜面中心点，第二次点击曲率圆心；默认圆心角 180°" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="／ 平面分光镜" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="透射与反射光强各为入射光的 50%" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="≋ 反射光栅" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="复色光 0 级保持黄色混光；±1、±2、±3 级发生色散；光强分别为 90%、50%、25%、10%" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="┃ 光屏" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="命中光屏后立即截停光线" />
+			<TextBlock Text="{DynamicResource Main.LightSources}" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="{DynamicResource Main.PointLight}" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" ToolTip.Tip="{DynamicResource Tip.Monochromatic}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="{DynamicResource Main.ParallelLight}" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" ToolTip.Tip="{DynamicResource Tip.Monochromatic}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositePointLight}" Content="{DynamicResource Main.CompositePointLight}" Command="{Binding SelectToolCommand}" CommandParameter="CompositePointLight" ToolTip.Tip="{DynamicResource Tip.Composite}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositeParallelLight}" Content="{DynamicResource Main.CompositeParallelLight}" Command="{Binding SelectToolCommand}" CommandParameter="CompositeParallelLight" ToolTip.Tip="{DynamicResource Tip.Composite}" />
+			<TextBlock Text="{DynamicResource Main.Lenses}" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="{DynamicResource Main.ConvexLens}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" ToolTip.Tip="{DynamicResource Tip.Lens}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content="{DynamicResource Main.ConcaveLens}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" ToolTip.Tip="{DynamicResource Tip.Lens}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="{DynamicResource Main.Aperture}" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
+			<TextBlock Text="{DynamicResource Main.Reflectors}" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="{DynamicResource Main.Mirror}" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="{DynamicResource Main.ConcaveMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="{DynamicResource Main.ConvexMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="{DynamicResource Main.BeamSplitter}" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="{DynamicResource Tip.BeamSplitter}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="{DynamicResource Main.ReflectionGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="{DynamicResource Tip.ReflectionGrating}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveGrating}" Content="{DynamicResource Main.ConcaveGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveGrating" ToolTip.Tip="{DynamicResource Tip.ConcaveGrating}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="{DynamicResource Main.Screen}" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="{DynamicResource Tip.Screen}" />
 
 			<Separator Margin="0,16,0,14" />
-			<TextBlock Text="移动/编辑：空白左拖框选，空白单击清空&#x0a;右键：随时拖动画布&#x0a;元件：先单击任意位置选中&#x0a;第一原点：选中后拖拽平移&#x0a;白色圆点：选中后固定原点旋转&#x0a;组合：单击成员选择整体&#x0a;设为主元件：先单击组合中的目标成员&#x0a;删除元件：单击后自动返回" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			<TextBlock Text="{DynamicResource Main.Help}" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>
@@ -205,7 +212,7 @@
 	<Border Grid.Row="4" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
 	  <Grid ColumnDefinitions="*,Auto">
 		<TextBlock Text="{Binding StatusText}" Foreground="#9EB0CA" FontSize="12" />
-		<TextBlock Grid.Column="1" Text="PolyForm Noncommercial 1.0.0 · 仅限非商业使用" Foreground="#687D9D" FontSize="12" />
+		<TextBlock Grid.Column="1" Text="{DynamicResource Common.Noncommercial}" Foreground="#687D9D" FontSize="12" />
 	  </Grid>
 	</Border>
   </Grid>

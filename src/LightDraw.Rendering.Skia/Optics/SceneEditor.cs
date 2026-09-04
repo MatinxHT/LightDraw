@@ -136,6 +136,14 @@ internal sealed class SceneEditor
                         NextElementName("Reflection Grating"))]
                 });
                 break;
+            case CanvasTool.ConcaveGrating:
+                UpdateScene(_scene with
+                {
+                    ConcaveGratings = [.. _scene.ConcaveGratingElements,
+                        new ConcaveGrating(start, end, Id: Guid.NewGuid(),
+                            Name: NextElementName("Concave Grating"))]
+                });
+                break;
             case CanvasTool.ConvexLens:
             case CanvasTool.ConcaveLens:
                 var kind = tool == CanvasTool.ConvexLens ? LensKind.Convex : LensKind.Concave;
@@ -216,6 +224,9 @@ internal sealed class SceneEditor
         ReflectionGratings = scene.ReflectionGratingElements
             .Select((item, index) => item with { Id = EnsureId(item.Id),
                 Name = NormalizeName(item.Name, "Reflection Grating", index + 1) }).ToArray(),
+        ConcaveGratings = scene.ConcaveGratingElements
+            .Select((item, index) => item with { Id = EnsureId(item.Id),
+                Name = NormalizeName(item.Name, "Concave Grating", index + 1) }).ToArray(),
         BeamSplitters = scene.BeamSplitterElements.Select((item, index) => item with { Id = EnsureId(item.Id),
             Name = NormalizeName(item.Name, "Beam Splitter", index + 1) }).ToArray(),
         Groups = NormalizeGroups(scene)
@@ -246,6 +257,7 @@ internal sealed class SceneEditor
         foreach (var item in _scene.ScreenElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
         foreach (var item in _scene.ApertureElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
         foreach (var item in _scene.ReflectionGratingElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
+        foreach (var item in _scene.ConcaveGratingElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
         foreach (var item in _scene.LensElements) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
         foreach (var item in _scene.ElementGroups) if (!string.IsNullOrWhiteSpace(item.Name)) yield return item.Name;
     }
@@ -340,6 +352,10 @@ internal sealed class SceneEditor
                 _scene = _scene with { ReflectionGratings = _scene.ReflectionGratingElements.Select((item, index) =>
                     index == _selectedIndex ? item with { Name = name } : item).ToArray() };
                 break;
+            case SceneItemKind.ConcaveGrating when IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements):
+                _scene = _scene with { ConcaveGratings = _scene.ConcaveGratingElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { Name = name } : item).ToArray() };
+                break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 _scene = _scene with { Lenses = _scene.LensElements.Select((item, index) =>
                     index == _selectedIndex ? item with { Name = name } : item).ToArray() };
@@ -380,6 +396,8 @@ internal sealed class SceneEditor
                     ? item with { IsTemporarilyHidden = value } : item).ToArray(),
                 ReflectionGratings = _scene.ReflectionGratingElements.Select(item => memberIds.Contains(item.Id)
                     ? item with { IsTemporarilyHidden = value } : item).ToArray(),
+                ConcaveGratings = _scene.ConcaveGratingElements.Select(item => memberIds.Contains(item.Id)
+                    ? item with { IsTemporarilyHidden = value } : item).ToArray(),
                 Lenses = _scene.LensElements.Select(item => memberIds.Contains(item.Id)
                     ? item with { IsTemporarilyHidden = value } : item).ToArray()
             });
@@ -415,6 +433,10 @@ internal sealed class SceneEditor
                 break;
             case SceneItemKind.ReflectionGrating when IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements):
                 UpdateScene(_scene with { ReflectionGratings = _scene.ReflectionGratingElements.Select((item, index) =>
+                    index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
+                break;
+            case SceneItemKind.ConcaveGrating when IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements):
+                UpdateScene(_scene with { ConcaveGratings = _scene.ConcaveGratingElements.Select((item, index) =>
                     index == _selectedIndex ? item with { IsTemporarilyHidden = value } : item).ToArray() });
                 break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
@@ -550,6 +572,16 @@ internal sealed class SceneEditor
                 };
                 UpdateScene(_scene with { ReflectionGratings = gratings });
                 break;
+            case SceneItemKind.ConcaveGrating when IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements):
+                var concaveGratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+                var concaveGrating = concaveGratings[_selectedIndex];
+                concaveGratings[_selectedIndex] = concaveGrating with
+                {
+                    CenterOfCurvature = concaveGrating.Vertex +
+                        Vector2D.FromAngle(radians) * concaveGrating.Radius
+                };
+                UpdateScene(_scene with { ConcaveGratings = concaveGratings });
+                break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_selectedIndex];
@@ -640,6 +672,12 @@ internal sealed class SceneEditor
             SetSelectedSphericalMirrorRadius(clamped * 2);
             return;
         }
+        else if (_selectedKind == SceneItemKind.ConcaveGrating &&
+                 IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements))
+        {
+            SetSelectedSphericalMirrorRadius(clamped * 2);
+            return;
+        }
         else
         {
             return;
@@ -688,6 +726,17 @@ internal sealed class SceneEditor
             };
             UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
         }
+        else if (_selectedKind == SceneItemKind.ConcaveGrating &&
+                 IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements))
+        {
+            var gratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+            var grating = gratings[_selectedIndex];
+            if (Math.Abs(grating.Radius - clamped) <= 1e-9) return;
+            var direction = (grating.CenterOfCurvature - grating.Vertex).Normalized();
+            gratings[_selectedIndex] = grating with
+                { CenterOfCurvature = grating.Vertex + direction * clamped };
+            UpdateScene(_scene with { ConcaveGratings = gratings });
+        }
         else
         {
             return;
@@ -727,6 +776,15 @@ internal sealed class SceneEditor
             mirrors[_selectedIndex] = mirror with { ArcAngleDegrees = clamped };
             UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
         }
+        else if (_selectedKind == SceneItemKind.ConcaveGrating &&
+                 IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements))
+        {
+            var gratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+            var grating = gratings[_selectedIndex];
+            if (Math.Abs(grating.ArcAngleDegrees - clamped) <= 1e-9) return;
+            gratings[_selectedIndex] = grating with { ArcAngleDegrees = clamped };
+            UpdateScene(_scene with { ConcaveGratings = gratings });
+        }
         else
         {
             return;
@@ -759,16 +817,24 @@ internal sealed class SceneEditor
 
     public void SetSelectedGrooveDensity(double grooveDensity)
     {
-        if (_selectedKind != SceneItemKind.ReflectionGrating ||
-            !IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements) ||
-            !double.IsFinite(grooveDensity))
+        if (!double.IsFinite(grooveDensity)) return;
+        var clamped = Math.Clamp(grooveDensity, 1, 5000);
+        if (_selectedKind == SceneItemKind.ConcaveGrating &&
+            IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements))
         {
+            var concaveGratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+            var concaveGrating = concaveGratings[_selectedIndex];
+            if (Math.Abs(concaveGrating.GrooveDensityLinesPerMillimeter - clamped) <= 1e-9) return;
+            concaveGratings[_selectedIndex] = concaveGrating with
+                { GrooveDensityLinesPerMillimeter = clamped };
+            UpdateScene(_scene with { ConcaveGratings = concaveGratings });
+            CommitSelectedEdit();
             return;
         }
-
+        if (_selectedKind != SceneItemKind.ReflectionGrating ||
+            !IsValidIndex(_selectedIndex, _scene.ReflectionGratingElements)) return;
         var gratings = (ReflectionGratingSegment[])_scene.ReflectionGratingElements.Clone();
         var grating = gratings[_selectedIndex];
-        var clamped = Math.Clamp(grooveDensity, 1, 5000);
         if (Math.Abs(grating.GrooveDensityLinesPerMillimeter - clamped) <= 1e-9)
         {
             return;
@@ -1042,6 +1108,16 @@ internal sealed class SceneEditor
                 };
                 UpdateScene(_scene with { ReflectionGratings = gratings });
                 break;
+            case SceneItemKind.ConcaveGrating when IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements):
+                var concaveGratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+                var concaveGrating = concaveGratings[_selectedIndex];
+                concaveGratings[_selectedIndex] = concaveGrating with
+                {
+                    Vertex = concaveGrating.Vertex + delta,
+                    CenterOfCurvature = concaveGrating.CenterOfCurvature + delta
+                };
+                UpdateScene(_scene with { ConcaveGratings = concaveGratings });
+                break;
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_selectedIndex];
@@ -1092,6 +1168,16 @@ internal sealed class SceneEditor
             }
             mirrors[_selectedIndex] = mirror with { CenterOfCurvature = center };
             UpdateScene(_scene with { ConvexSphericalMirrors = mirrors });
+        }
+        else if (_selectedKind == SceneItemKind.ConcaveGrating &&
+                 IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements))
+        {
+            var gratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+            var grating = gratings[_selectedIndex];
+            if ((center - grating.Vertex).Length < 2 ||
+                (center - grating.CenterOfCurvature).LengthSquared <= 1e-12) return;
+            gratings[_selectedIndex] = grating with { CenterOfCurvature = center };
+            UpdateScene(_scene with { ConcaveGratings = gratings });
         }
         else if (CreateSelection() is { } selection)
         {
@@ -1227,6 +1313,18 @@ internal sealed class SceneEditor
                 ref bestDistance);
         }
 
+        for (var index = 0; index < _scene.ConcaveGratingElements.Length; index++)
+        {
+            var grating = _scene.ConcaveGratingElements[index];
+            SelectIfCloser((world - grating.Vertex).Length, SceneItemKind.ConcaveGrating,
+                index, MoveDragMode.Translate, ref bestDistance);
+            SelectIfCloser((world - grating.CenterOfCurvature).Length,
+                SceneItemKind.ConcaveGrating, index, MoveDragMode.DirectionHandle, ref bestDistance);
+            SelectIfCloser((world - SphericalMirrorRotationHandle(
+                    grating.Vertex, grating.CenterOfCurvature)).Length,
+                SceneItemKind.ConcaveGrating, index, MoveDragMode.RotationHandle, ref bestDistance);
+        }
+
         for (var index = 0; index < _scene.LensElements.Length; index++)
         {
             var lens = _scene.LensElements[index];
@@ -1319,6 +1417,12 @@ internal sealed class SceneEditor
                 var convex = _scene.ConvexSphericalMirrorElements[item.Index];
                 yield return convex.CenterOfCurvature;
                 yield return SphericalMirrorRotationHandle(convex.Vertex, convex.CenterOfCurvature);
+                break;
+            case SceneItemKind.ConcaveGrating:
+                var concaveGrating = _scene.ConcaveGratingElements[item.Index];
+                yield return concaveGrating.CenterOfCurvature;
+                yield return SphericalMirrorRotationHandle(
+                    concaveGrating.Vertex, concaveGrating.CenterOfCurvature);
                 break;
             default:
                 var origin = SceneGeometry.Origin(_scene, item);
@@ -1470,6 +1574,13 @@ internal sealed class SceneEditor
                 SceneItemKind.ReflectionGrating, index);
         }
 
+        for (var index = 0; index < _scene.ConcaveGratingElements.Length; index++)
+        {
+            var grating = _scene.ConcaveGratingElements[index];
+            Consider(DistanceToArc(world, grating.Vertex, grating.CenterOfCurvature,
+                grating.ArcAngleDegrees), SceneItemKind.ConcaveGrating, index);
+        }
+
         for (var index = 0; index < _scene.LensElements.Length; index++)
         {
             var lens = _scene.LensElements[index];
@@ -1529,6 +1640,12 @@ internal sealed class SceneEditor
                     ReflectionGratings = RemoveAt(_scene.ReflectionGratingElements, itemIndex)
                 });
                 break;
+            case SceneItemKind.ConcaveGrating:
+                UpdateScene(_scene with
+                {
+                    ConcaveGratings = RemoveAt(_scene.ConcaveGratingElements, itemIndex)
+                });
+                break;
             case SceneItemKind.Lens:
                 UpdateScene(_scene with { Lenses = RemoveAt(_scene.LensElements, itemIndex) });
                 break;
@@ -1551,6 +1668,7 @@ internal sealed class SceneEditor
         Screens = scene.ScreenElements.Where(item => !ids.Contains(item.Id)).ToArray(),
         Apertures = scene.ApertureElements.Where(item => !ids.Contains(item.Id)).ToArray(),
         ReflectionGratings = scene.ReflectionGratingElements.Where(item => !ids.Contains(item.Id)).ToArray(),
+        ConcaveGratings = scene.ConcaveGratingElements.Where(item => !ids.Contains(item.Id)).ToArray(),
         Lenses = scene.LensElements.Where(item => !ids.Contains(item.Id)).ToArray()
     };
 
@@ -1629,6 +1747,10 @@ internal sealed class SceneEditor
                 SceneItemKind.ReflectionGrating => DistanceToSegment(world,
                     _scene.ReflectionGratingElements[item.Index].Start,
                     _scene.ReflectionGratingElements[item.Index].End),
+                SceneItemKind.ConcaveGrating => DistanceToArc(world,
+                    _scene.ConcaveGratingElements[item.Index].Vertex,
+                    _scene.ConcaveGratingElements[item.Index].CenterOfCurvature,
+                    _scene.ConcaveGratingElements[item.Index].ArcAngleDegrees),
                 SceneItemKind.Lens => DistanceToSegment(world, _scene.LensElements[item.Index].Start,
                     _scene.LensElements[item.Index].End),
                 _ => double.PositiveInfinity
@@ -1747,6 +1869,14 @@ internal sealed class SceneEditor
             var grating = _scene.ReflectionGratingElements[index];
             SelectIfCloser(DistanceToSegment(world, grating.Start, grating.End),
                 SceneItemKind.ReflectionGrating, index, MoveDragMode.Translate, ref bestDistance);
+        }
+
+        for (var index = 0; index < _scene.ConcaveGratingElements.Length; index++)
+        {
+            var grating = _scene.ConcaveGratingElements[index];
+            SelectIfCloser(DistanceToArc(world, grating.Vertex, grating.CenterOfCurvature,
+                    grating.ArcAngleDegrees), SceneItemKind.ConcaveGrating,
+                index, MoveDragMode.Translate, ref bestDistance);
         }
 
         for (var index = 0; index < _scene.LensElements.Length; index++)
@@ -2044,6 +2174,29 @@ internal sealed class SceneEditor
                 UpdateScene(_scene with { ReflectionGratings = gratings });
                 updated = true;
                 break;
+            case SceneItemKind.ConcaveGrating:
+                var concaveGratings = (ConcaveGrating[])_scene.ConcaveGratingElements.Clone();
+                var concaveGrating = concaveGratings[_movingIndex];
+                if (_moveDragMode is MoveDragMode.DirectionHandle or MoveDragMode.RotationHandle)
+                {
+                    var direction = (world - concaveGrating.Vertex).Normalized();
+                    if (direction.LengthSquared <= 1e-12) return;
+                    concaveGratings[_movingIndex] = concaveGrating with
+                    {
+                        CenterOfCurvature = concaveGrating.Vertex + direction * concaveGrating.Radius
+                    };
+                }
+                else
+                {
+                    concaveGratings[_movingIndex] = concaveGrating with
+                    {
+                        Vertex = concaveGrating.Vertex + delta,
+                        CenterOfCurvature = concaveGrating.CenterOfCurvature + delta
+                    };
+                }
+                UpdateScene(_scene with { ConcaveGratings = concaveGratings });
+                updated = true;
+                break;
             case SceneItemKind.Lens:
                 var lenses = (LensSegment[])_scene.LensElements.Clone();
                 var lens = lenses[_movingIndex];
@@ -2133,6 +2286,7 @@ internal sealed class SceneEditor
         SceneItemKind.Screen => _scene.ScreenElements[item.Index].IsTemporarilyHidden,
         SceneItemKind.Aperture => _scene.ApertureElements[item.Index].IsTemporarilyHidden,
         SceneItemKind.ReflectionGrating => _scene.ReflectionGratingElements[item.Index].IsTemporarilyHidden,
+        SceneItemKind.ConcaveGrating => _scene.ConcaveGratingElements[item.Index].IsTemporarilyHidden,
         SceneItemKind.Lens => _scene.LensElements[item.Index].IsTemporarilyHidden,
         _ => false
     };
@@ -2291,6 +2445,20 @@ internal sealed class SceneEditor
                     SecondOriginY: RotationHandle(grating.Start, grating.End).Y,
                     ElementName: grating.Name, CanRename: true, CanTemporarilyHide: true,
                     IsTemporarilyHidden: grating.IsTemporarilyHidden);
+            case SceneItemKind.ConcaveGrating when IsValidIndex(_selectedIndex, _scene.ConcaveGratingElements):
+                var concaveGrating = _scene.ConcaveGratingElements[_selectedIndex];
+                return new CanvasSelection(
+                    CanvasSelectionKind.ConcaveGrating, "凹面光栅", true,
+                    concaveGrating.Vertex.X, concaveGrating.Vertex.Y,
+                    SegmentAngleDegrees(concaveGrating.Vertex, concaveGrating.CenterOfCurvature),
+                    concaveGrating.FocalLength, null,
+                    GrooveDensity: concaveGrating.GrooveDensityLinesPerMillimeter,
+                    Radius: concaveGrating.Radius,
+                    ArcAngleDegrees: concaveGrating.ArcAngleDegrees,
+                    SecondOriginX: concaveGrating.CenterOfCurvature.X,
+                    SecondOriginY: concaveGrating.CenterOfCurvature.Y,
+                    ElementName: concaveGrating.Name, CanRename: true, CanTemporarilyHide: true,
+                    IsTemporarilyHidden: concaveGrating.IsTemporarilyHidden);
             case SceneItemKind.Lens when IsValidIndex(_selectedIndex, _scene.LensElements):
                 var lens = _scene.LensElements[_selectedIndex];
                 var lensOrigin = (lens.Start + lens.End) / 2;

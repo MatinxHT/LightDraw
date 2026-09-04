@@ -11,6 +11,11 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 {
     private CancellationTokenSource? _rayDensityUpdate;
     private bool _updatingSelection;
+    private CanvasSelection? _selection;
+    private bool _isPlacing;
+
+    [ObservableProperty]
+    private int _selectedLanguageIndex = LocalizationService.Instance.IsEnglish ? 1 : 0;
 
     [ObservableProperty]
     private OpticalScene _currentScene = OpticalScene.CreateEmpty();
@@ -25,7 +30,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private CanvasTool _activeTool = CanvasTool.Pan;
 
     [ObservableProperty]
-    private string _statusText = "就绪";
+    private string _statusText = LocalizationService.Instance.Get("Status.Ready");
 
     [ObservableProperty]
     private bool _hasSelectedElement;
@@ -85,7 +90,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _isSelectedElementTemporarilyHidden;
 
     [ObservableProperty]
-    private string _selectedElementName = "未选择元件";
+    private string _selectedElementName = LocalizationService.Instance.Get("Selection.None");
 
     [ObservableProperty]
     private string _selectedElementTitle = string.Empty;
@@ -94,7 +99,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     private bool _canRenameSelectedElement;
 
     [ObservableProperty]
-    private string _selectedAngleText = "当前角度 --";
+    private string _selectedAngleText = LocalizationService.Instance.Get("Selection.AngleNone");
 
     [ObservableProperty]
     private decimal _selectedFocalLength = 100;
@@ -128,6 +133,25 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private decimal _selectedLength = 100;
+
+    partial void OnSelectedLanguageIndexChanged(int value)
+    {
+        var normalized = value == 1 ? 1 : 0;
+        if (value != normalized)
+        {
+            SelectedLanguageIndex = normalized;
+            return;
+        }
+
+        LocalizationService.Instance.SetLanguage(normalized == 1 ? "en-US" : "zh-CN");
+        RefreshLanguage();
+    }
+
+    public void RefreshLanguage()
+    {
+        UpdateSelection(_selection);
+        UpdateToolState(ActiveTool, _isPlacing);
+    }
 
     [ObservableProperty]
     private decimal _rotationStep = 15;
@@ -456,14 +480,14 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         CurrentScene = OpticalScene.CreateEmpty();
         ActiveTool = CanvasTool.Pan;
         ResetViewRequested?.Invoke(this, EventArgs.Empty);
-        StatusText = "已重置为空白场景";
+        StatusText = T("Status.SceneReset");
     }
 
     [RelayCommand]
     private void ResetView()
     {
         ResetViewRequested?.Invoke(this, EventArgs.Empty);
-        StatusText = "视图已复位";
+        StatusText = T("Status.ViewReset");
     }
 
     [RelayCommand]
@@ -479,14 +503,14 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
             CurrentScene = opened.Scene;
             ActiveTool = CanvasTool.Pan;
-            StatusText = $"已打开：{opened.FileName}";
+            StatusText = F("Status.Opened", opened.FileName);
         }
         catch (OperationCanceledException)
         {
         }
         catch (Exception exception)
         {
-            StatusText = $"打开失败：{exception.Message}";
+            StatusText = F("Status.OpenFailed", exception.Message);
         }
     }
 
@@ -498,7 +522,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             var fileName = await sceneStorage.SaveAsync(CurrentScene, cancellationToken);
             if (fileName is not null)
             {
-                StatusText = $"已保存：{fileName}";
+                StatusText = F("Status.Saved", fileName);
             }
         }
         catch (OperationCanceledException)
@@ -506,29 +530,31 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         }
         catch (Exception exception)
         {
-            StatusText = $"保存失败：{exception.Message}";
+            StatusText = F("Status.SaveFailed", exception.Message);
         }
     }
 
     public void UpdateSimulation(SimulationResult result) =>
-        StatusText = $"{CurrentScene.Name} · 每光源 {AppliedRaysPerSource} 条 / 共 {result.InitialRayCount} 条 · " +
-                     $"{result.Segments.Count} 个线段 · {result.DiffractedRayCount} 条衍射光线 · " +
-                     $"计算 {result.Elapsed.TotalMilliseconds:F2} ms";
+        StatusText = F("Status.OpticalSimulation", CurrentScene.Name, AppliedRaysPerSource,
+            result.InitialRayCount, result.Segments.Count, result.DiffractedRayCount,
+            result.Elapsed.TotalMilliseconds);
 
     public void UpdateToolState(CanvasTool tool, bool isPlacing)
     {
         ActiveTool = tool;
+        _isPlacing = isPlacing;
         StatusText = tool switch
         {
-            CanvasTool.Pan => "平移工具 · 按住左键拖动画布",
-            CanvasTool.Move => "移动或调整元件 · 空白左拖框选，空白单击清空；右键随时平移画布",
-            CanvasTool.Delete => "删除元件 · 单击光源或光学元件即可删除，随后自动返回平移工具",
+            CanvasTool.Pan => T("Status.Pan"),
+            CanvasTool.Move => T("Status.OpticalMove"),
+            CanvasTool.Delete => T("Status.OpticalDelete"),
             _ => PlacementStatus(tool, isPlacing)
         };
     }
 
     public void UpdateSelection(CanvasSelection? selection)
     {
+        _selection = selection;
         _updatingSelection = true;
         try
         {
@@ -547,18 +573,18 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             HasSelectedThinLens = selection?.DispersionMode is not null;
             HasSelectedDispersiveLens = selection?.DispersionMode is not null and not LensDispersionMode.None;
             HasSelectedSphericalMirror = selection?.Kind is CanvasSelectionKind.ConcaveSphericalMirror
-                or CanvasSelectionKind.ConvexSphericalMirror;
+                or CanvasSelectionKind.ConvexSphericalMirror or CanvasSelectionKind.ConcaveGrating;
             HasSelectedSecondOrigin = selection?.SecondOriginX is not null && selection.SecondOriginY is not null;
             HasSelectedAperture = selection?.ApertureOpening is not null;
             HasSelectedReflectionGrating = selection?.GrooveDensity is not null;
             HasSelectedLength = selection?.Length is not null;
             CanTemporarilyHideSelectedElement = selection?.CanTemporarilyHide == true;
             IsSelectedElementTemporarilyHidden = selection?.IsTemporarilyHidden == true;
-            SelectedElementName = selection?.DisplayName ?? "未选择元件";
+            SelectedElementName = SelectionDisplayName(selection);
             SelectedElementTitle = selection?.ElementName ?? string.Empty;
             SelectedAngleText = selection?.CanRotate == true
-                ? $"当前角度 {selection.AngleDegrees:F1}°"
-                : "当前角度 --";
+                ? F("Selection.Angle", selection.AngleDegrees)
+                : T("Selection.AngleNone");
             SelectedStandardAngleIndex = selection?.CanRotate == true
                 ? GetStandardAngleIndex(selection.AngleDegrees)
                 : 0;
@@ -681,34 +707,69 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
     {
         var name = tool switch
         {
-            CanvasTool.PointLight => "单色点光源（580 nm，360° 发光，单击放置）",
-            CanvasTool.ParallelLight => "单色平行光源（580 nm，垂直于绘制线发射）",
-            CanvasTool.CompositePointLight => "复色点光源（450/550/650 nm，单击放置）",
-            CanvasTool.CompositeParallelLight => "复色平行光源（450/550/650 nm，垂直于绘制线发射）",
-            CanvasTool.Mirror => "平面反光镜",
-            CanvasTool.ConcaveSphericalMirror => "理想凹球面镜（先定镜面中心，再定曲率圆心）",
-            CanvasTool.ConvexSphericalMirror => "理想凸球面镜（先定镜面中心，再定曲率圆心）",
-            CanvasTool.BeamSplitter => "平面分光镜（透射/反射各 50%）",
-            CanvasTool.Screen => "光屏",
-            CanvasTool.Aperture => "光阑",
-            CanvasTool.ReflectionGrating => "反射光栅",
-            CanvasTool.ConvexLens => "凸透镜",
-            CanvasTool.ConcaveLens => "凹透镜",
-            _ => "物件"
+            CanvasTool.PointLight => T("Placement.PointLight"),
+            CanvasTool.ParallelLight => T("Placement.ParallelLight"),
+            CanvasTool.CompositePointLight => T("Placement.CompositePointLight"),
+            CanvasTool.CompositeParallelLight => T("Placement.CompositeParallelLight"),
+            CanvasTool.Mirror => T("Selection.Mirror"),
+            CanvasTool.ConcaveSphericalMirror => T("Placement.ConcaveMirror"),
+            CanvasTool.ConvexSphericalMirror => T("Placement.ConvexMirror"),
+            CanvasTool.BeamSplitter => T("Placement.BeamSplitter"),
+            CanvasTool.Screen => T("Selection.Screen"),
+            CanvasTool.Aperture => T("Selection.Aperture"),
+            CanvasTool.ReflectionGrating => T("Selection.ReflectionGrating"),
+            CanvasTool.ConcaveGrating => T("Placement.ConcaveGrating"),
+            CanvasTool.ConvexLens => T("Selection.ConvexLens"),
+            CanvasTool.ConcaveLens => T("Selection.ConcaveLens"),
+            _ => T("Placement.Object")
         };
         if (tool is CanvasTool.PointLight or CanvasTool.CompositePointLight)
         {
             return name;
         }
-        if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror)
+        if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror
+            or CanvasTool.ConcaveGrating)
         {
-            var sphericalMirrorName = tool == CanvasTool.ConcaveSphericalMirror
-                ? "理想凹球面镜"
-                : "理想凸球面镜";
+            var sphericalMirrorName = tool switch
+            {
+                CanvasTool.ConcaveSphericalMirror => T("Selection.ConcaveMirror"),
+                CanvasTool.ConvexSphericalMirror => T("Selection.ConvexMirror"),
+                _ => T("Selection.ConcaveGrating")
+            };
             return isPlacing
-                ? $"正在绘制{sphericalMirrorName} · 移动鼠标预览，单击确定曲率圆心和半径"
-                : $"{sphericalMirrorName} · 单击确定镜面中心点（第一原点）";
+                ? F("Placement.DrawingSpherical", sphericalMirrorName)
+                : F("Placement.StartSpherical", sphericalMirrorName);
         }
-        return isPlacing ? $"正在绘制{name} · 单击确定终点" : $"{name} · 单击确定起点";
+        return isPlacing ? F("Placement.Drawing", name) : F("Placement.Start", name);
     }
+
+    private static string SelectionDisplayName(CanvasSelection? selection)
+    {
+        if (selection is null) return T("Selection.None");
+        if (selection.Kind == CanvasSelectionKind.Group) return F("Selection.Group", selection.MemberCount);
+        if (selection.Kind == CanvasSelectionKind.Multiple) return F("Selection.Multiple", selection.MemberCount);
+
+        return selection.Kind switch
+        {
+            CanvasSelectionKind.PointLight => T(selection.WavelengthNanometers is null
+                ? "Selection.CompositePointLight" : "Selection.PointLight"),
+            CanvasSelectionKind.ParallelLight => T(selection.WavelengthNanometers is null
+                ? "Selection.CompositeParallelLight" : "Selection.ParallelLight"),
+            CanvasSelectionKind.Mirror => T("Selection.Mirror"),
+            CanvasSelectionKind.ConcaveSphericalMirror => T("Selection.ConcaveMirror"),
+            CanvasSelectionKind.ConvexSphericalMirror => T("Selection.ConvexMirror"),
+            CanvasSelectionKind.BeamSplitter => T("Selection.BeamSplitter"),
+            CanvasSelectionKind.Screen => T("Selection.Screen"),
+            CanvasSelectionKind.Aperture => T("Selection.Aperture"),
+            CanvasSelectionKind.ReflectionGrating => T("Selection.ReflectionGrating"),
+            CanvasSelectionKind.ConcaveGrating => T("Selection.ConcaveGrating"),
+            CanvasSelectionKind.ConvexLens => T("Selection.ConvexLens"),
+            CanvasSelectionKind.ConcaveLens => T("Selection.ConcaveLens"),
+            _ => selection.DisplayName
+        };
+    }
+
+    private static string T(string key) => LocalizationService.Instance.Get(key);
+
+    private static string F(string key, params object[] values) => string.Format(T(key), values);
 }

@@ -4,7 +4,7 @@
         xmlns:vm="using:LightDraw.Desktop.ViewModels"
         x:Class="LightDraw.Desktop.Views.ElectrostaticWindow"
         x:DataType="vm:ElectrostaticWindowViewModel"
-        Title="静电场仿真 - 光绘课堂"
+        Title="{DynamicResource Electro.Title}"
         Icon="/Assets/Icons/LightDraw.ico"
         Width="1320" Height="780" MinWidth="900" MinHeight="580"
         Background="#0B1220">
@@ -14,31 +14,31 @@
         <StackPanel Orientation="Horizontal" Spacing="10">
           <Image Width="40" Height="40" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
           <StackPanel>
-            <TextBlock Text="静电场仿真" FontSize="18" FontWeight="SemiBold" />
-            <TextBlock Text="点电荷、等势导体平板与电场线" FontSize="11" Foreground="#91A4C2" />
+            <TextBlock Text="{DynamicResource Electro.Heading}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{DynamicResource Electro.Subtitle}" FontSize="11" Foreground="#91A4C2" />
           </StackPanel>
         </StackPanel>
-        <TextBlock Grid.Column="2" Text="真空介电常数 ε₀ · 库仑定律" Foreground="#7F93B2" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="2" Text="{DynamicResource Electro.Law}" Foreground="#7F93B2" VerticalAlignment="Center" />
       </Grid>
     </Border>
 
     <Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,9" Background="#0F1A2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="Auto,Auto,Auto,*">
         <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,16,2">
-          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="✥ 平移界面" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
-          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="✣ 移动/编辑" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
-          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="× 删除" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="{DynamicResource Common.Pan}" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="{DynamicResource Common.Move}" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
+          <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="{DynamicResource Common.Delete}" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
         </StackPanel>
         <Border Grid.Column="1" Width="1" Height="28" Margin="0,0,16,0" Background="#26344C" />
-        <TextBlock Grid.Column="2" Text="统一模拟配置" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
+        <TextBlock Grid.Column="2" Text="{DynamicResource Common.SimulationSettings}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0" />
         <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
-          <TextBlock Text="每电荷电场线" Foreground="#9EB0CA" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Electro.LinesPerCharge}" Foreground="#9EB0CA" VerticalAlignment="Center" />
           <Grid Width="180" ColumnDefinitions="*,34" VerticalAlignment="Center">
             <Slider Minimum="8" Maximum="96" Value="{Binding LinesPerCharge, Mode=TwoWay}" TickFrequency="1" SmallChange="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding LinesPerCharge}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#7DE3FF" />
           </Grid>
-          <Button Classes="toolbar-inline" Content="⌂ 重置场景" Command="{Binding ResetSceneCommand}" />
-          <Button Classes="toolbar-inline" Content="◎ 适合窗口" Command="{Binding ResetViewCommand}" />
+          <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
+          <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
         </StackPanel>
       </Grid>
     </Border>
@@ -46,19 +46,19 @@
     <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
       <Grid RowDefinitions="Auto,Auto,Auto">
         <WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
-          <TextBlock Text="元件属性" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Common.ElementProperties}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
           <TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" Margin="0,2,18,2" />
           <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
-            <TextBlock Text="名称" Foreground="#9EB0CA" VerticalAlignment="Center" />
-            <TextBox Width="220" MaxLength="120" PlaceholderText="Element name"
+            <TextBlock Text="{DynamicResource Common.Name}" Foreground="#9EB0CA" VerticalAlignment="Center" />
+            <TextBox Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
                      Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
           </StackPanel>
         </WrapPanel>
         <Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
           <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-          <TextBlock Text="几何关系" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Common.Geometry}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
           <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
-          <TextBlock Text="中心" Foreground="#9EB0CA" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Common.Center}" Foreground="#9EB0CA" VerticalAlignment="Center" />
           <TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
           <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
           <TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
@@ -66,16 +66,16 @@
           <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
         </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelectedPlate}" Margin="0,2,18,2">
-            <TextBlock Text="旋转步进" Foreground="#9EB0CA" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="#9EB0CA" VerticalAlignment="Center" />
             <TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
             <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
-            <Button Classes="setting-inline" Content="↶ 逆时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
-            <Button Classes="setting-inline" Content="↷ 顺时针" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
-            <TextBlock Text="当前角度" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="4,0,0,0" />
+            <Button Classes="setting-inline" Content="{DynamicResource Common.Counterclockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
+            <Button Classes="setting-inline" Content="{DynamicResource Common.Clockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
+            <TextBlock Text="{DynamicResource Common.CurrentAngle}" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="4,0,0,0" />
             <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedPlateAngle, Mode=TwoWay}" />
             <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
             <ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
-              <ComboBoxItem Content="自定义" IsEnabled="False" />
+              <ComboBoxItem Content="{DynamicResource Common.Custom}" IsEnabled="False" />
               <ComboBoxItem Content="0°" />
               <ComboBoxItem Content="90°" />
               <ComboBoxItem Content="180°" />
@@ -86,19 +86,19 @@
         </Border>
         <Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
           <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-            <TextBlock Text="元件参数" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
+            <TextBlock Text="{DynamicResource Common.ElementParameters}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedPlate}" Margin="0,2,18,2">
-              <TextBlock Text="长度" Foreground="#9EB0CA" VerticalAlignment="Center" />
+              <TextBlock Text="{DynamicResource Common.Length}" Foreground="#9EB0CA" VerticalAlignment="Center" />
               <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedPlateLength, Mode=TwoWay}" />
               <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedCharge}" Margin="0,2,18,2">
-          <TextBlock Text="电量 q" Foreground="#9EB0CA" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Electro.Charge}" Foreground="#9EB0CA" VerticalAlignment="Center" />
           <TextBox Width="90" HorizontalContentAlignment="Right" Text="{Binding SelectedCharge, Mode=TwoWay}" />
           <TextBlock Text="nC" Foreground="#7F93B2" VerticalAlignment="Center" />
         </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedPlate}" Margin="0,2,18,2">
-          <TextBlock Text="电势 φ" Foreground="#9EB0CA" VerticalAlignment="Center" />
+          <TextBlock Text="{DynamicResource Electro.Potential}" Foreground="#9EB0CA" VerticalAlignment="Center" />
           <TextBox Width="90" HorizontalContentAlignment="Right" Text="{Binding SelectedPotential, Mode=TwoWay}" />
           <TextBlock Text="V" Foreground="#7F93B2" VerticalAlignment="Center" />
         </StackPanel>
@@ -109,14 +109,14 @@
 
     <Border Grid.Row="3" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
       <Grid RowDefinitions="Auto,*">
-        <TextBlock Text="创建模型" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
+        <TextBlock Text="{DynamicResource Common.CreateModels}" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
         <StackPanel Grid.Row="1" Margin="16,0,16,16" Spacing="2">
-          <TextBlock Text="电荷" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
-          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointCharge}" Content="⊕ 点电荷" Command="{Binding SelectToolCommand}" CommandParameter="PointCharge" />
-          <TextBlock Text="导体" Foreground="#7F93B2" FontSize="11" Margin="3,14,0,2" />
-          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ChargedPlate}" Content="▰ 带电平板" Command="{Binding SelectToolCommand}" CommandParameter="ChargedPlate" />
+          <TextBlock Text="{DynamicResource Electro.Charges}" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointCharge}" Content="{DynamicResource Electro.PointCharge}" Command="{Binding SelectToolCommand}" CommandParameter="PointCharge" />
+          <TextBlock Text="{DynamicResource Electro.Conductors}" Foreground="#7F93B2" FontSize="11" Margin="3,14,0,2" />
+          <Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ChargedPlate}" Content="{DynamicResource Electro.ChargedPlate}" Command="{Binding SelectToolCommand}" CommandParameter="ChargedPlate" />
           <Separator Margin="0,16,0,14" />
-          <TextBlock Text="红色：正电荷/正电势&#x0a;蓝色：负电荷/负电势&#x0a;&#x0a;平板两次点击创建。移动/编辑工具下可在空白处拖动画布；先单击元件任意位置选中，再拖动第一原点平移。平板长度和角度通过顶部属性框修改。&#x0a;&#x0a;所有电势均以无穷远 φ=0 为参考。" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
+          <TextBlock Text="{DynamicResource Electro.Help}" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0" TextWrapping="Wrap" />
         </StackPanel>
       </Grid>
     </Border>

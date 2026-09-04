@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Electromagnetics;
+using LightDraw.Desktop.Services;
 using LightDraw.Rendering.Skia.Electrostatics;
 
 namespace LightDraw.Desktop.ViewModels;
@@ -8,6 +9,7 @@ namespace LightDraw.Desktop.ViewModels;
 public sealed partial class ElectrostaticWindowViewModel : ObservableObject
 {
     private bool _updatingSelection;
+    private ElectrostaticSelection? _selection;
 
     [ObservableProperty] private ElectrostaticScene _currentScene = ElectrostaticScene.CreateEmpty();
     [ObservableProperty] private ElectrostaticTool _activeTool = ElectrostaticTool.Pan;
@@ -15,7 +17,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     [ObservableProperty] private bool _hasSelectedCharge;
     [ObservableProperty] private bool _hasSelectedPlate;
     [ObservableProperty] private bool _hasSelection;
-    [ObservableProperty] private string _selectedElementName = "未选择元件";
+    [ObservableProperty] private string _selectedElementName = T("Selection.None");
     [ObservableProperty] private string _selectedElementTitle = string.Empty;
     [ObservableProperty] private decimal _selectedCharge = 1;
     [ObservableProperty] private decimal _selectedPotential;
@@ -25,7 +27,7 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     [ObservableProperty] private int _selectedStandardAngleIndex;
     [ObservableProperty] private decimal _selectedOriginX;
     [ObservableProperty] private decimal _selectedOriginY;
-    [ObservableProperty] private string _statusText = "真空静电场 · 就绪";
+    [ObservableProperty] private string _statusText = T("Status.Ready");
 
     public event EventHandler? ResetViewRequested;
     public event Action<double>? SetSelectedChargeRequested;
@@ -114,38 +116,39 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
         CurrentScene = ElectrostaticScene.CreateEmpty();
         ActiveTool = ElectrostaticTool.Pan;
         UpdateSelection(null);
-        StatusText = "已重置为空白静电场";
+        StatusText = T("Status.ElectroReset");
     }
 
     [RelayCommand]
     private void ResetView()
     {
         ResetViewRequested?.Invoke(this, EventArgs.Empty);
-        StatusText = "视图已复位";
+        StatusText = T("Status.ViewReset");
     }
 
     public void UpdateToolState(ElectrostaticTool tool) => StatusText = tool switch
     {
-        ElectrostaticTool.Pan => "平移工具 · 按住左键拖动画布，滚轮缩放",
-        ElectrostaticTool.Move => "移动/编辑 · 空白处拖动画布；先单击选中，再拖动第一原点平移元件",
-        ElectrostaticTool.Delete => "删除工具 · 单击点电荷或平板后自动返回平移工具",
-        ElectrostaticTool.PointCharge => "放置点电荷 · 在画布中单击，随后可在顶部设置电量",
-        ElectrostaticTool.ChargedPlate => "放置带电平板 · 第一次点击起点，第二次点击终点",
+        ElectrostaticTool.Pan => T("Status.PanZoom"),
+        ElectrostaticTool.Move => T("Status.ElectroMove"),
+        ElectrostaticTool.Delete => T("Status.ElectroDelete"),
+        ElectrostaticTool.PointCharge => T("Status.PlaceCharge"),
+        ElectrostaticTool.ChargedPlate => T("Status.PlacePlate"),
         _ => StatusText
     };
 
     public void UpdateSelection(ElectrostaticSelection? selection)
     {
+        _selection = selection;
         _updatingSelection = true;
         try
         {
             HasSelection = selection is not null;
             HasSelectedCharge = selection?.Kind == ElectrostaticSelectionKind.PointCharge;
             HasSelectedPlate = selection?.Kind == ElectrostaticSelectionKind.ChargedPlate;
-            SelectedElementName = selection is null ? "未选择元件" :
+            SelectedElementName = selection is null ? T("Selection.None") :
                 selection.Kind == ElectrostaticSelectionKind.PointCharge
-                    ? $"点电荷 #{selection.Index + 1}"
-                    : $"带电平板 #{selection.Index + 1}";
+                    ? F("Selection.PointCharge", selection.Index + 1)
+                    : F("Selection.ChargedPlate", selection.Index + 1);
             SelectedElementTitle = selection?.Name ?? string.Empty;
             if (selection is not null)
             {
@@ -168,9 +171,14 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
     }
 
     public void UpdateSimulation(ElectrostaticSimulationResult result) =>
-        StatusText = $"{CurrentScene.Name} · {CurrentScene.Charges.Length} 个点电荷 · " +
-                     $"{CurrentScene.PlateElements.Length} 块平板 · " +
-                     $"{result.FieldLines.Count} 条电场线 · 计算 {result.Elapsed.TotalMilliseconds:F2} ms";
+        StatusText = F("Status.ElectroSimulation", CurrentScene.Name, CurrentScene.Charges.Length,
+            CurrentScene.PlateElements.Length, result.FieldLines.Count, result.Elapsed.TotalMilliseconds);
+
+    public void RefreshLanguage()
+    {
+        UpdateSelection(_selection);
+        UpdateToolState(ActiveTool);
+    }
 
     private void ApplyOrigin(decimal x, decimal y)
     {
@@ -184,4 +192,8 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
             if (Math.Abs(normalized - index * 90) <= 1e-6) return index + 1;
         return 0;
     }
+
+    private static string T(string key) => LocalizationService.Instance.Get(key);
+
+    private static string F(string key, params object[] values) => string.Format(T(key), values);
 }

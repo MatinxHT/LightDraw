@@ -6,7 +6,7 @@ namespace LightDraw.Core.Persistence;
 
 public static class SceneSerializer
 {
-    public const int CurrentDataVersion = 13;
+    public const int CurrentDataVersion = 14;
 
     private static readonly JsonSerializerOptions Options = new()
     {
@@ -65,6 +65,8 @@ public static class SceneSerializer
         Apertures = scene.ApertureElements.Select(item => item with { Id = EnsureId(item.Id) }).ToArray(),
         ReflectionGratings = scene.ReflectionGratingElements
             .Select(item => item with { Id = EnsureId(item.Id) }).ToArray(),
+        ConcaveGratings = scene.ConcaveGratingElements
+            .Select(item => item with { Id = EnsureId(item.Id) }).ToArray(),
         Lenses = scene.LensElements
             .Select(lens => lens with
             {
@@ -110,6 +112,7 @@ public static class SceneSerializer
             .Concat(scene.ScreenElements.Select(item => item.Id))
             .Concat(scene.ApertureElements.Select(item => item.Id))
             .Concat(scene.ReflectionGratingElements.Select(item => item.Id))
+            .Concat(scene.ConcaveGratingElements.Select(item => item.Id))
             .Concat(scene.LensElements.Select(item => item.Id));
 
     private static Guid EnsureId(Guid id) => id == Guid.Empty ? Guid.NewGuid() : id;

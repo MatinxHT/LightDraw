@@ -43,6 +43,9 @@ internal static class SceneGeometry
         for (var i = 0; i < scene.ReflectionGratingElements.Length; i++)
             yield return new SceneItemRef(SceneItemKind.ReflectionGrating, i,
                 scene.ReflectionGratingElements[i].Id);
+        for (var i = 0; i < scene.ConcaveGratingElements.Length; i++)
+            yield return new SceneItemRef(SceneItemKind.ConcaveGrating, i,
+                scene.ConcaveGratingElements[i].Id);
         for (var i = 0; i < scene.LensElements.Length; i++)
             yield return new SceneItemRef(SceneItemKind.Lens, i, scene.LensElements[i].Id);
     }
@@ -68,6 +71,7 @@ internal static class SceneGeometry
             scene.ApertureElements[item.Index].End),
         SceneItemKind.ReflectionGrating => Mid(scene.ReflectionGratingElements[item.Index].Start,
             scene.ReflectionGratingElements[item.Index].End),
+        SceneItemKind.ConcaveGrating => scene.ConcaveGratingElements[item.Index].Vertex,
         SceneItemKind.Lens => Mid(scene.LensElements[item.Index].Start, scene.LensElements[item.Index].End),
         _ => Vector2D.Zero
     };
@@ -92,6 +96,8 @@ internal static class SceneGeometry
             scene.ApertureElements[item.Index].End),
         SceneItemKind.ReflectionGrating => SegmentAngle(scene.ReflectionGratingElements[item.Index].Start,
             scene.ReflectionGratingElements[item.Index].End),
+        SceneItemKind.ConcaveGrating => SegmentAngle(scene.ConcaveGratingElements[item.Index].Vertex,
+            scene.ConcaveGratingElements[item.Index].CenterOfCurvature),
         SceneItemKind.Lens => SegmentAngle(scene.LensElements[item.Index].Start,
             scene.LensElements[item.Index].End),
         _ => 0
@@ -119,6 +125,10 @@ internal static class SceneGeometry
                 scene.ApertureElements[item.Index].End),
             SceneItemKind.ReflectionGrating => SegmentBounds(scene.ReflectionGratingElements[item.Index].Start,
                 scene.ReflectionGratingElements[item.Index].End),
+            SceneItemKind.ConcaveGrating => ArcBounds(
+                scene.ConcaveGratingElements[item.Index].Vertex,
+                scene.ConcaveGratingElements[item.Index].CenterOfCurvature,
+                scene.ConcaveGratingElements[item.Index].ArcAngleDegrees),
             SceneItemKind.Lens => SegmentBounds(scene.LensElements[item.Index].Start,
                 scene.LensElements[item.Index].End),
             _ => WorldBounds.FromPoint(Vector2D.Zero)
@@ -159,6 +169,9 @@ internal static class SceneGeometry
             ? item with { Start = item.Start + delta, End = item.End + delta } : item).ToArray(),
         ReflectionGratings = scene.ReflectionGratingElements.Select(item => ids.Contains(item.Id)
             ? item with { Start = item.Start + delta, End = item.End + delta } : item).ToArray(),
+        ConcaveGratings = scene.ConcaveGratingElements.Select(item => ids.Contains(item.Id)
+            ? item with { Vertex = item.Vertex + delta, CenterOfCurvature = item.CenterOfCurvature + delta }
+            : item).ToArray(),
         Lenses = scene.LensElements.Select(item => ids.Contains(item.Id)
             ? item with { Start = item.Start + delta, End = item.End + delta } : item).ToArray()
     };
@@ -200,6 +213,12 @@ internal static class SceneGeometry
         ReflectionGratings = RotateSegments(scene.ReflectionGratingElements, ids, pivot, radians,
             item => item.Id, item => item.Start, item => item.End,
             (item, start, end) => item with { Start = start, End = end }),
+        ConcaveGratings = scene.ConcaveGratingElements.Select(item => ids.Contains(item.Id)
+            ? item with
+            {
+                Vertex = RotatePoint(item.Vertex, pivot, radians),
+                CenterOfCurvature = RotatePoint(item.CenterOfCurvature, pivot, radians)
+            } : item).ToArray(),
         Lenses = RotateSegments(scene.LensElements, ids, pivot, radians,
             item => item.Id, item => item.Start, item => item.End,
             (item, start, end) => item with { Start = start, End = end })

@@ -13,6 +13,8 @@ public sealed partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        LocalizationService.Instance.ApplyResources();
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainWindow = new MainWindow();

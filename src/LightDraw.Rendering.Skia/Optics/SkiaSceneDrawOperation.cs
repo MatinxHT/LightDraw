@@ -55,6 +55,7 @@ internal sealed class SkiaSceneDrawOperation(
         DrawScreens(canvas);
         DrawApertures(canvas);
         DrawReflectionGratings(canvas);
+        DrawConcaveGratings(canvas);
         DrawLenses(canvas);
         DrawSources(canvas);
         DrawElementNames(canvas);
@@ -649,6 +650,58 @@ internal sealed class SkiaSceneDrawOperation(
         }
     }
 
+    private void DrawConcaveGratings(SKCanvas canvas)
+    {
+        using var glow = SegmentPaint(new SKColor(167, 139, 250, 48), 10);
+        using var paint = SegmentPaint(new SKColor(196, 181, 253), 3.2);
+        using var groovePaint = SegmentPaint(new SKColor(237, 233, 254), 1.1);
+        using var guide = new SKPaint
+        {
+            Color = new SKColor(196, 181, 253, 105), StrokeWidth = 1.2f,
+            Style = SKPaintStyle.Stroke, IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([5, 5], 0)
+        };
+
+        for (var index = 0; index < scene.ConcaveGratingElements.Length; index++)
+        {
+            var grating = scene.ConcaveGratingElements[index];
+            var radius = grating.Radius;
+            if (radius <= 1e-12) continue;
+            var center = ToScreen(grating.CenterOfCurvature);
+            var screenRadius = (float)(radius * zoom);
+            var oval = new SKRect(center.X - screenRadius, center.Y - screenRadius,
+                center.X + screenRadius, center.Y + screenRadius);
+            var middle = Math.Atan2(grating.Vertex.Y - grating.CenterOfCurvature.Y,
+                grating.Vertex.X - grating.CenterOfCurvature.X);
+            var sweepDegrees = Math.Clamp(Math.Abs(grating.ArcAngleDegrees), 1, 359.9);
+            var startDegrees = middle * 180 / Math.PI - sweepDegrees / 2;
+            canvas.DrawArc(oval, (float)startDegrees, (float)sweepDegrees, false, glow);
+            canvas.DrawArc(oval, (float)startDegrees, (float)sweepDegrees, false, paint);
+
+            var visibleGrooves = Math.Clamp((int)Math.Round(radius * sweepDegrees * Math.PI / 180 * zoom / 14), 4, 32);
+            var markerSize = Math.Min(5 / zoom, radius * 0.04);
+            var startRadians = startDegrees * Math.PI / 180;
+            var sweepRadians = sweepDegrees * Math.PI / 180;
+            for (var groove = 1; groove < visibleGrooves; groove++)
+            {
+                var radial = Vector2D.FromAngle(startRadians + sweepRadians * groove / visibleGrooves);
+                var point = grating.CenterOfCurvature + radial * radius;
+                canvas.DrawLine(ToScreen(point - radial * markerSize),
+                    ToScreen(point + radial * markerSize), groovePaint);
+            }
+
+            if (tool == CanvasTool.Move && selectedIds.Count <= 1)
+            {
+                canvas.DrawLine(ToScreen(grating.Vertex), center, guide);
+                canvas.DrawCircle(ToScreen(grating.Vertex), 4.5f, paint);
+                canvas.DrawCircle(center, 4.5f, paint);
+                DrawOrigin(canvas, grating.Vertex,
+                    selectedKind == SceneItemKind.ConcaveGrating && selectedIndex == index);
+                DrawSphericalMirrorRotationHandle(canvas, grating.Vertex, grating.CenterOfCurvature);
+            }
+        }
+    }
+
     private void DrawElementNames(SKCanvas canvas)
     {
         using var font = new SKFont(SKTypeface.Default, 12);
@@ -698,6 +751,7 @@ internal sealed class SkiaSceneDrawOperation(
         SceneItemKind.Screen => scene.ScreenElements[item.Index].Name,
         SceneItemKind.Aperture => scene.ApertureElements[item.Index].Name,
         SceneItemKind.ReflectionGrating => scene.ReflectionGratingElements[item.Index].Name,
+        SceneItemKind.ConcaveGrating => scene.ConcaveGratingElements[item.Index].Name,
         SceneItemKind.Lens => scene.LensElements[item.Index].Name,
         _ => null
     };
@@ -717,7 +771,8 @@ internal sealed class SkiaSceneDrawOperation(
         canvas.DrawLine(ToScreen(start), ToScreen(end), preview);
         canvas.DrawCircle(ToScreen(start), 5, preview);
         canvas.DrawCircle(ToScreen(end), 5, preview);
-        if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror)
+        if (tool is CanvasTool.ConcaveSphericalMirror or CanvasTool.ConvexSphericalMirror
+            or CanvasTool.ConcaveGrating)
         {
             var radius = (end - start).Length;
             if (radius > 1e-12)
@@ -740,9 +795,10 @@ internal sealed class SkiaSceneDrawOperation(
     private void DrawLegend(SKCanvas canvas)
     {
         using var paint = new SKPaint { Color = new SKColor(195, 209, 229), IsAntialias = true };
-        using var matchedTypeface = SKFontManager.Default.MatchCharacter('光');
-        using var font = new SKFont(matchedTypeface ?? SKTypeface.Default, 14);
-        canvas.DrawText($"{scene.Name}  ·  每光源 {raysPerSource} 条 / 共 {result.InitialRayCount} 条  ·  {result.ReflectedRayCount} 次反射  ·  {result.RefractedRayCount} 次折射  ·  {result.DiffractedRayCount} 条衍射光线",
+        using var font = new SKFont(SKTypeface.Default, 14);
+        canvas.DrawText($"Optical scene | {raysPerSource} rays/source | {result.InitialRayCount} total | " +
+                        $"{result.ReflectedRayCount} reflected | {result.RefractedRayCount} refracted | " +
+                        $"{result.DiffractedRayCount} diffracted",
             18, 28, SKTextAlign.Left, font, paint);
     }
 

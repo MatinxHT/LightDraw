@@ -119,13 +119,16 @@ public sealed class RayTracer
                     break;
                 }
 
-                if (nearestHit.Kind == OpticalHitKind.ReflectionGrating)
+                if (nearestHit.Kind is OpticalHitKind.ReflectionGrating or OpticalHitKind.ConcaveGrating)
                 {
-                    var grating = nearestHit.GetElement<ReflectionGratingSegment>();
                     if (bounce < options.MaximumReflections)
                     {
-                        foreach (var diffractedRay in DiffractSpectrum(ray, grating,
-                                     options.MaximumDiffractionOrder))
+                        var diffractedRays = nearestHit.Kind == OpticalHitKind.ReflectionGrating
+                            ? DiffractSpectrum(ray, nearestHit.GetElement<ReflectionGratingSegment>(),
+                                options.MaximumDiffractionOrder)
+                            : DiffractSpectrum(ray, hitPoint, nearestHit.GetElement<ConcaveGrating>(),
+                                options.MaximumDiffractionOrder);
+                        foreach (var diffractedRay in diffractedRays)
                         {
                             if (output.Count + pending.Count >= options.MaximumSegments)
                             {
@@ -297,6 +300,14 @@ public sealed class RayTracer
             }
         }
 
+        foreach (var grating in scene.ConcaveGratingElements.Where(item => !item.IsTemporarilyHidden))
+        {
+            if (TryIntersect(ray, grating, epsilon, out var distance))
+            {
+                Consider(distance, OpticalHitKind.ConcaveGrating, grating);
+            }
+        }
+
         foreach (var beamSplitter in scene.BeamSplitterElements.Where(item => !item.IsTemporarilyHidden))
         {
             if (TryIntersect(ray, beamSplitter.Start, beamSplitter.End, epsilon, out var distance))
@@ -431,6 +442,23 @@ public sealed class RayTracer
         }
     }
 
+    private static IEnumerable<(
+        Vector2D Direction,
+        int Order,
+        double WavelengthNanometers,
+        double SpectralIntensityFactor,
+        RaySpectrumState SpectrumState)> DiffractSpectrum(
+        Ray2D ray,
+        Vector2D hitPoint,
+        ConcaveGrating grating,
+        int maximumOrder)
+    {
+        var tangent = (hitPoint - grating.CenterOfCurvature).Normalized().Perpendicular();
+        var localPlane = new ReflectionGratingSegment(
+            hitPoint - tangent, hitPoint + tangent, grating.GrooveDensityLinesPerMillimeter);
+        return DiffractSpectrum(ray, localPlane, maximumOrder);
+    }
+
     private static double DiffractionIntensityFactor(int order) => Math.Abs(order) switch
     {
         0 => 0.9,
@@ -512,6 +540,14 @@ public sealed class RayTracer
         out double distance) =>
         TryIntersectSpherical(ray, mirror.Vertex, mirror.CenterOfCurvature,
             mirror.ArcAngleDegrees, false, epsilon, out distance);
+
+    private static bool TryIntersect(
+        Ray2D ray,
+        ConcaveGrating grating,
+        double epsilon,
+        out double distance) =>
+        TryIntersectSpherical(ray, grating.Vertex, grating.CenterOfCurvature,
+            grating.ArcAngleDegrees, true, epsilon, out distance);
 
     private static bool TryIntersectSpherical(
         Ray2D ray,
