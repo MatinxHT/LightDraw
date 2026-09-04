@@ -51,7 +51,7 @@ foreach ($architecture in $architectures) {
 <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10" xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" IgnorableNamespaces="uap uap10 rescap">
   <Identity Name="MartinHungChiho.LightDraw" Publisher="$Publisher" Version="$packageVersion" ProcessorArchitecture="$($architecture.ProcessorArchitecture)" />
   <Properties>
-    <DisplayName>LightDraw</DisplayName>
+    <DisplayName>&#x5149;&#x7ED8;&#x8BFE;&#x5802;LightDraw</DisplayName>
     <PublisherDisplayName>Martin Hung Chiho</PublisherDisplayName>
     <Description>LightDraw classroom application for optics, electrostatics, and magnetostatics.</Description>
     <Logo>Assets\StoreLogo.png</Logo>
