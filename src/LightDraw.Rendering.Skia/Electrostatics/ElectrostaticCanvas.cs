@@ -16,7 +16,7 @@ public sealed record ElectrostaticSelection(ElectrostaticSelectionKind Kind, int
     double? ChargeNanocoulombs = null, double? PotentialVolts = null, double? Length = null,
     double? AngleDegrees = null, string? Name = null);
 
-public sealed class ElectrostaticCanvas : Control
+public sealed class ElectrostaticCanvas : ThemedCanvas
 {
     public static readonly DirectProperty<ElectrostaticCanvas, ElectrostaticScene> SceneProperty =
         AvaloniaProperty.RegisterDirect<ElectrostaticCanvas, ElectrostaticScene>(nameof(Scene), c => c.Scene,
@@ -28,18 +28,36 @@ public sealed class ElectrostaticCanvas : Control
         AvaloniaProperty.RegisterDirect<ElectrostaticCanvas, int>(nameof(LinesPerCharge), c => c.LinesPerCharge,
             (c, v) => c.SetLinesPerCharge(v));
 
-    private static readonly IBrush BackgroundBrush = Brush("#08111F");
-    private static readonly IBrush TextBrush = Brush("#B8C9E2");
-    private static readonly Pen MinorGridPen = Pen("#15243A", 1);
-    private static readonly Pen MajorGridPen = Pen("#233955", 1);
-    private static readonly Pen AxisPen = Pen("#3C5878", 1.2);
-    private static readonly Pen TickPen = Pen("#96AAC9", 1);
-    private static readonly Pen FieldPen = Pen("#72D9FF", 1.35);
-    private static readonly Pen SelectionPen = Pen("#FFFFFF", 2);
+    private static readonly IBrush DarkBackgroundBrush = Brush("#191A18");
+    private static readonly IBrush LightBackgroundBrush = Brush("#FFFFFF");
+    private IBrush BackgroundBrush => IsLightTheme ? LightBackgroundBrush : DarkBackgroundBrush;
+    private static readonly IBrush DarkTextBrush = Brush("#C8C5BD");
+    private static readonly IBrush LightTextBrush = Brush("#486882");
+    private IBrush TextBrush => IsLightTheme ? LightTextBrush : DarkTextBrush;
+    private static readonly Pen DarkMinorGridPen = Pen("#252623", 1);
+    private static readonly Pen LightMinorGridPen = Pen("#EFF5FA", 1);
+    private Pen MinorGridPen => IsLightTheme ? LightMinorGridPen : DarkMinorGridPen;
+    private static readonly Pen DarkMajorGridPen = Pen("#33342F", 1);
+    private static readonly Pen LightMajorGridPen = Pen("#E1EDF6", 1);
+    private Pen MajorGridPen => IsLightTheme ? LightMajorGridPen : DarkMajorGridPen;
+    private static readonly Pen DarkAxisPen = Pen("#64645C", 1.2);
+    private static readonly Pen LightAxisPen = Pen("#87AAC6", 1.2);
+    private Pen AxisPen => IsLightTheme ? LightAxisPen : DarkAxisPen;
+    private static readonly Pen DarkTickPen = Pen("#A6A399", 1);
+    private static readonly Pen LightTickPen = Pen("#6C91AE", 1);
+    private Pen TickPen => IsLightTheme ? LightTickPen : DarkTickPen;
+    private static readonly Pen DarkFieldPen = Pen("#B7C5CC", 1.35);
+    private static readonly Pen LightFieldPen = Pen("#3499D2", 1.35);
+    private Pen FieldPen => IsLightTheme ? LightFieldPen : DarkFieldPen;
+    private static readonly Pen DarkSelectionPen = Pen("#D1BE9D", 2);
+    private static readonly Pen LightSelectionPen = Pen("#247FB9", 2);
+    private Pen SelectionPen => IsLightTheme ? LightSelectionPen : DarkSelectionPen;
     private static readonly Pen PositivePlatePen = Pen("#FF6B78", 5);
     private static readonly Pen NegativePlatePen = Pen("#5B9BFF", 5);
     private static readonly Pen ZeroPlatePen = Pen("#A0AEC0", 5);
-    private static readonly Pen PreviewPen = new(Brush("#A6EEFF"), 2, DashStyle.Dash);
+    private static readonly Pen DarkPreviewPen = new(Brush("#D1BE9D"), 2, DashStyle.Dash);
+    private static readonly Pen LightPreviewPen = new(Brush("#3899D3"), 2, DashStyle.Dash);
+    private Pen PreviewPen => IsLightTheme ? LightPreviewPen : DarkPreviewPen;
     private static readonly IBrush PositiveBrush = Brush("#F05262");
     private static readonly IBrush NegativeBrush = Brush("#3B82F6");
     private static readonly IBrush NeutralBrush = Brush("#77869C");
@@ -306,7 +324,7 @@ public sealed class ElectrostaticCanvas : Control
             for (var y = Math.Ceiling(bottom / step) * step; y <= top; y += step)
             { var p = ToScreen(new(0, y)); context.DrawLine(TickPen, new(_pan.X - 4, p.Y), new(_pan.X + 4, p.Y)); if (Math.Abs(y) > .01) DrawCoordinate(context, y, new(_pan.X + 7, p.Y + 2)); }
     }
-    private static void DrawCoordinate(DrawingContext c, double value, Point point) => c.DrawText(Text(Math.Round(value).ToString(CultureInfo.InvariantCulture), 11), point);
+    private void DrawCoordinate(DrawingContext c, double value, Point point) => c.DrawText(Text(Math.Round(value).ToString(CultureInfo.InvariantCulture), 11), point);
 
     private void DrawFieldLine(DrawingContext context, ElectricFieldLine line)
     {
@@ -406,7 +424,7 @@ public sealed class ElectrostaticCanvas : Control
     private Vector2D ToWorld(Point p) => new((p.X - _pan.X) / _zoom, (_pan.Y - p.Y) / _zoom);
     private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
     private static Pen Pen(string color, double width) => new(Brush(color), width);
-    private static FormattedText Text(string value, double size) => new(value, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new("Inter"), size, TextBrush);
+    private FormattedText Text(string value, double size) => new(value, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new("Inter"), size, TextBrush);
     private readonly record struct ElementHit(ElectrostaticSelectionKind Kind, int Index, DragMode Mode);
     private enum DragMode { Body, Origin }
 }

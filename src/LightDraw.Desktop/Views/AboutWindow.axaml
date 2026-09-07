@@ -7,7 +7,7 @@
     Height="700"
     MinWidth="520"
     MinHeight="560"
-    Background="#0B1220"
+    Background="{DynamicResource WindowBrush}"
     Icon="/Assets/Icons/LightDraw.ico"
     WindowStartupLocation="CenterOwner">
     <Grid Margin="28" RowDefinitions="*,Auto">
@@ -24,40 +24,40 @@
                             FontSize="20"
                             FontWeight="SemiBold"
                             Text="{DynamicResource App.Title}" />
-                        <TextBlock x:Name="VersionText" Foreground="#7DE3FF" />
+                        <TextBlock x:Name="VersionText" Foreground="{DynamicResource AccentBrush}" />
                     </StackPanel>
                 </StackPanel>
 
                 <TextBlock
-                    Foreground="#B7C5DA"
+                    Foreground="{DynamicResource BodyTextBrush}"
                     Text="{DynamicResource About.Description}"
                     TextWrapping="Wrap" />
 
                 <Border
                     Padding="16"
-                    Background="#111B2E"
-                    BorderBrush="#26344C"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="8">
                         <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Repository}" />
                         <TextBlock
-                            Foreground="#9EB0CA"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
                             Text="{DynamicResource About.RepositoryDescription}"
                             TextWrapping="Wrap" />
                         <HyperlinkButton
                             Padding="0"
                             HorizontalAlignment="Left"
                             Content="https://github.com/MatinxHT/LightDraw"
-                            Foreground="#7DE3FF"
+                            Foreground="{DynamicResource AccentBrush}"
                             NavigateUri="https://github.com/MatinxHT/LightDraw" />
                     </StackPanel>
                 </Border>
 
                 <Border
                     Padding="16"
-                    Background="#111B2E"
-                    BorderBrush="#26344C"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="12">
@@ -65,36 +65,36 @@
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="#7DE3FF"
+                                Foreground="{DynamicResource AccentBrush}"
                                 Text="{DynamicResource About.OpticsHeading}" />
                             <TextBlock
-                                Foreground="#9EB0CA"
+                                Foreground="{DynamicResource SecondaryTextBrush}"
                                 Text="{DynamicResource About.OpticsDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="#7DE3FF"
+                                Foreground="{DynamicResource AccentBrush}"
                                 Text="{DynamicResource About.ElectroHeading}" />
                             <TextBlock
-                                Foreground="#9EB0CA"
+                                Foreground="{DynamicResource SecondaryTextBrush}"
                                 Text="{DynamicResource About.ElectroDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Spacing="4">
                             <TextBlock
                                 FontWeight="SemiBold"
-                                Foreground="#7DE3FF"
+                                Foreground="{DynamicResource AccentBrush}"
                                 Text="{DynamicResource About.MagneticHeading}" />
                             <TextBlock
-                                Foreground="#9EB0CA"
+                                Foreground="{DynamicResource SecondaryTextBrush}"
                                 Text="{DynamicResource About.MagneticDescription}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
                         <TextBlock
                             FontSize="12"
-                            Foreground="#7F93B2"
+                            Foreground="{DynamicResource MutedTextBrush}"
                             Text="{DynamicResource About.Disclaimer}"
                             TextWrapping="Wrap" />
                     </StackPanel>
@@ -102,20 +102,20 @@
 
                 <Border
                     Padding="16"
-                    Background="#111B2E"
-                    BorderBrush="#26344C"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="7">
                         <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.License}" />
-                        <TextBlock Foreground="#7DE3FF" Text="PolyForm Noncommercial License 1.0.0" />
+                        <TextBlock Foreground="{DynamicResource AccentBrush}" Text="PolyForm Noncommercial License 1.0.0" />
                         <TextBlock
-                            Foreground="#9EB0CA"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
                             Text="{DynamicResource About.LicenseDescription}"
                             TextWrapping="Wrap" />
                         <TextBlock
                             FontSize="12"
-                            Foreground="#7F93B2"
+                            Foreground="{DynamicResource MutedTextBrush}"
                             Text="Required Notice: Copyright 2026 LightDraw contributors"
                             TextWrapping="Wrap" />
                     </StackPanel>
@@ -123,14 +123,14 @@
 
                 <Border
                     Padding="16"
-                    Background="#111B2E"
-                    BorderBrush="#26344C"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
                     <StackPanel Spacing="9">
                         <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Acknowledgements}" />
                         <TextBlock
-                            Foreground="#9EB0CA"
+                            Foreground="{DynamicResource SecondaryTextBrush}"
                             LineHeight="22"
                             Text="{DynamicResource About.Institutions}"
                             TextWrapping="Wrap" />
@@ -143,7 +143,7 @@
             <TextBlock
                 VerticalAlignment="Center"
                 FontSize="12"
-                Foreground="#687D9D"
+                Foreground="{DynamicResource QuietTextBrush}"
                 Text="{DynamicResource About.BuiltWith}" />
             <Button
                 Grid.Column="1"

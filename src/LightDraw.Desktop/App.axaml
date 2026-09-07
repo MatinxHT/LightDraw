@@ -2,12 +2,34 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:conv="using:LightDraw.Desktop.Converters"
              x:Class="LightDraw.Desktop.App"
-             RequestedThemeVariant="Dark">
+             RequestedThemeVariant="Light">
   <Application.Resources>
-    <conv:EnumEqualsConverter x:Key="EnumEqualsConverter" />
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Themes/Palette.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <conv:EnumEqualsConverter x:Key="EnumEqualsConverter" />
+    </ResourceDictionary>
   </Application.Resources>
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#C6B394"
+                               BaseHigh="#EEECE7" BaseMediumHigh="#D1CEC7"
+                               BaseMedium="#AAA69E" BaseMediumLow="#817D76" BaseLow="#3A3936"
+                               ChromeDisabledLow="#77736C" ChromeDisabledHigh="#89857E"
+                               ChromeHigh="#56534D" ChromeMedium="#302F2C"
+                               ChromeMediumLow="#282724" ChromeLow="#20201E"
+                               ListLow="#2C2B28" ListMedium="#403B33" />
+        <ColorPaletteResources x:Key="Light" Accent="#4CA9E6"
+                               BaseHigh="#283F52" BaseMediumHigh="#45657B"
+                               BaseMedium="#628096" BaseMediumLow="#8DA4B5" BaseLow="#E8F1F7"
+                               ChromeDisabledLow="#839AAB" ChromeDisabledHigh="#8BA1B2"
+                               ChromeHigh="#BDD4E5" ChromeMedium="#E7F1F8"
+                               ChromeMediumLow="#F3F8FC" ChromeLow="#FAFCFF"
+                               ListLow="#EDF6FC" ListMedium="#DDEFFC" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <Style Selector="Button.toolbar">
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="Padding" Value="14,10" />
@@ -17,9 +39,9 @@
       <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
     <Style Selector="Button.toolbar.selected">
-      <Setter Property="Background" Value="#1F6FEB33" />
-      <Setter Property="BorderBrush" Value="#7DE3FF" />
-      <Setter Property="Foreground" Value="#7DE3FF" />
+      <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.toolbar-inline">
@@ -28,12 +50,12 @@
       <Setter Property="Margin" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BorderBrush" Value="#26344C" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
     </Style>
     <Style Selector="Button.toolbar-inline.selected">
-      <Setter Property="Background" Value="#1F6FEB33" />
-      <Setter Property="BorderBrush" Value="#7DE3FF" />
-      <Setter Property="Foreground" Value="#7DE3FF" />
+      <Setter Property="Background" Value="{DynamicResource SelectionBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SelectionBorderBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
     <Style Selector="Button.setting-inline">
@@ -43,7 +65,7 @@
       <Setter Property="MinWidth" Value="0" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="BorderBrush" Value="#26344C" />
+      <Setter Property="BorderBrush" Value="{DynamicResource DividerBrush}" />
     </Style>
   </Application.Styles>
 </Application>

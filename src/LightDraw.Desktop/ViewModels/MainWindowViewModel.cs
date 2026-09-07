@@ -1,3 +1,5 @@
+using Avalonia;
+using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Scene;
@@ -16,6 +18,16 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
 
     [ObservableProperty]
     private int _selectedLanguageIndex = LocalizationService.Instance.IsEnglish ? 1 : 0;
+
+    [ObservableProperty]
+    private int _selectedThemeIndex = Application.Current?.RequestedThemeVariant == ThemeVariant.Light ? 1 : 0;
+
+    partial void OnSelectedThemeIndexChanged(int value)
+    {
+        if (value is not (0 or 1)) return;
+        if (Application.Current is { } app)
+            app.RequestedThemeVariant = value == 1 ? ThemeVariant.Light : ThemeVariant.Dark;
+    }
 
     [ObservableProperty]
     private OpticalScene _currentScene = OpticalScene.CreateEmpty();

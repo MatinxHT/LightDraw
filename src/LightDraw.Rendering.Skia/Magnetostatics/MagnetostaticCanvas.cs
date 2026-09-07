@@ -40,7 +40,7 @@ public sealed record MagnetostaticSelection(
     double? SecondOriginY = null,
     string? Name = null);
 
-public sealed class MagnetostaticCanvas : Control
+public sealed class MagnetostaticCanvas : ThemedCanvas
 {
     private const double RotationHandleOffset = 100;
     public static readonly DirectProperty<MagnetostaticCanvas, MagnetostaticScene> SceneProperty =
@@ -53,22 +53,42 @@ public sealed class MagnetostaticCanvas : Control
         AvaloniaProperty.RegisterDirect<MagnetostaticCanvas, int>(nameof(MarkerDensity), c => c.MarkerDensity,
             (c, v) => c.SetMarkerDensity(v));
 
-    private static readonly IBrush BackgroundBrush = Brush("#08111F");
-    private static readonly IBrush TextBrush = Brush("#B8C9E2");
-    private static readonly Pen MinorGridPen = Pen("#15243A", 1);
-    private static readonly Pen MajorGridPen = Pen("#233955", 1);
-    private static readonly Pen AxisPen = Pen("#3C5878", 1.2);
-    private static readonly Pen TickPen = Pen("#96AAC9", 1);
-    private static readonly IBrush FieldBrush = Brush("#67E8C7");
-    private static readonly Pen FieldPen = Pen("#67E8C7", 1.4);
+    private static readonly IBrush DarkBackgroundBrush = Brush("#191A18");
+    private static readonly IBrush LightBackgroundBrush = Brush("#FFFFFF");
+    private IBrush BackgroundBrush => IsLightTheme ? LightBackgroundBrush : DarkBackgroundBrush;
+    private static readonly IBrush DarkTextBrush = Brush("#C8C5BD");
+    private static readonly IBrush LightTextBrush = Brush("#486882");
+    private IBrush TextBrush => IsLightTheme ? LightTextBrush : DarkTextBrush;
+    private static readonly Pen DarkMinorGridPen = Pen("#252623", 1);
+    private static readonly Pen LightMinorGridPen = Pen("#EFF5FA", 1);
+    private Pen MinorGridPen => IsLightTheme ? LightMinorGridPen : DarkMinorGridPen;
+    private static readonly Pen DarkMajorGridPen = Pen("#33342F", 1);
+    private static readonly Pen LightMajorGridPen = Pen("#E1EDF6", 1);
+    private Pen MajorGridPen => IsLightTheme ? LightMajorGridPen : DarkMajorGridPen;
+    private static readonly Pen DarkAxisPen = Pen("#64645C", 1.2);
+    private static readonly Pen LightAxisPen = Pen("#87AAC6", 1.2);
+    private Pen AxisPen => IsLightTheme ? LightAxisPen : DarkAxisPen;
+    private static readonly Pen DarkTickPen = Pen("#A6A399", 1);
+    private static readonly Pen LightTickPen = Pen("#6C91AE", 1);
+    private Pen TickPen => IsLightTheme ? LightTickPen : DarkTickPen;
+    private static readonly IBrush DarkFieldBrush = Brush("#A9B9A6");
+    private static readonly IBrush LightFieldBrush = Brush("#269C8B");
+    private IBrush FieldBrush => IsLightTheme ? LightFieldBrush : DarkFieldBrush;
+    private static readonly Pen DarkFieldPen = Pen("#A9B9A6", 1.4);
+    private static readonly Pen LightFieldPen = Pen("#269C8B", 1.4);
+    private Pen FieldPen => IsLightTheme ? LightFieldPen : DarkFieldPen;
     private static readonly Pen PositiveCurrentPen = Pen("#FF8A65", 6);
     private static readonly Pen NegativeCurrentPen = Pen("#7AA7FF", 6);
     private static readonly Pen ZeroCurrentPen = Pen("#8493A8", 6);
     private static readonly IBrush PositiveCurrentBrush = Brush("#FF8A65");
     private static readonly IBrush NegativeCurrentBrush = Brush("#7AA7FF");
     private static readonly IBrush ZeroCurrentBrush = Brush("#8493A8");
-    private static readonly Pen SelectionPen = Pen("#FFFFFF", 2);
-    private static readonly Pen PreviewPen = new(Brush("#A7F3D0"), 2, DashStyle.Dash);
+    private static readonly Pen DarkSelectionPen = Pen("#D1BE9D", 2);
+    private static readonly Pen LightSelectionPen = Pen("#247FB9", 2);
+    private Pen SelectionPen => IsLightTheme ? LightSelectionPen : DarkSelectionPen;
+    private static readonly Pen DarkPreviewPen = new(Brush("#D1BE9D"), 2, DashStyle.Dash);
+    private static readonly Pen LightPreviewPen = new(Brush("#269C8B"), 2, DashStyle.Dash);
+    private Pen PreviewPen => IsLightTheme ? LightPreviewPen : DarkPreviewPen;
 
     private readonly MagnetostaticSimulator _simulator = new();
     private MagnetostaticScene _scene = MagnetostaticScene.CreateEmpty();
@@ -538,7 +558,7 @@ public sealed class MagnetostaticCanvas : Control
             for (var y = Math.Ceiling(bottom / step) * step; y <= top; y += step)
             { var p = ToScreen(new(0, y)); context.DrawLine(TickPen, new(_pan.X - 4, p.Y), new(_pan.X + 4, p.Y)); if (Math.Abs(y) > .01) DrawCoordinate(context, y, new(_pan.X + 7, p.Y + 2)); }
     }
-    private static void DrawCoordinate(DrawingContext context, double value, Point point) =>
+    private void DrawCoordinate(DrawingContext context, double value, Point point) =>
         context.DrawText(Text(Math.Round(value).ToString(CultureInfo.InvariantCulture), 11), point);
 
     private void DrawFieldLine(DrawingContext context, MagneticFieldLine line)
@@ -818,7 +838,7 @@ public sealed class MagnetostaticCanvas : Control
     private Vector2D ToWorld(Point point) => new((point.X - _pan.X) / _zoom, (_pan.Y - point.Y) / _zoom);
     private static IBrush Brush(string color) => new SolidColorBrush(Color.Parse(color));
     private static Pen Pen(string color, double width) => new(Brush(color), width);
-    private static FormattedText Text(string value, double size) =>
+    private FormattedText Text(string value, double size) =>
         new(value, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, new("Inter"), size, TextBrush);
     private readonly record struct ElementHit(MagnetostaticSelectionKind Kind, int Index, DragMode Mode);
     private enum DragMode { Body, Origin, RotationHandle }

@@ -64,6 +64,9 @@ public sealed class LocalizationService
         void Add(string key, string chinese, string english) => result.Add(key, new(chinese, english));
 
         Add("App.Title", "光绘课堂 (LightDraw)", "LightDraw");
+        Add("Common.Theme", "主题", "Theme");
+        Add("Common.DarkTheme", "深色", "Dark");
+        Add("Common.LightTheme", "浅色", "Light");
         Add("Main.Subtitle", "几何光学光路绘图", "Geometric optics drawing");
         Add("Main.OpenElectrostatic", "↯ 打开静电场仿真", "↯ Open electrostatic simulation");
         Add("Main.OpenMagnetostatic", "⌁ 打开静磁场仿真", "⌁ Open magnetostatic simulation");

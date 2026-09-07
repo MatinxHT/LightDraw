@@ -47,7 +47,7 @@ internal enum MoveDragMode
     None, Translate, DirectionHandle, RotationHandle
 }
 
-public sealed class OpticalCanvas : Control
+public sealed class OpticalCanvas : ThemedCanvas
 {
     public static readonly DirectProperty<OpticalCanvas, OpticalScene> SceneProperty =
         AvaloniaProperty.RegisterDirect<OpticalCanvas, OpticalScene>(
@@ -185,7 +185,7 @@ public sealed class OpticalCanvas : Control
         context.Custom(new SkiaSceneDrawOperation(new Rect(Bounds.Size), _scene, _result, _pan, _zoom,
             _raysPerSource, _tool, _placementStart, _placementPreview,
             _editor.SelectedKind, _editor.SelectedIndex, _editor.SelectedIds,
-            _editor.SelectedGroupId, _editor.ActiveElementId, _marqueeStart, _marqueeCurrent));
+            _editor.SelectedGroupId, _editor.ActiveElementId, _marqueeStart, _marqueeCurrent, IsLightTheme));
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)

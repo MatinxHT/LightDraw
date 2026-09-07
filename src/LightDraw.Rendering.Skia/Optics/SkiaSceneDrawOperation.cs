@@ -26,7 +26,8 @@ internal sealed class SkiaSceneDrawOperation(
     Guid? selectedGroupId,
     Guid? activeElementId,
     Vector2D? marqueeStart,
-    Vector2D? marqueeCurrent) : ICustomDrawOperation
+    Vector2D? marqueeCurrent,
+    bool isLightTheme) : ICustomDrawOperation
 {
     private const string CoordinateUnit = "mm";
     private const double RotationHandleOffset = 100;
@@ -44,7 +45,7 @@ internal sealed class SkiaSceneDrawOperation(
         var canvas = lease.SkCanvas;
         canvas.Save();
         canvas.ClipRect(SKRect.Create((float)Bounds.Width, (float)Bounds.Height));
-        canvas.Clear(new SKColor(8, 13, 24));
+        canvas.Clear(isLightTheme ? SKColors.White : new SKColor(25, 26, 24));
         DrawGrid(canvas);
         DrawAxis(canvas);
         DrawRays(canvas);
@@ -74,7 +75,7 @@ internal sealed class SkiaSceneDrawOperation(
         var gridScreen = gridWorld * zoom;
         var startX = PositiveModulo(pan.X, gridScreen);
         var startY = PositiveModulo(pan.Y, gridScreen);
-        using var paint = new SKPaint { Color = new SKColor(43, 57, 78, 95), StrokeWidth = 1, IsAntialias = false };
+        using var paint = new SKPaint { Color = (isLightTheme ? new SKColor(220, 233, 243, 125) : new SKColor(61, 63, 57, 95)), StrokeWidth = 1, IsAntialias = false };
         for (var x = startX; x < Bounds.Width; x += gridScreen) canvas.DrawLine((float)x, 0, (float)x, (float)Bounds.Height, paint);
         for (var y = startY; y < Bounds.Height; y += gridScreen) canvas.DrawLine(0, (float)y, (float)Bounds.Width, (float)y, paint);
     }
@@ -86,19 +87,19 @@ internal sealed class SkiaSceneDrawOperation(
         var verticalAxisVisible = pan.X >= 0 && pan.X <= Bounds.Width;
         using var axisPaint = new SKPaint
         {
-            Color = new SKColor(122, 145, 180, 210),
+            Color = (isLightTheme ? new SKColor(124, 162, 191, 210) : new SKColor(135, 134, 123, 210)),
             StrokeWidth = 1.2f,
             IsAntialias = true
         };
         using var tickPaint = new SKPaint
         {
-            Color = new SKColor(150, 170, 201, 225),
+            Color = (isLightTheme ? new SKColor(108, 145, 174, 225) : new SKColor(166, 163, 153, 225)),
             StrokeWidth = 1,
             IsAntialias = true
         };
         using var textPaint = new SKPaint
         {
-            Color = new SKColor(184, 201, 226, 235),
+            Color = (isLightTheme ? new SKColor(72, 104, 130, 255) : new SKColor(200, 197, 189, 235)),
             IsAntialias = true
         };
         using var font = new SKFont(SKTypeface.Default, 11);
@@ -206,6 +207,9 @@ internal sealed class SkiaSceneDrawOperation(
                          segment.WavelengthNanometers, segment.SpectrumState)))
         {
             var color = RayColor(rayGroup.Key.WavelengthNanometers, rayGroup.Key.SpectrumState);
+            // Preserve wavelength hues while giving rays enough contrast against white.
+            if (isLightTheme)
+                color = new SKColor((byte)(color.Red * 0.78), (byte)(color.Green * 0.78), (byte)(color.Blue * 0.78));
             var intensity = Math.Clamp(rayGroup.Key.Intensity, 0, 1);
             var rayAlpha = (byte)Math.Clamp(Math.Round(alpha * intensity), 1, byte.MaxValue);
             using var paint = new SKPaint
@@ -280,8 +284,8 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawMirrors(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(47, 213, 255, 50), 9);
-        using var paint = SegmentPaint(new SKColor(117, 225, 255), 3);
+        using var glow = SegmentPaint((isLightTheme ? new SKColor(47, 213, 255, 50) : new SKColor(183, 197, 204, 18)), 9);
+        using var paint = SegmentPaint((isLightTheme ? new SKColor(49, 151, 210) : new SKColor(183, 197, 204)), 3);
         for (var index = 0; index < scene.Mirrors.Length; index++)
         {
             var mirror = scene.Mirrors[index];
@@ -298,8 +302,8 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawConcaveSphericalMirrors(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(64, 198, 255, 55), 10);
-        using var paint = SegmentPaint(new SKColor(91, 212, 255), 3.2);
+        using var glow = SegmentPaint((isLightTheme ? new SKColor(64, 198, 255, 55) : new SKColor(171, 190, 198, 18)), 10);
+        using var paint = SegmentPaint((isLightTheme ? new SKColor(41, 143, 204) : new SKColor(171, 190, 198)), 3.2);
         using var guide = new SKPaint
         {
             Color = new SKColor(151, 190, 220, 110),
@@ -344,8 +348,8 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawConvexSphericalMirrors(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(255, 166, 72, 55), 10);
-        using var paint = SegmentPaint(new SKColor(255, 184, 92), 3.2);
+        using var glow = SegmentPaint((isLightTheme ? new SKColor(255, 166, 72, 55) : new SKColor(212, 177, 124, 18)), 10);
+        using var paint = SegmentPaint((isLightTheme ? new SKColor(200, 119, 36) : new SKColor(212, 177, 124)), 3.2);
         using var guide = new SKPaint
         {
             Color = new SKColor(255, 201, 138, 110),
@@ -408,8 +412,8 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawBeamSplitters(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(47, 213, 255, 50), 9);
-        using var paint = SegmentPaint(new SKColor(117, 225, 255), 3);
+        using var glow = SegmentPaint((isLightTheme ? new SKColor(47, 213, 255, 50) : new SKColor(183, 197, 204, 18)), 9);
+        using var paint = SegmentPaint((isLightTheme ? new SKColor(49, 151, 210) : new SKColor(183, 197, 204)), 3);
         for (var index = 0; index < scene.BeamSplitterElements.Length; index++)
         {
             var beamSplitter = scene.BeamSplitterElements[index];
@@ -468,7 +472,7 @@ internal sealed class SkiaSceneDrawOperation(
     {
         using var glow = SegmentPaint(new SKColor(148, 163, 184, 42), 9);
         using var paint = SegmentPaint(new SKColor(148, 163, 184), 3);
-        using var groovePaint = SegmentPaint(new SKColor(203, 213, 225), 1.2);
+        using var groovePaint = SegmentPaint((isLightTheme ? new SKColor(106, 131, 152) : new SKColor(211, 208, 198)), 1.2);
         for (var index = 0; index < scene.ReflectionGratingElements.Length; index++)
         {
             var grating = scene.ReflectionGratingElements[index];
@@ -506,7 +510,7 @@ internal sealed class SkiaSceneDrawOperation(
         for (var index = 0; index < scene.LensElements.Length; index++)
         {
             var lens = scene.LensElements[index];
-            var color = lens.Kind == LensKind.Convex ? new SKColor(101, 238, 196) : new SKColor(183, 142, 255);
+            var color = lens.Kind == LensKind.Convex ? (isLightTheme ? new SKColor(39, 163, 141) : new SKColor(164, 190, 161)) : (isLightTheme ? new SKColor(148, 110, 210) : new SKColor(181, 166, 199));
             using var glow = SegmentPaint(color.WithAlpha(45), 11);
             using var paint = SegmentPaint(color, 3);
             var tangent = (lens.End - lens.Start).Normalized();
@@ -559,7 +563,7 @@ internal sealed class SkiaSceneDrawOperation(
     private void DrawSources(SKCanvas canvas)
     {
         using var fill = new SKPaint { Color = new SKColor(255, 208, 62), Style = SKPaintStyle.Fill, IsAntialias = true };
-        using var outline = new SKPaint { Color = new SKColor(255, 245, 188), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
+        using var outline = new SKPaint { Color = (isLightTheme ? new SKColor(203, 147, 36) : new SKColor(255, 245, 188)), Style = SKPaintStyle.Stroke, StrokeWidth = 2, IsAntialias = true };
         for (var index = 0; index < scene.LightSources.Length; index++)
         {
             var source = scene.LightSources[index];
@@ -598,7 +602,7 @@ internal sealed class SkiaSceneDrawOperation(
         if (tool != CanvasTool.Move) return;
         using var selectionPaint = new SKPaint
         {
-            Color = new SKColor(83, 214, 255, 220), StrokeWidth = 1.5f,
+            Color = (isLightTheme ? new SKColor(40, 137, 199, 230) : new SKColor(209, 190, 157, 220)), StrokeWidth = 1.5f,
             Style = SKPaintStyle.Stroke, IsAntialias = true,
             PathEffect = SKPathEffect.CreateDash([7, 5], 0)
         };
@@ -620,7 +624,7 @@ internal sealed class SkiaSceneDrawOperation(
             var point = ToScreen(origin);
             using var primaryFill = new SKPaint
             {
-                Color = new SKColor(83, 214, 255), Style = SKPaintStyle.Fill, IsAntialias = true
+                Color = (isLightTheme ? new SKColor(40, 137, 199) : new SKColor(209, 190, 157)), Style = SKPaintStyle.Fill, IsAntialias = true
             };
             canvas.DrawCircle(point, 6.5f, primaryFill);
             canvas.DrawLine(point.X - 10, point.Y, point.X + 10, point.Y, primaryFill);
@@ -642,7 +646,7 @@ internal sealed class SkiaSceneDrawOperation(
         {
             using var fill = new SKPaint
             {
-                Color = new SKColor(83, 214, 255, 28), Style = SKPaintStyle.Fill
+                Color = (isLightTheme ? new SKColor(83, 214, 255, 28) : new SKColor(209, 190, 157, 28)), Style = SKPaintStyle.Fill
             };
             var rect = ToScreenRect(WorldBounds.FromCorners(start, current), 0);
             canvas.DrawRect(rect, fill);
@@ -652,9 +656,9 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawConcaveGratings(SKCanvas canvas)
     {
-        using var glow = SegmentPaint(new SKColor(167, 139, 250, 48), 10);
-        using var paint = SegmentPaint(new SKColor(196, 181, 253), 3.2);
-        using var groovePaint = SegmentPaint(new SKColor(237, 233, 254), 1.1);
+        using var glow = SegmentPaint((isLightTheme ? new SKColor(167, 139, 250, 48) : new SKColor(188, 176, 200, 18)), 10);
+        using var paint = SegmentPaint((isLightTheme ? new SKColor(142, 111, 200) : new SKColor(188, 176, 200)), 3.2);
+        using var groovePaint = SegmentPaint((isLightTheme ? new SKColor(109, 82, 162) : new SKColor(217, 210, 223)), 1.1);
         using var guide = new SKPaint
         {
             Color = new SKColor(196, 181, 253, 105), StrokeWidth = 1.2f,
@@ -707,12 +711,12 @@ internal sealed class SkiaSceneDrawOperation(
         using var font = new SKFont(SKTypeface.Default, 12);
         using var shadow = new SKPaint
         {
-            Color = new SKColor(5, 9, 17, 225), IsAntialias = true,
+            Color = (isLightTheme ? new SKColor(255, 255, 255, 240) : new SKColor(30, 30, 27, 240)), IsAntialias = true,
             StrokeWidth = 3, Style = SKPaintStyle.Stroke, StrokeJoin = SKStrokeJoin.Round
         };
         using var textPaint = new SKPaint
         {
-            Color = new SKColor(221, 231, 245, 235), IsAntialias = true
+            Color = (isLightTheme ? new SKColor(49, 79, 104, 255) : new SKColor(232, 229, 221, 235)), IsAntialias = true
         };
 
         foreach (var item in SceneGeometry.Enumerate(scene))
@@ -728,7 +732,7 @@ internal sealed class SkiaSceneDrawOperation(
 
         using var groupPaint = new SKPaint
         {
-            Color = new SKColor(125, 227, 255, 240), IsAntialias = true
+            Color = (isLightTheme ? new SKColor(22, 117, 181, 255) : new SKColor(209, 190, 157, 240)), IsAntialias = true
         };
         foreach (var group in scene.ElementGroups)
         {
@@ -767,7 +771,7 @@ internal sealed class SkiaSceneDrawOperation(
     private void DrawPlacementPreview(SKCanvas canvas)
     {
         if (placementStart is not { } start || placementPreview is not { } end) return;
-        using var preview = new SKPaint { Color = new SKColor(255, 255, 255, 185), StrokeWidth = 2, IsAntialias = true, PathEffect = SKPathEffect.CreateDash([8, 6], 0) };
+        using var preview = new SKPaint { Color = (isLightTheme ? new SKColor(46, 139, 198, 220) : new SKColor(255, 255, 255, 185)), StrokeWidth = 2, IsAntialias = true, PathEffect = SKPathEffect.CreateDash([8, 6], 0) };
         canvas.DrawLine(ToScreen(start), ToScreen(end), preview);
         canvas.DrawCircle(ToScreen(start), 5, preview);
         canvas.DrawCircle(ToScreen(end), 5, preview);
@@ -794,7 +798,7 @@ internal sealed class SkiaSceneDrawOperation(
 
     private void DrawLegend(SKCanvas canvas)
     {
-        using var paint = new SKPaint { Color = new SKColor(195, 209, 229), IsAntialias = true };
+        using var paint = new SKPaint { Color = (isLightTheme ? new SKColor(83, 115, 139) : new SKColor(200, 197, 189)), IsAntialias = true };
         using var font = new SKFont(SKTypeface.Default, 14);
         canvas.DrawText($"Optical scene | {raysPerSource} rays/source | {result.InitialRayCount} total | " +
                         $"{result.ReflectedRayCount} reflected | {result.RefractedRayCount} refracted | " +
@@ -816,7 +820,7 @@ internal sealed class SkiaSceneDrawOperation(
         var point = ToScreen(origin);
         using var paint = new SKPaint
         {
-            Color = isSelected ? new SKColor(255, 255, 255) : new SKColor(151, 190, 220, 175),
+            Color = isSelected ? (isLightTheme ? new SKColor(22, 117, 181) : new SKColor(255, 255, 255)) : (isLightTheme ? new SKColor(91, 144, 181, 210) : new SKColor(180, 178, 166, 175)),
             StrokeWidth = isSelected ? 1.8f : 1.2f,
             Style = SKPaintStyle.Stroke,
             IsAntialias = true
@@ -854,7 +858,7 @@ internal sealed class SkiaSceneDrawOperation(
         var handlePoint = ToScreen(handle);
         using var guide = new SKPaint
         {
-            Color = new SKColor(255, 255, 255, 90),
+            Color = (isLightTheme ? new SKColor(75, 144, 187, 135) : new SKColor(255, 255, 255, 90)),
             StrokeWidth = 1,
             Style = SKPaintStyle.Stroke,
             IsAntialias = true,
@@ -862,7 +866,7 @@ internal sealed class SkiaSceneDrawOperation(
         };
         using var outline = new SKPaint
         {
-            Color = new SKColor(8, 13, 24, 210),
+            Color = (isLightTheme ? new SKColor(49, 131, 187, 230) : new SKColor(25, 26, 24, 210)),
             StrokeWidth = 1.5f,
             Style = SKPaintStyle.Stroke,
             IsAntialias = true

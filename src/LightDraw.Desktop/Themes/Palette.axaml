@@ -1,0 +1,41 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ResourceDictionary.ThemeDictionaries>
+    <!-- Warm graphite surfaces with a restrained champagne accent. -->
+    <ResourceDictionary x:Key="Dark">
+      <SolidColorBrush x:Key="WindowBrush">#1C1C1A</SolidColorBrush>
+      <SolidColorBrush x:Key="HeaderBrush">#282724</SolidColorBrush>
+      <SolidColorBrush x:Key="ToolbarBrush">#232320</SolidColorBrush>
+      <SolidColorBrush x:Key="PropertiesBrush">#20201E</SolidColorBrush>
+      <SolidColorBrush x:Key="SidebarBrush">#242421</SolidColorBrush>
+      <SolidColorBrush x:Key="DividerBrush">#3D3B36</SolidColorBrush>
+      <SolidColorBrush x:Key="SubtitleBrush">#AAA69E</SolidColorBrush>
+      <SolidColorBrush x:Key="MutedTextBrush">#A39F96</SolidColorBrush>
+      <SolidColorBrush x:Key="SecondaryTextBrush">#C1BDB4</SolidColorBrush>
+      <SolidColorBrush x:Key="BodyTextBrush">#D1CEC7</SolidColorBrush>
+      <SolidColorBrush x:Key="QuietTextBrush">#99958D</SolidColorBrush>
+      <SolidColorBrush x:Key="AccentBrush">#D1BE9D</SolidColorBrush>
+      <SolidColorBrush x:Key="MagneticAccentBrush">#A9B9A6</SolidColorBrush>
+      <SolidColorBrush x:Key="SelectionBrush">#39352E</SolidColorBrush>
+      <SolidColorBrush x:Key="SelectionBorderBrush">#D1BE9D</SolidColorBrush>
+    </ResourceDictionary>
+    <!-- Ice blue surfaces echo the app-store artwork; the drawing canvas stays white. -->
+    <ResourceDictionary x:Key="Light">
+      <SolidColorBrush x:Key="WindowBrush">#FFFFFF</SolidColorBrush>
+      <SolidColorBrush x:Key="HeaderBrush">#EDF7FF</SolidColorBrush>
+      <SolidColorBrush x:Key="ToolbarBrush">#F5FAFF</SolidColorBrush>
+      <SolidColorBrush x:Key="PropertiesBrush">#FAFCFF</SolidColorBrush>
+      <SolidColorBrush x:Key="SidebarBrush">#F3F9FE</SolidColorBrush>
+      <SolidColorBrush x:Key="DividerBrush">#D3E6F3</SolidColorBrush>
+      <SolidColorBrush x:Key="SubtitleBrush">#56758B</SolidColorBrush>
+      <SolidColorBrush x:Key="MutedTextBrush">#5C768B</SolidColorBrush>
+      <SolidColorBrush x:Key="SecondaryTextBrush">#47647B</SolidColorBrush>
+      <SolidColorBrush x:Key="BodyTextBrush">#354F65</SolidColorBrush>
+      <SolidColorBrush x:Key="QuietTextBrush">#627D91</SolidColorBrush>
+      <SolidColorBrush x:Key="AccentBrush">#1675B5</SolidColorBrush>
+      <SolidColorBrush x:Key="MagneticAccentBrush">#1675B5</SolidColorBrush>
+      <SolidColorBrush x:Key="SelectionBrush">#DDF1FF</SolidColorBrush>
+      <SolidColorBrush x:Key="SelectionBorderBrush">#83C6F0</SolidColorBrush>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+</ResourceDictionary>

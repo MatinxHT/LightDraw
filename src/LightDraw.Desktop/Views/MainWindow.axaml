@@ -10,22 +10,43 @@
 		Height="800"
 		MinWidth="920"
 		MinHeight="600"
-		Background="#0B1220">
+		Background="{DynamicResource WindowBrush}">
   <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,*,Auto">
-	<Border Grid.ColumnSpan="2" Padding="18,12" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
-	  <Grid ColumnDefinitions="Auto,*,Auto">
-		<StackPanel Orientation="Horizontal" Spacing="10">
+	<Border Grid.ColumnSpan="2" Padding="18,12" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+	  <Grid ColumnDefinitions="*,Auto">
+		<WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+		  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
 		  <Image Width="40" Height="40" Source="/Assets/Brand/LightDrawLogo.png" Stretch="Uniform" />
 		  <StackPanel>
 			<TextBlock Text="{DynamicResource App.Title}" FontSize="18" FontWeight="SemiBold" />
-			<TextBlock Text="{DynamicResource Main.Subtitle}" FontSize="11" Foreground="#91A4C2" />
+			<TextBlock Text="{DynamicResource Main.Subtitle}" FontSize="11" Foreground="{DynamicResource SubtitleBrush}" />
 		  </StackPanel>
-		  <Border Width="1" Height="30" Margin="10,0,4,0" Background="#26344C" />
+		  </StackPanel>
+		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+		  <Border Margin="0,3,8,3">
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenElectrostatic}" Command="{Binding OpenElectrostaticSimulationCommand}" />
+		  </Border>
+		  <Border Margin="0,3,8,3">
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenMagnetostatic}" Command="{Binding OpenMagnetostaticSimulationCommand}" />
-		</StackPanel>
-		<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-		  <TextBlock Text="语言Language：" Foreground="#7F93B2" VerticalAlignment="Center" />
+		  </Border>
+		  </WrapPanel>
+		</WrapPanel>
+		<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+		  <TextBlock Text="{DynamicResource Common.Theme}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
+		  <ComboBox x:Name="ThemeSelector" Width="104" SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" AutomationProperties.Name="{DynamicResource Common.Theme}">
+			<ComboBox.SelectionBoxItemTemplate>
+			  <DataTemplate>
+				<Panel>
+				  <TextBlock Text="{DynamicResource Common.DarkTheme}" IsVisible="{Binding $parent[ComboBox].SelectedIndex, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=0}" />
+				  <TextBlock Text="{DynamicResource Common.LightTheme}" IsVisible="{Binding $parent[ComboBox].SelectedIndex, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=1}" />
+				</Panel>
+			  </DataTemplate>
+			</ComboBox.SelectionBoxItemTemplate>
+			<ComboBoxItem Content="{DynamicResource Common.DarkTheme}" />
+			<ComboBoxItem Content="{DynamicResource Common.LightTheme}" />
+		  </ComboBox>
+		  <Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
+		  <TextBlock Text="语言Language：" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  <ComboBox Width="245" SelectedIndex="{Binding SelectedLanguageIndex, Mode=TwoWay}">
 			<ComboBoxItem Content="简体中文 Simplified Chinese （zh-CN）" />
 			<ComboBoxItem Content="English(en-us)" />
@@ -34,21 +55,21 @@
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,10" Background="#0F1A2E" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+	<Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,10" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
 	  <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto">
 		<StackPanel Orientation="Horizontal" Spacing="6">
 		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="{DynamicResource Common.Pan}" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
 		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="{DynamicResource Common.Move}" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
 		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Delete}" Content="{DynamicResource Common.Delete}" Command="{Binding SelectToolCommand}" CommandParameter="Delete" />
 		</StackPanel>
-		<Border Grid.Column="1" Width="1" Margin="14,4" Background="#26344C" />
+		<Border Grid.Column="1" Width="1" Margin="14,4" Background="{DynamicResource DividerBrush}" />
 		<TextBlock Grid.Column="2" Text="{DynamicResource Common.SimulationSettings}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
-		<TextBlock Grid.Column="3" Text="{DynamicResource Main.RaysPerSource}" Foreground="#7F93B2" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
+		<TextBlock Grid.Column="3" Text="{DynamicResource Main.RaysPerSource}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
 		<Grid Grid.Column="4" ColumnDefinitions="*,42" MinWidth="120" VerticalAlignment="Center">
 		  <Slider Minimum="1" Maximum="1000" Value="{Binding RayDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
-		  <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#7DE3FF" />
+		  <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}" />
 		</Grid>
-		<Border Grid.Column="5" Width="1" Margin="14,4" Background="#26344C" />
+		<Border Grid.Column="5" Width="1" Margin="14,4" Background="{DynamicResource DividerBrush}" />
 		<StackPanel Grid.Column="6" Orientation="Horizontal" Spacing="6">
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
@@ -59,14 +80,14 @@
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="#0D1728" BorderBrush="#26344C" BorderThickness="0,0,0,1">
+	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="{DynamicResource PropertiesBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
 	  <Grid RowDefinitions="Auto,Auto,Auto">
 		<WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
 		  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,18,2" VerticalAlignment="Center">
 			<TextBlock Text="{DynamicResource Common.ElementProperties}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
-			<Border Width="1" Height="24" Margin="4,0" Background="#26344C" />
-			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="#7DE3FF" VerticalAlignment="Center" />
-			<TextBlock Text="{DynamicResource Common.Name}" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
+			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.Name}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
 					 IsEnabled="{Binding CanRenameSelectedElement}"
 					 Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
@@ -80,32 +101,32 @@
 			<Button Classes="setting-inline" Content="{DynamicResource Main.SetPrimary}" Command="{Binding SetPrimaryElementCommand}" IsEnabled="{Binding CanSetPrimaryElement}" ToolTip.Tip="{DynamicResource Tip.SetPrimary}" />
 		  </StackPanel>
 		</WrapPanel>
-		<Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+		<Border Grid.Row="1" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
 		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
 			<TextBlock Text="{DynamicResource Common.Geometry}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding CanEditSelectedTransform}">
-			<TextBlock Text="{DynamicResource Common.FirstOrigin}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FirstOrigin}" />
-			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.FirstOrigin}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FirstOrigin}" />
+			<TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
-			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
-			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSecondOrigin}">
-			<TextBlock Text="{DynamicResource Common.SecondOrigin}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.SecondOrigin}" />
-			<TextBlock Text="X" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.SecondOrigin}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.SecondOrigin}" />
+			<TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
-			<TextBlock Text="Y" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay}" />
-			<TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" VerticalAlignment="Center" IsEnabled="{Binding CanRotateSelectedElement}">
-			<TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="#9EB0CA" VerticalAlignment="Center" />
+			<TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
 			<TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
-			<TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
+			<TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<Button Classes="setting-inline" Content="{DynamicResource Common.Counterclockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
 			<Button Classes="setting-inline" Content="{DynamicResource Common.Clockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
-			<TextBlock Text="{Binding SelectedAngleText}" MinWidth="98" Foreground="#9EB0CA" VerticalAlignment="Center" Margin="2,0" />
+			<TextBlock Text="{Binding SelectedAngleText}" MinWidth="98" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="2,0" />
 			<ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
 			  <ComboBoxItem Content="{DynamicResource Common.Custom}" IsEnabled="False" />
 			  <ComboBoxItem Content="0°" />
@@ -116,31 +137,31 @@
 		  </StackPanel>
 		  </WrapPanel>
 		</Border>
-		<Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="#26344C" BorderThickness="0,1,0,0">
+		<Border Grid.Row="2" Margin="0,5,0,0" Padding="0,5,0,0" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
 		  <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
 			<TextBlock Text="{DynamicResource Common.ElementParameters}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLength}">
-			  <TextBlock Text="{DynamicResource Common.Length}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Length}" />
+			  <TextBlock Text="{DynamicResource Common.Length}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Length}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
-			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedLightSource}">
-			  <TextBlock Text="{DynamicResource Main.Wavelength}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Wavelength}" />
+			  <TextBlock Text="{DynamicResource Main.Wavelength}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Wavelength}" />
 			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" ToolTip.Tip="{DynamicResource Tip.WavelengthValue}" />
-			  <TextBlock Text="nm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="nm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedAperture}">
-			  <TextBlock Text="{DynamicResource Main.ApertureOpening}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Aperture}" />
+			  <TextBlock Text="{DynamicResource Main.ApertureOpening}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Aperture}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedApertureOpening, Mode=TwoWay}" />
-			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
-			  <TextBlock Text="{DynamicResource Main.FocalLength}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FocalLength}" />
+			  <TextBlock Text="{DynamicResource Main.FocalLength}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FocalLength}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
-			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}">
-			  <TextBlock Text="{DynamicResource Main.Dispersion}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Dispersion}" />
+			  <TextBlock Text="{DynamicResource Main.Dispersion}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Dispersion}" />
 			  <ComboBox Width="108" SelectedIndex="{Binding SelectedLensDispersionModeIndex, Mode=TwoWay}">
 				<ComboBoxItem Content="{DynamicResource Main.NoDispersion}" />
 				<ComboBoxItem Content="{DynamicResource Main.NormalDispersion}" />
@@ -148,45 +169,45 @@
 			  </ComboBox>
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}" IsEnabled="{Binding HasSelectedDispersiveLens}">
-			  <TextBlock Text="{DynamicResource Main.DispersionLevel}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.DispersionLevel}" />
+			  <TextBlock Text="{DynamicResource Main.DispersionLevel}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.DispersionLevel}" />
 			  <TextBox Width="48" HorizontalContentAlignment="Right" Text="{Binding SelectedLensDispersionLevel, Mode=TwoWay}" />
-			  <TextBlock Text="0–10" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="0–10" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
-			  <TextBlock Text="{DynamicResource Common.Radius}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Radius}" />
+			  <TextBlock Text="{DynamicResource Common.Radius}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Radius}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay}" />
-			  <TextBlock Text="mm" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedCentralAngle}">
-			  <TextBlock Text="{DynamicResource Main.CentralAngle}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.CentralAngle}" />
+			  <TextBlock Text="{DynamicResource Main.CentralAngle}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.CentralAngle}" />
 			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedCentralAngle, Mode=TwoWay}" />
-			  <TextBlock Text="°" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedReflectionGrating}">
-			  <TextBlock Text="{DynamicResource Main.GrooveDensity}" Foreground="#9EB0CA" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.GrooveDensity}" />
+			  <TextBlock Text="{DynamicResource Main.GrooveDensity}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.GrooveDensity}" />
 			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedGrooveDensity, Mode=TwoWay}" />
-			  <TextBlock Text="{DynamicResource Main.LinesPerMillimeter}" Foreground="#7F93B2" VerticalAlignment="Center" />
+			  <TextBlock Text="{DynamicResource Main.LinesPerMillimeter}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 		  </WrapPanel>
 		</Border>
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="3" Background="#10192A" BorderBrush="#26344C" BorderThickness="0,0,1,0">
+	<Border Grid.Row="3" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0">
 	  <Grid RowDefinitions="Auto,*">
 		<TextBlock Text="{DynamicResource Main.CreateTools}" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
 		  <StackPanel Spacing="2">
-			<TextBlock Text="{DynamicResource Main.LightSources}" Foreground="#7F93B2" FontSize="11" Margin="3,8,0,2" />
+			<TextBlock Text="{DynamicResource Main.LightSources}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" Margin="3,8,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=PointLight}" Content="{DynamicResource Main.PointLight}" Command="{Binding SelectToolCommand}" CommandParameter="PointLight" ToolTip.Tip="{DynamicResource Tip.Monochromatic}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ParallelLight}" Content="{DynamicResource Main.ParallelLight}" Command="{Binding SelectToolCommand}" CommandParameter="ParallelLight" ToolTip.Tip="{DynamicResource Tip.Monochromatic}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositePointLight}" Content="{DynamicResource Main.CompositePointLight}" Command="{Binding SelectToolCommand}" CommandParameter="CompositePointLight" ToolTip.Tip="{DynamicResource Tip.Composite}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=CompositeParallelLight}" Content="{DynamicResource Main.CompositeParallelLight}" Command="{Binding SelectToolCommand}" CommandParameter="CompositeParallelLight" ToolTip.Tip="{DynamicResource Tip.Composite}" />
-			<TextBlock Text="{DynamicResource Main.Lenses}" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
+			<TextBlock Text="{DynamicResource Main.Lenses}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexLens}" Content="{DynamicResource Main.ConvexLens}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexLens" ToolTip.Tip="{DynamicResource Tip.Lens}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveLens}" Content="{DynamicResource Main.ConcaveLens}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveLens" ToolTip.Tip="{DynamicResource Tip.Lens}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="{DynamicResource Main.Aperture}" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
-			<TextBlock Text="{DynamicResource Main.Reflectors}" Foreground="#7F93B2" FontSize="11" Margin="3,12,0,2" />
+			<TextBlock Text="{DynamicResource Main.Reflectors}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="{DynamicResource Main.Mirror}" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="{DynamicResource Main.ConcaveMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="{DynamicResource Main.ConvexMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
@@ -196,7 +217,7 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="{DynamicResource Main.Screen}" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="{DynamicResource Tip.Screen}" />
 
 			<Separator Margin="0,16,0,14" />
-			<TextBlock Text="{DynamicResource Main.Help}" Foreground="#7F93B2" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
+			<TextBlock Text="{DynamicResource Main.Help}" Foreground="{DynamicResource MutedTextBrush}" FontSize="12" LineHeight="19" Margin="3,0,0,0" />
 		  </StackPanel>
 		</ScrollViewer>
 	  </Grid>
@@ -209,10 +230,10 @@
 						RaysPerSource="{Binding AppliedRaysPerSource}"
 						ActiveTool="{Binding ActiveTool, Mode=TwoWay}" />
 
-	<Border Grid.Row="4" Grid.ColumnSpan="2" Background="#111B2E" BorderBrush="#26344C" BorderThickness="0,1,0,0" Padding="14,7">
+	<Border Grid.Row="4" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="14,7">
 	  <Grid ColumnDefinitions="*,Auto">
-		<TextBlock Text="{Binding StatusText}" Foreground="#9EB0CA" FontSize="12" />
-		<TextBlock Grid.Column="1" Text="{DynamicResource Common.Noncommercial}" Foreground="#687D9D" FontSize="12" />
+		<TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
+		<TextBlock Grid.Column="1" Text="{DynamicResource Common.Noncommercial}" Foreground="{DynamicResource QuietTextBrush}" FontSize="12" />
 	  </Grid>
 	</Border>
   </Grid>
