@@ -39,6 +39,7 @@
           </Grid>
           <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
           <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
+          <Button Classes="toolbar-inline" Content="{DynamicResource Main.ExportCanvas}" Click="OnExportCanvasClick" />
         </StackPanel>
       </Grid>
     </Border>

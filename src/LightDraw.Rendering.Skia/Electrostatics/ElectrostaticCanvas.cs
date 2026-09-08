@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Media;
+using Avalonia.Media.Imaging;
 using LightDraw.Core.Electromagnetics;
 using LightDraw.Core.Geometry;
 
@@ -85,6 +86,17 @@ public sealed class ElectrostaticCanvas : ThemedCanvas
     public ElectrostaticTool ActiveTool { get => _activeTool; set => SelectTool(value); }
     public int LinesPerCharge { get => _linesPerCharge; set => SetLinesPerCharge(value); }
     public ElectrostaticSimulationResult SimulationResult => _result;
+
+    /// <summary>Writes the currently visible canvas to a PNG.</summary>
+    public void ExportPng(Stream stream)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var width = Math.Max(1, (int)Math.Ceiling(Bounds.Width));
+        var height = Math.Max(1, (int)Math.Ceiling(Bounds.Height));
+        using var bitmap = new RenderTargetBitmap(new PixelSize(width, height), new Vector(96, 96));
+        bitmap.Render(this);
+        bitmap.Save(stream, PngBitmapEncoderOptions.Default);
+    }
     public ElectrostaticSelection? Selection
     {
         get

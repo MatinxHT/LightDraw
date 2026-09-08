@@ -98,6 +98,7 @@ public sealed class LocalizationService
         Add("Main.OpenScene", "打开场景…", "Open scene…");
         Add("Main.SaveScene", "保存场景…", "Save scene…");
         Add("Main.About", "关于程序", "About");
+        Add("Main.ExportCanvas", "导出画布…", "Export canvas…");
         Add("Main.Hidden", "暂时隐藏", "Temporarily hide");
         Add("Main.Group", "组合", "Group");
         Add("Main.Ungroup", "取消组合", "Ungroup");

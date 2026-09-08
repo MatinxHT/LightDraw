@@ -6,6 +6,7 @@ using Avalonia.Media;
 using LightDraw.Core.Geometry;
 using LightDraw.Core.Scene;
 using LightDraw.Core.Simulation;
+using SkiaSharp;
 
 namespace LightDraw.Rendering.Skia.Optics;
 
@@ -179,14 +180,34 @@ public sealed class OpticalCanvas : ThemedCanvas
     public bool UngroupSelection() => _editor.UngroupSelection();
     public bool SetActiveMemberAsPrimary() => _editor.SetActiveMemberAsPrimary();
 
+    /// <summary>Writes the currently visible canvas to a PNG without the render-status legend.</summary>
+    public void ExportPng(Stream stream)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
+        var width = Math.Max(1, (int)Math.Ceiling(Bounds.Width));
+        var height = Math.Max(1, (int)Math.Ceiling(Bounds.Height));
+        using var surface = SKSurface.Create(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul));
+        if (surface is null) throw new InvalidOperationException("Unable to create the PNG export surface.");
+
+        CreateDrawOperation(new Rect(new Size(width, height)), showLegend: false).RenderTo(surface.Canvas);
+        using var image = surface.Snapshot();
+        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+        if (data is null) throw new InvalidOperationException("Unable to encode the canvas as PNG.");
+        data.SaveTo(stream);
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        context.Custom(new SkiaSceneDrawOperation(new Rect(Bounds.Size), _scene, _result, _pan, _zoom,
+        context.Custom(CreateDrawOperation(new Rect(Bounds.Size)));
+    }
+
+    private SkiaSceneDrawOperation CreateDrawOperation(Rect bounds, bool showLegend = true) =>
+        new(bounds, _scene, _result, _pan, _zoom,
             _raysPerSource, _tool, _placementStart, _placementPreview,
             _editor.SelectedKind, _editor.SelectedIndex, _editor.SelectedIds,
-            _editor.SelectedGroupId, _editor.ActiveElementId, _marqueeStart, _marqueeCurrent, IsLightTheme));
-    }
+            _editor.SelectedGroupId, _editor.ActiveElementId, _marqueeStart, _marqueeCurrent,
+            IsLightTheme, showLegend);
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {

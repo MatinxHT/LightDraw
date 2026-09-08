@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using LightDraw.Core.Scene;
 using LightDraw.Desktop.ViewModels;
 
@@ -119,6 +121,26 @@ public sealed partial class MainWindow : Window
 
     private void OnAboutRequested(object? sender, EventArgs e) =>
         _ = new AboutWindow().ShowDialog(this);
+
+    private async void OnExportCanvasClick(object? sender, RoutedEventArgs e)
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "导出画布 PNG",
+            SuggestedFileName = "lightdraw-canvas",
+            DefaultExtension = "png",
+            FileTypeChoices = [new FilePickerFileType("PNG 图片")
+            {
+                Patterns = ["*.png"],
+                MimeTypes = ["image/png"]
+            }]
+        });
+
+        if (file is null) return;
+        await using var stream = await file.OpenWriteAsync();
+        stream.SetLength(0);
+        Canvas.ExportPng(stream);
+    }
 
     private void OnOpenElectrostaticSimulationRequested(object? sender, EventArgs e) =>
         new ElectrostaticWindow().Show(this);

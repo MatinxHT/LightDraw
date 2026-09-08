@@ -27,7 +27,8 @@ internal sealed class SkiaSceneDrawOperation(
     Guid? activeElementId,
     Vector2D? marqueeStart,
     Vector2D? marqueeCurrent,
-    bool isLightTheme) : ICustomDrawOperation
+    bool isLightTheme,
+    bool showLegend = true) : ICustomDrawOperation
 {
     private const string CoordinateUnit = "mm";
     private const double RotationHandleOffset = 100;
@@ -62,7 +63,32 @@ internal sealed class SkiaSceneDrawOperation(
         DrawElementNames(canvas);
         DrawSelectionOverlay(canvas);
         DrawPlacementPreview(canvas);
-        DrawLegend(canvas);
+        if (showLegend) DrawLegend(canvas);
+        canvas.Restore();
+    }
+
+    internal void RenderTo(SKCanvas canvas)
+    {
+        canvas.Save();
+        canvas.ClipRect(SKRect.Create((float)Bounds.Width, (float)Bounds.Height));
+        canvas.Clear(isLightTheme ? SKColors.White : new SKColor(25, 26, 24));
+        DrawGrid(canvas);
+        DrawAxis(canvas);
+        DrawRays(canvas);
+        DrawMirrors(canvas);
+        DrawConcaveSphericalMirrors(canvas);
+        DrawConvexSphericalMirrors(canvas);
+        DrawBeamSplitters(canvas);
+        DrawScreens(canvas);
+        DrawApertures(canvas);
+        DrawReflectionGratings(canvas);
+        DrawConcaveGratings(canvas);
+        DrawLenses(canvas);
+        DrawSources(canvas);
+        DrawElementNames(canvas);
+        DrawSelectionOverlay(canvas);
+        DrawPlacementPreview(canvas);
+        if (showLegend) DrawLegend(canvas);
         canvas.Restore();
     }
 
