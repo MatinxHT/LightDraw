@@ -8,7 +8,7 @@
   </a>
 </p>
 
-**光绘课堂 (LightDraw)** 是一款面向大中小学物理课堂教学实验演示的二维物理场绘图与模拟的跨平台工具。项目希望用直观、流畅的可视化方式帮助教师讲解几何光学，也让学生能够自由搭建场景、观察光路并验证自己的猜想。同时光是电磁波，所以也提供静电场和静磁场模拟仿真供教学使用。
+**光绘课堂 (LightDraw)** 是一款面向大中小学物理课堂教学实验演示的二维物理场绘图与模拟的跨平台工具。项目希望用直观、流畅的可视化方式帮助教师讲解几何光学，也让学生能够自由搭建场景、观察光路并验证自己的猜想。同时光是电磁波，所以也提供静电场和静磁场模拟仿真供中学教学使用。
 
 项目以公开源码、社区协作和长期维护为方向。欢迎教师、学生、开发者、设计师和光学爱好者提交问题、改进文档、补充测试或实现新功能。
 
@@ -23,9 +23,8 @@
 - Avalonia 跨平台桌面界面；
 - SkiaSharp 高性能批量绘图；
 - Windows、macOS 和 Linux 的统一代码基础；
-- 兼容应用商店沙盒的场景文件读写。
 
-当前版本适合开发预览、课堂概念演示和技术验证，尚不建议用于精密工程计算或对数值误差敏感的科研工作。
+当前版本已适合课堂概念演示和技术验证，尚不建议用于精密工程计算或对数值误差敏感的科研工作。
 
 ![optics](./assets/app-store/optics.png)
 ![optics2](./assets/app-store/optics2.png)
@@ -38,25 +37,6 @@
 
 - .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；
 - Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
-- 可选 IDE：JetBrains Rider、Visual Studio 或 Visual Studio Code。
-
-先确认本机 SDK：
-
-```powershell
-dotnet --info
-```
-
-### 还原、构建与运行
-
-在仓库根目录执行：
-
-```powershell
-dotnet restore LightDraw.slnx
-dotnet build LightDraw.slnx -c Release
-dotnet run --project src/LightDraw.Desktop/LightDraw.Desktop.csproj
-```
-
-首次还原需要连接 NuGet。仓库启用了可空引用类型、确定性构建和“警告视为错误”，提交代码前应确保 Release 构建无警告通过。
 
 ## 使用说明
 
