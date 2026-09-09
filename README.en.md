@@ -1,5 +1,7 @@
 # LightDraw (光绘课堂)
 
+[中文](README.md) | English
+
 <p align="center">
   <img src="src/LightDraw.Desktop/Assets/Brand/LightDrawLogo.png" alt="LightDraw standard logo" width="220" />
   <br />
