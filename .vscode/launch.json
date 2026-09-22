@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug LightDraw (macOS)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build LightDraw Desktop",
+      "program": "${workspaceFolder}/src/LightDraw.Desktop/bin/Debug/net10.0/LightDraw.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/src/LightDraw.Desktop",
+      "stopAtEntry": false
+    }
+  ]
+}
