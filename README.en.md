@@ -1,5 +1,18 @@
 # LightDraw (光绘课堂)
 
+## Browser build and Cloudflare Pages
+
+The browser edition provides the geometric optics canvas. Simulation and scene file operations run locally in the browser. Use a desktop browser with a viewport of at least 920 × 600.
+
+```bash
+dotnet workload install wasm-tools
+dotnet publish src/LightDraw.Browser/LightDraw.Browser.csproj -c Release
+```
+
+Set the Cloudflare Pages build command to the `dotnet publish` command above and the output directory to `src/LightDraw.Browser/bin/Release/net10.0-browser/publish/wwwroot`. Host its contents as static files, serving `.wasm` as `application/wasm`. No Pages Function or Worker is needed. Before deployment, check that each file is under 25 MiB and the total file count is under 20,000. AOT is disabled for the first release.
+
+Open scene imports a desktop-compatible `.lightdraw.json` file. Save scene downloads `lightdraw-scene.lightdraw.json`; Export canvas downloads `lightdraw-canvas.png`. Electrostatic and magnetostatic views and touch controls are outside the browser edition's scope.
+
 [中文](README.md) | English
 
 <p align="center">

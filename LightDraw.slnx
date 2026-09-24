@@ -9,5 +9,6 @@
     <Project Path="src/LightDraw.Core/LightDraw.Core.csproj" />
     <Project Path="src/LightDraw.Rendering.Skia/LightDraw.Rendering.Skia.csproj" />
     <Project Path="src/LightDraw.Desktop/LightDraw.Desktop.csproj" />
+    <Project Path="src/LightDraw.Browser/LightDraw.Browser.csproj" />
   </Folder>
 </Solution>

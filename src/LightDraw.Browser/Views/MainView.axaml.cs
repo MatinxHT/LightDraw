@@ -1,0 +1,165 @@
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using LightDraw.Browser.Services;
+using LightDraw.Core.Scene;
+using LightDraw.Desktop.ViewModels;
+
+namespace LightDraw.Browser.Views;
+
+public sealed partial class MainView : UserControl
+{
+    private MainWindowViewModel? _viewModel;
+
+    public MainView()
+    {
+        InitializeComponent();
+    }
+
+    public void AttachViewModel(MainWindowViewModel viewModel)
+    {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        if (_viewModel is not null)
+        {
+            _viewModel.ResetViewRequested -= OnResetViewRequested;
+            _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
+            _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
+            _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
+            _viewModel.SetSelectedLensDispersionModeRequested -= OnSetSelectedLensDispersionModeRequested;
+            _viewModel.SetSelectedLensDispersionLevelRequested -= OnSetSelectedLensDispersionLevelRequested;
+            _viewModel.SetSelectedSphericalMirrorRadiusRequested -= OnSetSelectedSphericalMirrorRadiusRequested;
+            _viewModel.SetSelectedSphericalMirrorArcAngleRequested -= OnSetSelectedSphericalMirrorArcAngleRequested;
+            _viewModel.SetSelectedPointLightEmissionAngleRequested -= OnSetSelectedPointLightEmissionAngleRequested;
+            _viewModel.SetSelectedCentralAngleRequested -= OnSetSelectedCentralAngleRequested;
+            _viewModel.SetSelectedApertureOpeningRequested -= OnSetSelectedApertureOpeningRequested;
+            _viewModel.SetSelectedGrooveDensityRequested -= OnSetSelectedGrooveDensityRequested;
+            _viewModel.SetSelectedWavelengthRequested -= OnSetSelectedWavelengthRequested;
+            _viewModel.SetSelectedLengthRequested -= OnSetSelectedLengthRequested;
+            _viewModel.SetSelectedTemporarilyHiddenRequested -= OnSetSelectedTemporarilyHiddenRequested;
+            _viewModel.SetSelectedOriginRequested -= OnSetSelectedOriginRequested;
+            _viewModel.SetSelectedSecondOriginRequested -= OnSetSelectedSecondOriginRequested;
+            _viewModel.SetSelectedNameRequested -= OnSetSelectedNameRequested;
+            _viewModel.GroupSelectionRequested -= OnGroupSelectionRequested;
+            _viewModel.UngroupSelectionRequested -= OnUngroupSelectionRequested;
+            _viewModel.SetPrimaryElementRequested -= OnSetPrimaryElementRequested;
+        }
+
+        _viewModel = viewModel;
+        DataContext = viewModel;
+        _viewModel.ResetViewRequested += OnResetViewRequested;
+        _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
+        _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
+        _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
+        _viewModel.SetSelectedLensDispersionModeRequested += OnSetSelectedLensDispersionModeRequested;
+        _viewModel.SetSelectedLensDispersionLevelRequested += OnSetSelectedLensDispersionLevelRequested;
+        _viewModel.SetSelectedSphericalMirrorRadiusRequested += OnSetSelectedSphericalMirrorRadiusRequested;
+        _viewModel.SetSelectedSphericalMirrorArcAngleRequested += OnSetSelectedSphericalMirrorArcAngleRequested;
+        _viewModel.SetSelectedPointLightEmissionAngleRequested += OnSetSelectedPointLightEmissionAngleRequested;
+        _viewModel.SetSelectedCentralAngleRequested += OnSetSelectedCentralAngleRequested;
+        _viewModel.SetSelectedApertureOpeningRequested += OnSetSelectedApertureOpeningRequested;
+        _viewModel.SetSelectedGrooveDensityRequested += OnSetSelectedGrooveDensityRequested;
+        _viewModel.SetSelectedWavelengthRequested += OnSetSelectedWavelengthRequested;
+        _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
+        _viewModel.SetSelectedTemporarilyHiddenRequested += OnSetSelectedTemporarilyHiddenRequested;
+        _viewModel.SetSelectedOriginRequested += OnSetSelectedOriginRequested;
+        _viewModel.SetSelectedSecondOriginRequested += OnSetSelectedSecondOriginRequested;
+        _viewModel.SetSelectedNameRequested += OnSetSelectedNameRequested;
+        _viewModel.GroupSelectionRequested += OnGroupSelectionRequested;
+        _viewModel.UngroupSelectionRequested += OnUngroupSelectionRequested;
+        _viewModel.SetPrimaryElementRequested += OnSetPrimaryElementRequested;
+        Canvas.SimulationCompleted += OnSimulationCompleted;
+        Canvas.ToolStateChanged += OnToolStateChanged;
+        Canvas.SceneChanged += OnSceneChanged;
+        Canvas.SelectionChanged += OnSelectionChanged;
+        viewModel.UpdateSimulation(Canvas.SimulationResult);
+        viewModel.UpdateSelection(Canvas.Selection);
+    }
+
+    private void OnResetViewRequested(object? sender, EventArgs e) => Canvas.ResetView();
+
+    private void OnExportCanvasClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            using var stream = new MemoryStream();
+            Canvas.ExportPng(stream);
+            BrowserFileInterop.Download("lightdraw-canvas.png", "image/png", stream.ToArray());
+        }
+        catch (Exception exception)
+        {
+            if (_viewModel is not null) _viewModel.StatusText = exception.Message;
+        }
+    }
+
+    private void OnSimulationCompleted(object? sender, EventArgs e) =>
+        _viewModel?.UpdateSimulation(Canvas.SimulationResult);
+
+    private void OnToolStateChanged(object? sender, EventArgs e) =>
+        _viewModel?.UpdateToolState(Canvas.ActiveTool, Canvas.IsPlacing);
+
+    private void OnSelectionChanged(object? sender, EventArgs e) =>
+        _viewModel?.UpdateSelection(Canvas.Selection);
+
+    private void OnRotateSelectedRequested(double degrees) =>
+        Canvas.RotateSelectedBy(degrees);
+
+    private void OnSetSelectedAngleRequested(double degrees) =>
+        Canvas.SetSelectedAngle(degrees);
+
+    private void OnSetSelectedFocalLengthRequested(double focalLength) =>
+        Canvas.SetSelectedFocalLength(focalLength);
+
+    private void OnSetSelectedLensDispersionModeRequested(LensDispersionMode mode) =>
+        Canvas.SetSelectedLensDispersionMode(mode);
+
+    private void OnSetSelectedLensDispersionLevelRequested(int level) =>
+        Canvas.SetSelectedLensDispersionLevel(level);
+
+    private void OnSetSelectedSphericalMirrorRadiusRequested(double radius) =>
+        Canvas.SetSelectedSphericalMirrorRadius(radius);
+
+    private void OnSetSelectedSphericalMirrorArcAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedSphericalMirrorArcAngle(angleDegrees);
+
+    private void OnSetSelectedPointLightEmissionAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedPointLightEmissionAngle(angleDegrees);
+
+    private void OnSetSelectedCentralAngleRequested(double angleDegrees) =>
+        Canvas.SetSelectedCentralAngle(angleDegrees);
+
+    private void OnSetSelectedApertureOpeningRequested(double openingSize) =>
+        Canvas.SetSelectedApertureOpening(openingSize);
+
+    private void OnSetSelectedGrooveDensityRequested(double grooveDensity) =>
+        Canvas.SetSelectedGrooveDensity(grooveDensity);
+
+    private void OnSetSelectedWavelengthRequested(double wavelengthNanometers) =>
+        Canvas.SetSelectedWavelength(wavelengthNanometers);
+
+    private void OnSetSelectedLengthRequested(double length) =>
+        Canvas.SetSelectedLength(length);
+
+    private void OnSetSelectedTemporarilyHiddenRequested(bool isHidden) =>
+        Canvas.SetSelectedTemporarilyHidden(isHidden);
+
+    private void OnSetSelectedOriginRequested(double x, double y) =>
+        Canvas.SetSelectedOrigin(x, y);
+
+    private void OnSetSelectedSecondOriginRequested(double x, double y) =>
+        Canvas.SetSelectedSecondOrigin(x, y);
+
+    private void OnSetSelectedNameRequested(string name) => Canvas.SetSelectedName(name);
+
+    private void OnGroupSelectionRequested(object? sender, EventArgs e) => Canvas.GroupSelection();
+
+    private void OnUngroupSelectionRequested(object? sender, EventArgs e) => Canvas.UngroupSelection();
+
+    private void OnSetPrimaryElementRequested(object? sender, EventArgs e) => Canvas.SetActiveMemberAsPrimary();
+
+    private void OnSceneChanged(object? sender, EventArgs e)
+    {
+        if (_viewModel is not null)
+        {
+            _viewModel.CurrentScene = Canvas.Scene;
+        }
+    }
+}

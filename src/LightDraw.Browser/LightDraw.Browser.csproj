@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-browser</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <WasmEnableThreads>false</WasmEnableThreads>
+    <WasmBuildNative>true</WasmBuildNative>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LightDraw.Core/LightDraw.Core.csproj" />
+    <ProjectReference Include="../LightDraw.Rendering.Skia/LightDraw.Rendering.Skia.csproj" />
+    <PackageReference Include="Avalonia.Browser" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../LightDraw.Desktop/ViewModels/MainWindowViewModel.cs" Link="ViewModels/MainWindowViewModel.cs" />
+    <Compile Include="../LightDraw.Desktop/Services/ISceneStorageService.cs" Link="Services/ISceneStorageService.cs" />
+    <Compile Include="../LightDraw.Desktop/Services/LocalizationService.cs" Link="Services/LocalizationService.cs" />
+    <Compile Include="../LightDraw.Desktop/Converters/EnumEqualsConverter.cs" Link="Converters/EnumEqualsConverter.cs" />
+    <AvaloniaResource Include="../LightDraw.Desktop/Themes/Palette.axaml" Link="Themes/Palette.axaml" />
+    <AvaloniaResource Include="../LightDraw.Desktop/Assets/Brand/LightDrawLogo.png" Link="Assets/Brand/LightDrawLogo.png" />
+    <AvaloniaResource Include="Assets/Fonts/NotoSansCJKsc-Regular.otf" />
+  </ItemGroup>
+  <Target Name="CleanPublishedWwwroot" BeforeTargets="PrepareForPublish"
+          Condition="'$(PublishDir)' != '' and Exists('$(PublishDir)wwwroot')">
+    <RemoveDir Directories="$(PublishDir)wwwroot" />
+  </Target>
+</Project>

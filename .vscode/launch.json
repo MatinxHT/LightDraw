@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debug LightDraw (macOS)",
+      "name": "Debug LightDraw Desktop",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build LightDraw Desktop",
@@ -10,6 +10,17 @@
       "args": [],
       "cwd": "${workspaceFolder}/src/LightDraw.Desktop",
       "stopAtEntry": false
+    },
+    {
+      "name": "Debug LightDraw Browser",
+      "type": "blazorwasm",
+      "request": "attach",
+      "browser": "chrome",
+      "projectPath": "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
+      "cwd": "${workspaceFolder}/src/LightDraw.Browser",
+      "url": "http://127.0.0.1:8765/",
+      "preLaunchTask": "run LightDraw Browser",
+      "postDebugTask": "stop LightDraw Browser"
     }
   ]
 }

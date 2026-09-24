@@ -8,13 +8,19 @@ public static class SceneSerializer
 {
     public const int CurrentDataVersion = 14;
 
-    private static readonly JsonSerializerOptions Options = new()
+    private static readonly SceneJsonContext Context = new(new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) }
-    };
+        Converters =
+        {
+            new JsonStringEnumConverter<LightSourceKind>(JsonNamingPolicy.CamelCase),
+            new JsonStringEnumConverter<LightSpectrumKind>(JsonNamingPolicy.CamelCase),
+            new JsonStringEnumConverter<LensKind>(JsonNamingPolicy.CamelCase),
+            new JsonStringEnumConverter<LensDispersionMode>(JsonNamingPolicy.CamelCase)
+        }
+    });
 
     public static async Task SaveAsync(OpticalScene scene, Stream stream, CancellationToken cancellationToken = default)
     {
@@ -24,14 +30,14 @@ public static class SceneSerializer
         await JsonSerializer.SerializeAsync(
             stream,
             new SceneDocument(CurrentDataVersion, scene),
-            Options,
+            Context.SceneDocument,
             cancellationToken);
     }
 
     public static async Task<OpticalScene> LoadAsync(Stream stream, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var document = await JsonSerializer.DeserializeAsync<SceneDocument>(stream, Options, cancellationToken)
+        var document = await JsonSerializer.DeserializeAsync(stream, Context.SceneDocument, cancellationToken)
             ?? throw new InvalidDataException("场景文件为空或格式无效。");
 
         if (document.DataVersion is < 1 or > CurrentDataVersion)
@@ -121,6 +127,13 @@ public static class SceneSerializer
         double.IsFinite(wavelengthNanometers) && wavelengthNanometers > 0
             ? wavelengthNanometers
             : LightSource.MonochromaticWavelengthNanometers;
-
-    private sealed record SceneDocument(int DataVersion, OpticalScene? Scene);
 }
+
+internal sealed record SceneDocument(int DataVersion, OpticalScene? Scene);
+
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true,
+    WriteIndented = true)]
+[JsonSerializable(typeof(SceneDocument))]
+internal partial class SceneJsonContext : JsonSerializerContext;

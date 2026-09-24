@@ -35,6 +35,21 @@
 
 ## 快速开始
 
+### 浏览器版与 Cloudflare Pages
+
+浏览器版只包含几何光学画布，计算和场景文件读写都在本地浏览器完成。建议使用宽度至少 920 px、高度至少 600 px 的桌面浏览器。
+
+```bash
+dotnet workload install wasm-tools
+dotnet publish src/LightDraw.Browser/LightDraw.Browser.csproj -c Release
+```
+
+Cloudflare Pages 的构建命令使用上面的 `dotnet publish`；输出目录设置为 `src/LightDraw.Browser/bin/Release/net10.0-browser/publish/wwwroot`。将该目录的内容作为静态站点发布，无需 Pages Function 或 Worker。服务器应以 `application/wasm` 提供 `.wasm` 文件。首次发布前检查单文件小于 25 MiB、文件数小于 20,000。首版没有启用 AOT。
+
+在 VS Code 中选择 **Debug LightDraw Browser** 并按 F5，会通过 Browser task 启动本地服务并连接调试器，停止调试时也会停止该服务。也可单独运行 **Tasks: Run Task → run LightDraw Browser**，终端会显示 `App url: http://127.0.0.1:8765/`；保持任务运行即可访问该地址。`build LightDraw Browser` 只会编译，不会启动 HTTP 服务。
+
+“打开场景”选择桌面版兼容的 `.lightdraw.json`；“保存场景”下载 `lightdraw-scene.lightdraw.json`；“导出画布”下载 `lightdraw-canvas.png`。浏览器版不包含静电场、静磁场及移动端触摸操作。
+
 ### 环境要求
 
 - .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；

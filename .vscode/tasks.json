@@ -16,6 +16,57 @@
         "kind": "build",
         "isDefault": true
       }
+    },
+    {
+      "label": "build LightDraw Browser",
+      "type": "process",
+      "command": "${workspaceFolder}/.vscode/dotnet-browser.sh",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
+        "--configuration",
+        "Debug"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "run LightDraw Browser",
+      "type": "process",
+      "command": "${workspaceFolder}/.vscode/dotnet-browser.sh",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
+        "--configuration",
+        "Debug"
+      ],
+      "options": {
+        "env": {
+          "ASPNETCORE_URLS": "http://127.0.0.1:8765"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "browser",
+        "pattern": {
+          "regexp": "^(?!)"
+        },
+        "background": {
+          "activeOnStart": true,
+          "endsPattern": "^App url: http://127\\.0\\.0\\.1:8765/"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "stop LightDraw Browser",
+      "type": "process",
+      "command": "${workspaceFolder}/.vscode/stop-browser.sh",
+      "problemMatcher": []
     }
   ]
 }

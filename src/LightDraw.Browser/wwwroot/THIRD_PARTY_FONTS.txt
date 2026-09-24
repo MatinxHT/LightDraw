@@ -1,0 +1,5 @@
+Noto Sans CJK SC Regular
+Copyright 2014-2021 Adobe (http://www.adobe.com/).
+Noto is a trademark of Google Inc.
+Source: https://github.com/notofonts/noto-cjk/tree/main/Sans/OTF/SimplifiedChinese
+License: SIL Open Font License 1.1; see NotoSansCJK-OFL.txt.
