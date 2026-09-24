@@ -1,3 +1,4 @@
+using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using LightDraw.Browser.Services;
@@ -13,6 +14,14 @@ public sealed partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
+        var assembly = typeof(MainView).Assembly;
+        var informationalVersion = assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion;
+        var version = informationalVersion?.Split('+')[0]
+            ?? assembly.GetName().Version?.ToString(3)
+            ?? "Unknown";
+        VersionText.Text = $"v{version}";
     }
 
     public void AttachViewModel(MainWindowViewModel viewModel)

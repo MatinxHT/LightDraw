@@ -2,6 +2,8 @@
 
 ## Browser build and Cloudflare Pages
 
+**Try online:** [Open the LightDraw browser edition](https://lightdraw.martinphysics.club/) to test the geometric optics canvas without installing the app.
+
 The browser edition provides the geometric optics canvas. Simulation and scene file operations run locally in the browser. Use a desktop browser with a viewport of at least 920 × 600.
 
 ```bash

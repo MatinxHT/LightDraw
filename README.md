@@ -37,6 +37,8 @@
 
 ### 浏览器版与 Cloudflare Pages
 
+**在线测试：**[打开 LightDraw 浏览器版](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学画布。
+
 浏览器版只包含几何光学画布，计算和场景文件读写都在本地浏览器完成。建议使用宽度至少 920 px、高度至少 600 px 的桌面浏览器。
 
 ```bash
