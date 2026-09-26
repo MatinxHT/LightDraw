@@ -10,7 +10,7 @@
   </a>
 </p>
 
-**光绘课堂 (LightDraw)** 是一款面向大中小学物理课堂教学实验演示的二维物理场绘图与模拟的跨平台工具。项目希望用直观、流畅的可视化方式帮助教师讲解几何光学，也让学生能够自由搭建场景、观察光路并验证自己的猜想。同时光是电磁波，所以也提供静电场和静磁场模拟仿真供中学教学使用。
+**光绘课堂 (LightDraw)** 是一款面向物理课堂和实验演示的二维绘图与模拟工具。它支持在桌面端搭建几何光学、静电场和静磁场场景；浏览器版目前提供几何光学画布。教师可以用它演示物理概念，学生也可以自行搭建场景、观察结果并验证猜想。
 
 项目以公开源码、社区协作和长期维护为方向。欢迎教师、学生、开发者、设计师和光学爱好者提交问题、改进文档、补充测试或实现新功能。
 
@@ -19,14 +19,13 @@
 
 ## 项目状态
 
-光绘课堂目前处于早期开发阶段。仓库已经包含可运行的桌面基础版本，主要用于验证以下技术路线：
+光绘课堂仓库包含可运行的桌面版和浏览器版，当前功能范围如下：
 
-- 纯 .NET 几何光学计算核心；
-- Avalonia 跨平台桌面界面；
-- SkiaSharp 高性能批量绘图；
-- Windows、macOS 和 Linux 的统一代码基础；
+- **桌面版**：在 Windows、macOS 和 Linux 上运行，提供几何光学、静电场和静磁场模拟；其中Windows版本在Microsoft Store中提供了安装包，macOS 和 Linux包敬请自行打包编译，因为目前项目的支持度还不足以用GitHub Action自动打包、也不足用缴纳Apple开发者年费。
+- **浏览器版**：提供几何光学画布，支持与桌面版互通的场景文件、PNG 画布导出，以及中英文界面和明暗主题；基于性能原因不提供静电场和静磁场仿真场景。
+- **共享代码**：两个前端共用纯 .NET 场景与模拟核心、SkiaSharp 光学画布，以及主要的界面状态与命令逻辑。
 
-当前版本已适合课堂概念演示和技术验证，尚不建议用于精密工程计算或对数值误差敏感的科研工作。
+当前版本适合课堂概念演示和技术验证，不建议用于精密工程计算或对数值误差敏感的科研工作。
 
 ![optics](./assets/app-store/optics.png)
 ![optics2](./assets/app-store/optics2.png)
@@ -35,35 +34,31 @@
 
 ## 快速开始
 
-### 浏览器版与 Cloudflare Pages
+### 浏览器版
 
 **在线测试：**[打开 LightDraw 浏览器版](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学画布。
 
-浏览器版只包含几何光学画布，计算和场景文件读写都在本地浏览器完成。建议使用宽度至少 920 px、高度至少 600 px 的桌面浏览器。
+浏览器版只包含几何光学画布，计算在本地浏览器完成；场景文件通过浏览器的文件选择和下载功能读写，不需要将场景上传到服务器。建议使用宽度至少 920 px、高度至少 600 px 的桌面浏览器。
 
-```bash
-dotnet workload install wasm-tools
-dotnet publish src/LightDraw.Browser/LightDraw.Browser.csproj -c Release
-```
-
-Cloudflare Pages 的构建命令使用上面的 `dotnet publish`；输出目录设置为 `src/LightDraw.Browser/bin/Release/net10.0-browser/publish/wwwroot`。将该目录的内容作为静态站点发布，无需 Pages Function 或 Worker。服务器应以 `application/wasm` 提供 `.wasm` 文件。首次发布前检查单文件小于 25 MiB、文件数小于 20,000。首版没有启用 AOT。
-
-在 VS Code 中选择 **Debug LightDraw Browser** 并按 F5，会通过 Browser task 启动本地服务并连接调试器，停止调试时也会停止该服务。也可单独运行 **Tasks: Run Task → run LightDraw Browser**，终端会显示 `App url: http://127.0.0.1:8765/`；保持任务运行即可访问该地址。`build LightDraw Browser` 只会编译，不会启动 HTTP 服务。
-
-“打开场景”选择桌面版兼容的 `.lightdraw.json`；“保存场景”下载 `lightdraw-scene.lightdraw.json`；“导出画布”下载 `lightdraw-canvas.png`。浏览器版不包含静电场、静磁场及移动端触摸操作。
+“打开场景”选择桌面版兼容的 `.lightdraw.json`；“保存场景”下载 `lightdraw-scene.lightdraw.json`；“导出画布”下载 `lightdraw-canvas.png`。浏览器版还提供“关于程序”面板，可查看版本、仿真方法、许可与鸣谢。
 
 ### 环境要求
 
 - .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；
-- Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
+- 桌面版运行环境：Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
+- 本地构建浏览器版时还需要 `wasm-tools` 工作负载。
 
 ## 使用说明
 
 | 操作 | 效果 |
 | --- | --- |
 | 顶部语言选择左侧的主题下拉框 | 即时切换深色 / 浅色主题，所有窗口同步；默认浅色，采用纯白画布和淡蓝界面；深色采用暖石墨灰面板、炭黑画布和香槟色选中强调 |
+| 顶部语言下拉框 | 在简体中文与英语之间切换界面文字 |
+| 关于程序 | 查看版本、仿真方法、项目仓库、许可与鸣谢；桌面版以窗口显示，浏览器版以页面内面板显示 |
 | 选择平移工具并按住鼠标左键拖动 | 平移画布 |
 | 移动或调整元件 | 空白处按住左键可平移界面；先单击元件任意位置选中，再按住第一原点拖拽平移；拖动元件正交方向 100 mm 处的白点可固定元件原点旋转；所有长度只能通过属性框修改，光路在拖动时实时刷新 |
+| 选中元件后的属性栏 | 可修改元件名称、坐标和适用的光学参数；支持组合、取消组合及设置组合中的主元件 |
+| 暂时隐藏元件 | 选中光学元件后勾选“暂时隐藏”，元件仍显示在画布上，但不参与光线追迹，光线会穿过它 |
 | 删除元件 | 单击光源、镜面、分光镜、光屏、光阑、光栅或透镜即可删除，成功删除后自动返回平移工具 |
 | 使用任意绘制工具时按住右键拖动 | 临时平移画布 |
 | 滚动鼠标滚轮 | 以当前指针位置为中心缩放 |
@@ -79,6 +74,7 @@ Cloudflare Pages 的构建命令使用上面的 `dotnet publish`；输出目录�
 | 适合窗口 | 恢复默认视图范围 |
 | 光线密度 | 实时调整每个光源生成的光线数量 |
 | 打开场景 / 保存场景 | 读写 `.lightdraw.json` 场景文件 |
+| 导出画布 | 将当前光学画布导出为 PNG；桌面版选择保存位置，浏览器版直接下载 |
 
 ## 场景文件格式
 
@@ -185,6 +181,7 @@ Cloudflare Pages 的构建命令使用上面的 `dotnet publish`；输出目录�
 - `reflectionGratings[].start/end`：反射光栅的两个端点；`grooveDensityLinesPerMillimeter` 为刻线密度（线/mm）。
 - `concaveGratings[]`：凹面光栅；`vertex`、`centerOfCurvature` 和 `arcAngleDegrees` 的几何定义与理想凹球面镜一致，另以 `grooveDensityLinesPerMillimeter` 设置刻线密度。
 - `lenses[].start/end`：薄透镜的两个端点，另含 `kind` 与 `focalLength`；新建凸、凹透镜的默认基准焦距均为 300 mm，聚散性质由 `kind` 决定。`dispersionMode` 可取 `none`、`normal`、`anomalous`，分别表示理想无色散、正常色散和反常色散；`dispersionLevel` 范围为 0～10，默认 5，仅在色散模式下生效。旧场景缺少这两个字段时迁移为 `none` 和 `5`。
+- 光学元件可保存自定义 `name` 和 `isTemporarilyHidden`；后者为 `true` 时仍绘制元件，但追迹时忽略它。场景还可包含 `groups`，记录组合成员及主元件；这些字段缺失的旧场景仍可读取。
 
 色散透镜以 550 nm 绿光焦距为 `f₀`。令 `t = clamp((λ - 550) / 100, -1, 1)`、`s = dispersionLevel × 0.05`，正常色散使用 `f(λ) = f₀ × (1 + st)`，反常色散使用 `f(λ) = f₀ × (1 - st)`。因此正常色散下蓝光焦距较短、红光焦距较长，反常色散则相反。等级 5、基准焦距 300 mm 时，正常色散的 450/550/650 nm 焦距分别为 225/300/375 mm。复色光第一次命中色散透镜时拆分为三个等强分量，后续透镜按各分量波长继续计算，不会重复拆分。
 
@@ -208,20 +205,24 @@ LightDraw
 │  ├─ Optics             光学画布、场景编辑和 Skia 绘制
 │  ├─ Electrostatics     静电场交互画布
 │  └─ Magnetostatics     磁静态交互画布
-└─ src/LightDraw.Desktop
-   ├─ Views              Avalonia 窗口和界面布局
-   ├─ ViewModels         窗口状态与命令
-   ├─ Services           文件选择与场景存储服务
-   └─ Assets             应用内使用的品牌和图标资源
+├─ src/LightDraw.Desktop
+│  ├─ Views              Avalonia 桌面窗口和界面布局
+│  ├─ ViewModels         两端共用的主界面状态与命令
+│  ├─ Services           本地文件选择、场景存储与本地化服务
+│  └─ Assets             应用内使用的品牌和图标资源
+└─ src/LightDraw.Browser
+   ├─ Views              Avalonia 浏览器界面与关于面板
+   ├─ Services           浏览器文件选择、下载与场景存储
+   └─ wwwroot            WebAssembly 入口、脚本与静态资源
 ```
 
 依赖方向保持为：
 
 ```text
-LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop
+LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop / LightDraw.Browser
 ```
 
-`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，也便于未来复用于命令行工具、WebAssembly 或其他前端。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件仍输出到被 Git 忽略的 `artifacts` 目录。
+`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，并已复用于浏览器版。浏览器版还复用光学画布、主界面 ViewModel 和本地化服务；浏览器专用代码负责文件选择与下载。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件不纳入版本控制。
 
 ### 模拟与绘制
 

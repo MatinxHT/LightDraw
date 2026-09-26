@@ -1,20 +1,5 @@
 # LightDraw (光绘课堂)
 
-## Browser build and Cloudflare Pages
-
-**Try online:** [Open the LightDraw browser edition](https://lightdraw.martinphysics.club/) to test the geometric optics canvas without installing the app.
-
-The browser edition provides the geometric optics canvas. Simulation and scene file operations run locally in the browser. Use a desktop browser with a viewport of at least 920 × 600.
-
-```bash
-dotnet workload install wasm-tools
-dotnet publish src/LightDraw.Browser/LightDraw.Browser.csproj -c Release
-```
-
-Set the Cloudflare Pages build command to the `dotnet publish` command above and the output directory to `src/LightDraw.Browser/bin/Release/net10.0-browser/publish/wwwroot`. Host its contents as static files, serving `.wasm` as `application/wasm`. No Pages Function or Worker is needed. Before deployment, check that each file is under 25 MiB and the total file count is under 20,000. AOT is disabled for the first release.
-
-Open scene imports a desktop-compatible `.lightdraw.json` file. Save scene downloads `lightdraw-scene.lightdraw.json`; Export canvas downloads `lightdraw-canvas.png`. Electrostatic and magnetostatic views and touch controls are outside the browser edition's scope.
-
 [中文](README.md) | English
 
 <p align="center">
@@ -25,7 +10,7 @@ Open scene imports a desktop-compatible `.lightdraw.json` file. Save scene downl
   </a>
 </p>
 
-**LightDraw (光绘课堂)** is a cross-platform 2D physics field drawing and simulation tool for classroom demonstrations in physics education (K-12 and higher education). The project focuses on intuitive and smooth visualization so teachers can explain geometric optics more clearly, while students can build scenes, observe ray paths, and verify their ideas. Since light is an electromagnetic wave, the app also includes electrostatic and magnetostatic simulations for secondary-school teaching use.
+**LightDraw (光绘课堂)** is a 2D drawing and simulation tool for physics lessons and demonstrations. The desktop edition supports geometric optics, electrostatics, and magnetostatics scenes; the browser edition currently provides a geometric optics canvas. Teachers can use it to demonstrate concepts, while students can build scenes, observe the results, and test their ideas.
 
 The project is developed with public source code, community collaboration, and long-term maintenance in mind. Teachers, students, developers, designers, and optics enthusiasts are welcome to report issues, improve docs, add tests, or implement new features.
 
@@ -34,14 +19,13 @@ The project is developed with public source code, community collaboration, and l
 
 ## Project Status
 
-LightDraw is currently in an early development stage. The repository already contains a runnable desktop baseline used to validate the following technical direction:
+The LightDraw repository contains runnable desktop and browser editions. Their current scope is:
 
-- A pure .NET geometric-optics computation core
-- Avalonia cross-platform desktop UI
-- SkiaSharp high-performance batch rendering
-- A unified codebase for Windows, macOS, and Linux
+- **Desktop edition**: Runs on Windows, macOS, and Linux, with geometric optics, electrostatics, and magnetostatics simulations. A Windows installer is available through the Microsoft Store. macOS and Linux users currently need to build and package the app themselves: automated packaging with GitHub Actions is not yet supported, and the project cannot currently cover Apple's annual developer fee.
+- **Browser edition**: Provides the geometric optics canvas, scene files compatible with the desktop edition, PNG canvas export, Chinese and English interfaces, and light and dark themes. Electrostatics and magnetostatics scenes are omitted for performance reasons.
+- **Shared code**: Both editions use the same pure .NET scene and simulation core, SkiaSharp optics canvas, and most main interface state and command logic.
 
-The current version is suitable for classroom concept demonstrations and technical validation, but is not yet recommended for precision engineering calculation or research work sensitive to numerical error.
+The current version is suitable for classroom concept demonstrations and technical validation. It is not recommended for precision engineering calculations or research sensitive to numerical error.
 
 ![optics](./assets/app-store/optics.png)
 ![optics2](./assets/app-store/optics2.png)
@@ -50,18 +34,31 @@ The current version is suitable for classroom concept demonstrations and technic
 
 ## Quick Start
 
+### Browser Edition
+
+**Try it online:** [Open LightDraw in your browser](https://lightdraw.martinphysics.club/) to use the geometric optics canvas without installing the app.
+
+The browser edition contains only the geometric optics canvas. Calculations run locally in the browser. Scenes are opened through the browser's file picker and saved as downloads; scene files do not need to be uploaded to a server. A desktop browser with a viewport of at least 920 px wide and 600 px high is recommended.
+
+**Open scene** accepts a desktop-compatible `.lightdraw.json` file; **Save scene** downloads `lightdraw-scene.lightdraw.json`; **Export canvas** downloads `lightdraw-canvas.png`. The browser edition also has an **About** panel with the version, simulation methods, license, and acknowledgements.
+
 ### Requirements
 
-- .NET SDK 10.0.400, or another .NET 10 SDK compatible with `global.json`
-- Windows 10/11, macOS, or Linux with X11/Wayland support
+- .NET SDK 10.0.400, or a compatible .NET 10 SDK as specified by `global.json`
+- Desktop runtime: Windows 10/11, macOS, or Linux with X11/Wayland support
+- The `wasm-tools` workload is also required to build the browser edition locally.
 
 ## Usage
 
 | Action | Effect |
 | --- | --- |
 | Theme dropdown to the left of the top language selector | Instantly switch between dark/light themes across all windows; default is light (white canvas + pale blue UI); dark uses warm graphite panels, charcoal canvas, and champagne-colored selection accents |
+| Language dropdown at the top | Switch interface text between Simplified Chinese and English |
+| About | View the version, simulation methods, project repository, license, and acknowledgements; shown in a window on desktop and an in-page panel in the browser |
 | Select the pan tool and drag with left mouse button | Pan the canvas |
 | Move or adjust components | Dragging on blank space pans; click any component to select it, then drag the first anchor to translate; drag the white point located 100 mm along the orthogonal direction to rotate around a fixed origin; all lengths are edited in the property panel, and ray paths refresh in real time while dragging |
+| Properties of a selected element | Edit its name, coordinates, and applicable optical parameters; group or ungroup elements and set the primary element of a group |
+| Temporarily hide an element | Select an optical element and check **Temporarily hide**. The element remains visible on the canvas but is excluded from ray tracing, so rays pass through it |
 | Delete a component | Click a light source, mirror, beam splitter, screen, aperture, grating, or lens to delete; after deletion, the tool automatically returns to pan mode |
 | Hold right mouse button while using any drawing tool and drag | Temporarily pan the canvas |
 | Scroll mouse wheel | Zoom centered at the current cursor position |
@@ -77,6 +74,7 @@ The current version is suitable for classroom concept demonstrations and technic
 | Fit to window | Restore default viewport range |
 | Ray density | Adjust the number of generated rays per source in real time |
 | Open scene / Save scene | Read/write `.lightdraw.json` scene files |
+| Export canvas | Export the current optical canvas as a PNG; choose a save location on desktop or download it directly in the browser |
 
 ## Scene File Format
 
@@ -183,6 +181,7 @@ Field notes:
 - `reflectionGratings[].start/end`: two endpoints of a reflection grating; `grooveDensityLinesPerMillimeter` is groove density (lines/mm).
 - `concaveGratings[]`: concave gratings; geometric meaning of `vertex`, `centerOfCurvature`, and `arcAngleDegrees` matches ideal concave spherical mirrors, with `grooveDensityLinesPerMillimeter` for groove density.
 - `lenses[].start/end`: two endpoints of thin lenses, plus `kind` and `focalLength`. Default reference focal length for new convex/concave lenses is 300 mm; converging/diverging behavior is determined by `kind`. `dispersionMode` can be `none`, `normal`, or `anomalous` (achromatic, normal dispersion, anomalous dispersion). `dispersionLevel` ranges 0–10 with default 5, active only in dispersion modes. Old scenes missing these fields migrate to `none` and `5`.
+- Optical elements can store a custom `name` and `isTemporarilyHidden`. When the latter is `true`, the element is still drawn but ignored during ray tracing. A scene can also contain `groups` with member and primary element IDs. Older scenes without these fields remain readable.
 
 For dispersive lenses, use 550 nm green-light focal length as `f₀`. Let `t = clamp((λ - 550) / 100, -1, 1)` and `s = dispersionLevel × 0.05`. Normal dispersion uses `f(λ) = f₀ × (1 + st)`, anomalous dispersion uses `f(λ) = f₀ × (1 - st)`. Therefore, with normal dispersion blue has shorter focal length and red has longer focal length (reversed for anomalous). At level 5 and base focal length 300 mm, focal lengths at 450/550/650 nm are 225/300/375 mm in normal dispersion. Composite light is split into three equal-strength components at its first hit on a dispersive lens; later lenses continue using each component wavelength without re-splitting.
 
@@ -206,20 +205,24 @@ LightDraw
 │  ├─ Optics             Optical canvas, scene editing, and Skia rendering
 │  ├─ Electrostatics     Interactive electrostatic canvas
 │  └─ Magnetostatics     Interactive magnetostatic canvas
-└─ src/LightDraw.Desktop
-   ├─ Views              Avalonia windows and layout
-   ├─ ViewModels         Window state and commands
-   ├─ Services           File pickers and scene storage services
-   └─ Assets             In-app branding and icon assets
+├─ src/LightDraw.Desktop
+│  ├─ Views              Avalonia desktop windows and layouts
+│  ├─ ViewModels         Main interface state and commands shared by both editions
+│  ├─ Services           Local file selection, scene storage, and localization
+│  └─ Assets             In-app branding and icon assets
+└─ src/LightDraw.Browser
+   ├─ Views              Avalonia browser interface and About panel
+   ├─ Services           Browser file selection, downloads, and scene storage
+   └─ wwwroot            WebAssembly entry point, scripts, and static assets
 ```
 
 Dependency direction is:
 
 ```text
-LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop
+LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop / LightDraw.Browser
 ```
 
-`LightDraw.Core` does not reference Avalonia, SkiaSharp, Windows API, or macOS API, which keeps it independently testable and reusable for CLI tools, WebAssembly, or other front ends. The root `assets/app-store` directory stores store-poster assets that should be version controlled; build/publish/package outputs still go to the Git-ignored `artifacts` directory.
+`LightDraw.Core` does not reference Avalonia, SkiaSharp, Windows API, or macOS API, so it can be tested independently and is already reused by the browser edition. The browser edition also reuses the optical canvas, main interface ViewModel, and localization service; browser-specific code handles file selection and downloads. The root `assets/app-store` directory holds version-controlled store graphics. Build, publish, and package outputs are not version controlled.
 
 ### Simulation and Rendering
 
@@ -236,7 +239,7 @@ LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop
 
 ## Contributing
 
-Issue reports, classroom use cases, bilingual documentation improvements, test additions, accessibility support, performance optimization, and new optical elements are all welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before coding. For large features, open an Issue first and explain use case, interaction design, and algorithmic rationale.
+Issue reports, classroom use cases, bilingual documentation improvements, test additions, accessibility support, performance optimization, and new optical elements are all welcome. Please read [CONTRIBUTING.en.md](CONTRIBUTING.en.md) before coding. For large features, open an Issue first and explain use case, interaction design, and algorithmic rationale.
 
 By submitting contributions, you confirm you have rights to provide the content and agree to license contributions under this repository’s current PolyForm Noncommercial License 1.0.0. Do not directly copy code, images, fonts, exercises, or teaching materials with incompatible licenses or unclear provenance.
 
