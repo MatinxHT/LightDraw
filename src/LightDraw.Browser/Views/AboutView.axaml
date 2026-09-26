@@ -1,0 +1,152 @@
+<UserControl
+    x:Class="LightDraw.Browser.Views.AboutView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="{DynamicResource WindowBrush}"
+    KeyDown="OnKeyDown">
+    <Border Background="{DynamicResource WindowBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1" CornerRadius="10">
+    <Grid Margin="28" RowDefinitions="*,Auto">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="0,0,10,18" Spacing="16">
+                <StackPanel Orientation="Horizontal" Spacing="14">
+                    <Image
+                        Width="72"
+                        Height="72"
+                        Source="/Assets/Brand/LightDrawLogo.png"
+                        Stretch="Uniform" />
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            Text="{DynamicResource App.Title}" />
+                        <TextBlock x:Name="VersionText" Foreground="{DynamicResource AccentBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <TextBlock
+                    Foreground="{DynamicResource BodyTextBrush}"
+                    Text="{DynamicResource About.Description}"
+                    TextWrapping="Wrap" />
+
+                <Border
+                    Padding="16"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="8">
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Repository}" />
+                        <TextBlock
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            Text="{DynamicResource About.RepositoryDescription}"
+                            TextWrapping="Wrap" />
+                        <HyperlinkButton
+                            Padding="0"
+                            HorizontalAlignment="Left"
+                            Content="https://github.com/MatinxHT/LightDraw"
+                            Foreground="{DynamicResource AccentBrush}"
+                            NavigateUri="https://github.com/MatinxHT/LightDraw" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Methods}" />
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Text="{DynamicResource About.OpticsHeading}" />
+                            <TextBlock
+                                Foreground="{DynamicResource SecondaryTextBrush}"
+                                Text="{DynamicResource About.OpticsDescription}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Text="{DynamicResource About.ElectroHeading}" />
+                            <TextBlock
+                                Foreground="{DynamicResource SecondaryTextBrush}"
+                                Text="{DynamicResource About.ElectroDescription}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Spacing="4">
+                            <TextBlock
+                                FontWeight="SemiBold"
+                                Foreground="{DynamicResource AccentBrush}"
+                                Text="{DynamicResource About.MagneticHeading}" />
+                            <TextBlock
+                                Foreground="{DynamicResource SecondaryTextBrush}"
+                                Text="{DynamicResource About.MagneticDescription}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource MutedTextBrush}"
+                            Text="{DynamicResource About.Disclaimer}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="7">
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.License}" />
+                        <TextBlock Foreground="{DynamicResource AccentBrush}" Text="PolyForm Noncommercial License 1.0.0" />
+                        <TextBlock
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            Text="{DynamicResource About.LicenseDescription}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{DynamicResource MutedTextBrush}"
+                            Text="Required Notice: Copyright 2026 LightDraw contributors"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{DynamicResource HeaderBrush}"
+                    BorderBrush="{DynamicResource DividerBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="9">
+                        <TextBlock FontWeight="SemiBold" Text="{DynamicResource About.Acknowledgements}" />
+                        <TextBlock
+                            Foreground="{DynamicResource SecondaryTextBrush}"
+                            LineHeight="22"
+                            Text="{DynamicResource About.Institutions}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+            <TextBlock
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{DynamicResource QuietTextBrush}"
+                Text="{DynamicResource About.BuiltWith}" />
+            <Button x:Name="CloseButton"
+                Grid.Column="1"
+                MinWidth="88"
+                HorizontalAlignment="Right"
+                Click="OnCloseClicked"
+                Content="{DynamicResource About.Close}" />
+        </Grid>
+    </Grid>
+    </Border>
+</UserControl>

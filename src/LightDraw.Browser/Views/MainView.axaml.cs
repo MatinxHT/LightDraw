@@ -14,6 +14,7 @@ public sealed partial class MainView : UserControl
     public MainView()
     {
         InitializeComponent();
+        AboutPanel.CloseRequested += OnAboutCloseRequested;
         var assembly = typeof(MainView).Assembly;
         var informationalVersion = assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
@@ -30,6 +31,7 @@ public sealed partial class MainView : UserControl
         if (_viewModel is not null)
         {
             _viewModel.ResetViewRequested -= OnResetViewRequested;
+            _viewModel.AboutRequested -= OnAboutRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
             _viewModel.SetSelectedAngleRequested -= OnSetSelectedAngleRequested;
             _viewModel.SetSelectedFocalLengthRequested -= OnSetSelectedFocalLengthRequested;
@@ -55,6 +57,7 @@ public sealed partial class MainView : UserControl
         _viewModel = viewModel;
         DataContext = viewModel;
         _viewModel.ResetViewRequested += OnResetViewRequested;
+        _viewModel.AboutRequested += OnAboutRequested;
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
         _viewModel.SetSelectedAngleRequested += OnSetSelectedAngleRequested;
         _viewModel.SetSelectedFocalLengthRequested += OnSetSelectedFocalLengthRequested;
@@ -84,6 +87,18 @@ public sealed partial class MainView : UserControl
     }
 
     private void OnResetViewRequested(object? sender, EventArgs e) => Canvas.ResetView();
+
+    private void OnAboutRequested(object? sender, EventArgs e)
+    {
+        AboutOverlay.IsVisible = true;
+        AboutPanel.FocusCloseButton();
+    }
+
+    private void OnAboutCloseRequested(object? sender, EventArgs e)
+    {
+        AboutOverlay.IsVisible = false;
+        AboutButton.Focus();
+    }
 
     private void OnExportCanvasClick(object? sender, RoutedEventArgs e)
     {

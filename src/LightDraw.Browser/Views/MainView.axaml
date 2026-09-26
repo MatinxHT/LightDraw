@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:skia="using:LightDraw.Rendering.Skia.Optics"
+		xmlns:views="using:LightDraw.Browser.Views"
 		xmlns:vm="using:LightDraw.Desktop.ViewModels"
 		x:Class="LightDraw.Browser.Views.MainView"
 		x:DataType="vm:MainWindowViewModel"
@@ -19,6 +20,7 @@
 		  </StackPanel>
 		</WrapPanel>
 		<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+		  <Button x:Name="AboutButton" Classes="toolbar-inline" Content="{DynamicResource Main.About}" Command="{Binding ShowAboutCommand}" />
 		  <Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
 		  <TextBlock Text="{DynamicResource Common.Theme}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  <ComboBox x:Name="ThemeSelector" Width="104" SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" AutomationProperties.Name="{DynamicResource Common.Theme}">
@@ -227,5 +229,8 @@
 		</StackPanel>
 	  </Grid>
 	</Border>
+	<Grid x:Name="AboutOverlay" Grid.RowSpan="5" Grid.ColumnSpan="2" ZIndex="10" IsVisible="False" Background="#B8000000">
+	  <views:AboutView x:Name="AboutPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20" MaxWidth="580" MaxHeight="700" />
+	</Grid>
   </Grid>
 </UserControl>
