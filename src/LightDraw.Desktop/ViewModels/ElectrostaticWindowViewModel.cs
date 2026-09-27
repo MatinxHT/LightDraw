@@ -1,3 +1,4 @@
+using LightDraw.Core.Persistence;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Electromagnetics;
@@ -8,10 +9,24 @@ namespace LightDraw.Desktop.ViewModels;
 
 public sealed partial class ElectrostaticWindowViewModel : ObservableObject
 {
+    public SceneDocumentViewModel<ElectrostaticScene> Document { get; }
+    public ElectrostaticScene CurrentScene => Document.Scene;
+
+    public ElectrostaticWindowViewModel(ISceneStorageService<ElectrostaticScene> sceneStorage)
+    {
+        Document = new(sceneStorage, ElectrostaticSceneCodec.Instance);
+        Document.StatusChanged += text => StatusText = text;
+        Document.SceneReplaced += (_, _) =>
+        {
+            ActiveTool = ElectrostaticTool.Pan;
+            UpdateSelection(null);
+        };
+    }
+
     private bool _updatingSelection;
     private ElectrostaticSelection? _selection;
 
-    [ObservableProperty] private ElectrostaticScene _currentScene = ElectrostaticScene.CreateEmpty();
+
     [ObservableProperty] private ElectrostaticTool _activeTool = ElectrostaticTool.Pan;
     [ObservableProperty] private int _linesPerCharge = 24;
     [ObservableProperty] private bool _hasSelectedCharge;
@@ -108,15 +123,6 @@ public sealed partial class ElectrostaticWindowViewModel : ObservableObject
         if (!Enum.TryParse<ElectrostaticTool>(value, out var tool)) return;
         ActiveTool = tool;
         UpdateToolState(tool);
-    }
-
-    [RelayCommand]
-    private void ResetScene()
-    {
-        CurrentScene = ElectrostaticScene.CreateEmpty();
-        ActiveTool = ElectrostaticTool.Pan;
-        UpdateSelection(null);
-        StatusText = T("Status.ElectroReset");
     }
 
     [RelayCommand]

@@ -129,7 +129,9 @@ public sealed class ElectrostaticCanvas : ThemedCanvas
     {
         ArgumentNullException.ThrowIfNull(scene);
         if (ReferenceEquals(scene, _scene)) return;
-        SetAndRaise(SceneProperty, ref _scene, NormalizeNames(scene)); SetSelection(null, -1); Recalculate();
+        _isMoving = _isPanning = _moveChanged = _moveSimulationDirty = false;
+        _plateStart = null;
+        SetAndRaise(SceneProperty, ref _scene, LightDraw.Core.Scene.ElectromagneticSceneNormalizer.Normalize(scene)); SetSelection(null, -1); Recalculate();
     }
     public void SelectTool(ElectrostaticTool tool)
     {
@@ -143,6 +145,32 @@ public sealed class ElectrostaticCanvas : ThemedCanvas
         value = Math.Clamp(value, 8, 96); if (value == _linesPerCharge) return;
         SetAndRaise(LinesPerChargeProperty, ref _linesPerCharge, value); Recalculate();
     }
+    public void FinishInteraction()
+    {
+        EndDrag();
+        _plateStart = null;
+        InvalidateVisual();
+    }
+
+    private void EndDrag()
+    {
+        _isPanning = false;
+        if (!_isMoving) return;
+        _isMoving = false;
+        if (_moveChanged)
+        {
+            if (_moveSimulationDirty) Recalculate();
+            SceneChanged?.Invoke(this, EventArgs.Empty);
+        }
+        _moveChanged = _moveSimulationDirty = false;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        EndDrag();
+    }
+
     public void ResetView()
     {
         _zoom = 1; _pan = new(Math.Max(420, Bounds.Width * .5), Math.Max(300, Bounds.Height * .52)); InvalidateVisual();
@@ -393,17 +421,6 @@ public sealed class ElectrostaticCanvas : ThemedCanvas
     { if (_selectedKind == kind && _selectedIndex == index) return; _selectedKind = kind; _selectedIndex = index; SelectionChanged?.Invoke(this, EventArgs.Empty); InvalidateVisual(); }
     private void CommitScene(ElectrostaticScene scene)
     { SetAndRaise(SceneProperty, ref _scene, scene); Recalculate(); SceneChanged?.Invoke(this, EventArgs.Empty); SelectionChanged?.Invoke(this, EventArgs.Empty); }
-    private static ElectrostaticScene NormalizeNames(ElectrostaticScene scene) => scene with
-    {
-        Charges = (scene.Charges ?? []).Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Point Charge {index + 1}" : item.Name.Trim()
-        }).ToArray(),
-        Plates = scene.PlateElements.Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Charged Plate {index + 1}" : item.Name.Trim()
-        }).ToArray()
-    };
     private string NextName(string baseName)
     {
         var names = _scene.Charges.Select(item => item.Name)

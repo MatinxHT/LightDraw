@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using LightDraw.Core.Geometry;
 
 namespace LightDraw.Core.Electromagnetics;
@@ -10,6 +11,7 @@ public sealed record ChargedPlate(Vector2D Start, Vector2D End, double Potential
 
 public sealed record ElectrostaticScene(string Name, PointCharge[] Charges, ChargedPlate[]? Plates = null)
 {
+    [JsonIgnore]
     public ChargedPlate[] PlateElements => Plates ?? [];
 
     public static ElectrostaticScene CreateEmpty() => new("空白静电场", [], []);

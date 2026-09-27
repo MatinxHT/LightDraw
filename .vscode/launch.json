@@ -20,7 +20,15 @@
       "cwd": "${workspaceFolder}/src/LightDraw.Browser",
       "url": "http://127.0.0.1:8765/",
       "preLaunchTask": "run LightDraw Browser",
-      "postDebugTask": "stop LightDraw Browser"
+      "postDebugTask": "stop LightDraw Browser",
+      "browserConfig": {
+        "runtimeArgs": [
+          "http://127.0.0.1:8765/"
+        ],
+        "userDataDir": "${workspaceFolder}/.vscode/.browser-profile",
+        "cleanUp": "wholeBrowser",
+        "postDebugTask": "stop LightDraw Browser"
+      }
     }
   ]
 }

@@ -11,4 +11,7 @@
     <Project Path="src/LightDraw.Desktop/LightDraw.Desktop.csproj" />
     <Project Path="src/LightDraw.Browser/LightDraw.Browser.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LightDraw.Tests/LightDraw.Tests.csproj" />
+  </Folder>
 </Solution>

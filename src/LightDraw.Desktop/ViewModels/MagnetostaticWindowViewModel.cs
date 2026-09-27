@@ -1,3 +1,4 @@
+using LightDraw.Core.Persistence;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LightDraw.Core.Electromagnetics;
@@ -8,10 +9,24 @@ namespace LightDraw.Desktop.ViewModels;
 
 public sealed partial class MagnetostaticWindowViewModel : ObservableObject
 {
+    public SceneDocumentViewModel<MagnetostaticScene> Document { get; }
+    public MagnetostaticScene CurrentScene => Document.Scene;
+
+    public MagnetostaticWindowViewModel(ISceneStorageService<MagnetostaticScene> sceneStorage)
+    {
+        Document = new(sceneStorage, MagnetostaticSceneCodec.Instance);
+        Document.StatusChanged += text => StatusText = text;
+        Document.SceneReplaced += (_, _) =>
+        {
+            ActiveTool = MagnetostaticTool.Pan;
+            UpdateSelection(null);
+        };
+    }
+
     private bool _updatingSelection;
     private MagnetostaticSelection? _selection;
 
-    [ObservableProperty] private MagnetostaticScene _currentScene = MagnetostaticScene.CreateEmpty();
+
     [ObservableProperty] private MagnetostaticTool _activeTool = MagnetostaticTool.Pan;
     [ObservableProperty] private int _markerDensity = 16;
     [ObservableProperty] private bool _hasSelection;
@@ -102,12 +117,6 @@ public sealed partial class MagnetostaticWindowViewModel : ObservableObject
     {
         if (!Enum.TryParse<MagnetostaticTool>(value, out var tool)) return;
         ActiveTool = tool; UpdateToolState(tool);
-    }
-    [RelayCommand]
-    private void ResetScene()
-    {
-        CurrentScene = MagnetostaticScene.CreateEmpty(); ActiveTool = MagnetostaticTool.Pan;
-        UpdateSelection(null); StatusText = T("Status.MagneticReset");
     }
     [RelayCommand]
     private void ResetView()

@@ -1,3 +1,5 @@
+using LightDraw.Core.Electromagnetics;
+using LightDraw.Core.Persistence;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -8,11 +10,17 @@ namespace LightDraw.Desktop.Views;
 
 public sealed partial class MagnetostaticWindow : Window
 {
-    private readonly MagnetostaticWindowViewModel _viewModel = new();
+    private readonly MagnetostaticWindowViewModel _viewModel;
+    private readonly DocumentViewBinding _documentBinding;
+    private readonly DocumentWindowCloseGuard _closeGuard;
 
     public MagnetostaticWindow()
     {
-        InitializeComponent(); DataContext = _viewModel;
+        InitializeComponent();
+        _viewModel = new(new AvaloniaSceneStorageService<MagnetostaticScene>(this, MagnetostaticSceneCodec.Instance));
+        DataContext = _viewModel;
+        _documentBinding = new(this, Canvas, _viewModel.Document, UnsavedPrompt, Canvas.FinishInteraction);
+        _closeGuard = new(this, _viewModel.Document);
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.SetSelectedCurrentRequested += OnSetSelectedCurrentRequested;
         _viewModel.SetSelectedLengthRequested += OnSetSelectedLengthRequested;
@@ -45,6 +53,8 @@ public sealed partial class MagnetostaticWindow : Window
         Canvas.ToolStateChanged -= OnToolStateChanged;
         Canvas.SelectionChanged -= OnSelectionChanged;
         LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+        _documentBinding.Dispose();
+        _closeGuard.Dispose();
         base.OnClosed(e);
     }
 
@@ -72,7 +82,7 @@ public sealed partial class MagnetostaticWindow : Window
     private void OnSetSelectedOriginRequested(double x, double y) => Canvas.SetSelectedOrigin(x, y);
     private void OnSetSelectedSecondOriginRequested(double x, double y) => Canvas.SetSelectedSecondOrigin(x, y);
     private void OnSetSelectedNameRequested(string name) => Canvas.SetSelectedName(name);
-    private void OnSceneChanged(object? sender, EventArgs e) => _viewModel.CurrentScene = Canvas.Scene;
+    private void OnSceneChanged(object? sender, EventArgs e) => _viewModel.Document.Commit(Canvas.Scene);
     private void OnSimulationCompleted(object? sender, EventArgs e) => _viewModel.UpdateSimulation(Canvas.SimulationResult);
     private void OnToolStateChanged(object? sender, EventArgs e) => _viewModel.UpdateToolState(Canvas.ActiveTool);
     private void OnSelectionChanged(object? sender, EventArgs e) => _viewModel.UpdateSelection(Canvas.Selection);

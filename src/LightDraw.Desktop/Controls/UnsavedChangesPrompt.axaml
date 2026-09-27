@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="LightDraw.Desktop.Controls.UnsavedChangesPrompt"
+             IsVisible="False" Focusable="True" KeyboardNavigation.TabNavigation="Cycle">
+  <Grid Background="#B8000000">
+    <Border MaxWidth="520" Margin="20" Padding="24" CornerRadius="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+            Background="{DynamicResource WindowBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+      <StackPanel Spacing="18">
+        <TextBlock Text="{DynamicResource Document.PromptTitle}" FontSize="20" FontWeight="SemiBold" />
+        <TextBlock Text="{DynamicResource Document.PromptMessage}" TextWrapping="Wrap" />
+        <WrapPanel HorizontalAlignment="Right" Orientation="Horizontal">
+          <Button x:Name="SaveButton" Content="{DynamicResource Document.Save}" Click="OnSave" Margin="4" />
+          <Button Content="{DynamicResource Document.Discard}" Click="OnDiscard" Margin="4" />
+          <Button x:Name="CancelButton" Content="{DynamicResource Document.Cancel}" Click="OnCancel" Margin="4" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

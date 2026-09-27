@@ -1,4 +1,5 @@
 <UserControl xmlns="https://github.com/avaloniaui"
+		xmlns:document="using:LightDraw.Desktop.Controls"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:skia="using:LightDraw.Rendering.Skia.Optics"
 		xmlns:views="using:LightDraw.Browser.Views"
@@ -7,7 +8,9 @@
 		x:DataType="vm:MainWindowViewModel"
 		Background="{DynamicResource WindowBrush}"
 		FontFamily="avares://LightDraw.Browser/Assets/Fonts#Noto Sans CJK SC">
-  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,*,Auto">
+  <Grid>
+  <Grid IsEnabled="{Binding Document.IsEditingEnabled}" ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+    <document:DocumentToolbar Grid.Row="1" Grid.ColumnSpan="2" DataContext="{Binding Document}" />
 	<Border Grid.ColumnSpan="2" Padding="18,12" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
 	  <Grid ColumnDefinitions="*,Auto">
 		<WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -45,8 +48,8 @@
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,10" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
-	  <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*" RowDefinitions="Auto,Auto">
+	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,10" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+	  <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto">
 		<StackPanel Orientation="Horizontal" Spacing="6">
 		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="{DynamicResource Common.Pan}" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
 		  <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Move}" Content="{DynamicResource Common.Move}" Command="{Binding SelectToolCommand}" CommandParameter="Move" />
@@ -55,21 +58,18 @@
 		<Border Grid.Column="1" Width="1" Margin="14,4" Background="{DynamicResource DividerBrush}" />
 		<TextBlock Grid.Column="2" Text="{DynamicResource Common.SimulationSettings}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" />
 		<TextBlock Grid.Column="3" Text="{DynamicResource Main.RaysPerSource}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" VerticalAlignment="Center" Margin="14,0" />
-		<Grid Grid.Column="4" ColumnDefinitions="*,42" MinWidth="120" VerticalAlignment="Center">
+		<Grid Grid.Column="4" ColumnDefinitions="*,36" MinWidth="110" MaxWidth="250" VerticalAlignment="Center">
 		  <Slider Minimum="1" Maximum="1000" Value="{Binding RayDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
 		  <TextBlock Grid.Column="1" Text="{Binding RayDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource AccentBrush}" />
 		</Grid>
-		<StackPanel Grid.Row="1" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,6,0,0">
-		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
+		<StackPanel Grid.Column="5" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="6" Margin="12,0,0,0">
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
-		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.OpenScene}" Command="{Binding OpenSceneCommand}" />
-		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.SaveScene}" Command="{Binding SaveSceneCommand}" />
 		  <Button Classes="toolbar-inline" Content="{DynamicResource Main.ExportCanvas}" Click="OnExportCanvasClick" />
 		</StackPanel>
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="{DynamicResource PropertiesBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+	<Border Grid.Row="3" Grid.ColumnSpan="2" Padding="18,7" Background="{DynamicResource PropertiesBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
 	  <Grid RowDefinitions="Auto,Auto,Auto">
 		<WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
 		  <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,2,18,2" VerticalAlignment="Center">
@@ -77,7 +77,7 @@
 			<Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
 			<TextBlock Text="{Binding SelectedElementName}" MinWidth="105" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" />
 			<TextBlock Text="{DynamicResource Common.Name}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
+			<TextBox Tag="SceneProperty" Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
 					 IsEnabled="{Binding CanRenameSelectedElement}"
 					 Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<CheckBox Content="{DynamicResource Main.Hidden}" IsVisible="{Binding CanTemporarilyHideSelectedElement}"
@@ -96,22 +96,22 @@
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding CanEditSelectedTransform}">
 			<TextBlock Text="{DynamicResource Common.FirstOrigin}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FirstOrigin}" />
 			<TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
+			<TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
+			<TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="5" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSecondOrigin}">
 			<TextBlock Text="{DynamicResource Common.SecondOrigin}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.SecondOrigin}" />
 			<TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
+			<TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay}" />
+			<TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 		  </StackPanel>
 		  <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2" VerticalAlignment="Center" IsEnabled="{Binding CanRotateSelectedElement}">
 			<TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-			<TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
+			<TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			<TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			<Button Classes="setting-inline" Content="{DynamicResource Common.Counterclockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
 			<Button Classes="setting-inline" Content="{DynamicResource Common.Clockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
@@ -131,22 +131,22 @@
 			<TextBlock Text="{DynamicResource Common.ElementParameters}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLength}">
 			  <TextBlock Text="{DynamicResource Common.Length}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Length}" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedLightSource}">
 			  <TextBlock Text="{DynamicResource Main.Wavelength}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Wavelength}" />
-			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay}" ToolTip.Tip="{DynamicResource Tip.WavelengthValue}" />
+			  <TextBox Tag="SceneProperty" Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedWavelength, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" ToolTip.Tip="{DynamicResource Tip.WavelengthValue}" />
 			  <TextBlock Text="nm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedAperture}">
 			  <TextBlock Text="{DynamicResource Main.ApertureOpening}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Aperture}" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedApertureOpening, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedApertureOpening, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedLens}">
 			  <TextBlock Text="{DynamicResource Main.FocalLength}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.FocalLength}" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedFocalLength, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}">
@@ -159,22 +159,22 @@
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsVisible="{Binding HasSelectedThinLens}" IsEnabled="{Binding HasSelectedDispersiveLens}">
 			  <TextBlock Text="{DynamicResource Main.DispersionLevel}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.DispersionLevel}" />
-			  <TextBox Width="48" HorizontalContentAlignment="Right" Text="{Binding SelectedLensDispersionLevel, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="48" HorizontalContentAlignment="Right" Text="{Binding SelectedLensDispersionLevel, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="0–10" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedSphericalMirror}">
 			  <TextBlock Text="{DynamicResource Common.Radius}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.Radius}" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedSphericalMirrorRadius, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,18,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedCentralAngle}">
 			  <TextBlock Text="{DynamicResource Main.CentralAngle}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.CentralAngle}" />
-			  <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedCentralAngle, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedCentralAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 			<StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,2" VerticalAlignment="Center" IsEnabled="{Binding HasSelectedReflectionGrating}">
 			  <TextBlock Text="{DynamicResource Main.GrooveDensity}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.GrooveDensity}" />
-			  <TextBox Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedGrooveDensity, Mode=TwoWay}" />
+			  <TextBox Tag="SceneProperty" Width="78" HorizontalContentAlignment="Right" Text="{Binding SelectedGrooveDensity, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
 			  <TextBlock Text="{DynamicResource Main.LinesPerMillimeter}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
 			</StackPanel>
 		  </WrapPanel>
@@ -182,7 +182,7 @@
 	  </Grid>
 	</Border>
 
-	<Border Grid.Row="3" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0">
+	<Border Grid.Row="4" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0">
 	  <Grid RowDefinitions="Auto,*">
 		<TextBlock Text="{DynamicResource Main.CreateTools}" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
 		<ScrollViewer Grid.Row="1" Padding="16,0,16,16" VerticalScrollBarVisibility="Auto">
@@ -198,11 +198,31 @@
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Aperture}" Content="{DynamicResource Main.Aperture}" Command="{Binding SelectToolCommand}" CommandParameter="Aperture" />
 			<TextBlock Text="{DynamicResource Main.Reflectors}" Foreground="{DynamicResource MutedTextBrush}" FontSize="11" Margin="3,12,0,2" />
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Mirror}" Content="{DynamicResource Main.Mirror}" Command="{Binding SelectToolCommand}" CommandParameter="Mirror" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" Content="{DynamicResource Main.ConcaveMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" Content="{DynamicResource Main.ConvexMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveSphericalMirror}" AutomationProperties.Name="{DynamicResource Selection.ConcaveMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}">
+			  <StackPanel Orientation="Horizontal" Spacing="6">
+				<PathIcon Width="18" Height="22" VerticalAlignment="Center" Data="M 15,2 C 3,5 3,19 15,22 L 12,22 C 0,18 0,6 12,2 Z" />
+				<TextBlock VerticalAlignment="Center" Text="{DynamicResource Selection.ConcaveMirror}" />
+			  </StackPanel>
+			</Button>
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConvexSphericalMirror}" AutomationProperties.Name="{DynamicResource Selection.ConvexMirror}" Command="{Binding SelectToolCommand}" CommandParameter="ConvexSphericalMirror" ToolTip.Tip="{DynamicResource Tip.SphericalMirror}">
+			  <StackPanel Orientation="Horizontal" Spacing="6">
+				<PathIcon Width="18" Height="22" VerticalAlignment="Center" Data="M 9,2 C 21,5 21,19 9,22 L 12,22 C 24,18 24,6 12,2 Z" />
+				<TextBlock VerticalAlignment="Center" Text="{DynamicResource Selection.ConvexMirror}" />
+			  </StackPanel>
+			</Button>
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=BeamSplitter}" Content="{DynamicResource Main.BeamSplitter}" Command="{Binding SelectToolCommand}" CommandParameter="BeamSplitter" ToolTip.Tip="{DynamicResource Tip.BeamSplitter}" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" Content="{DynamicResource Main.ReflectionGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="{DynamicResource Tip.ReflectionGrating}" />
-			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveGrating}" Content="{DynamicResource Main.ConcaveGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveGrating" ToolTip.Tip="{DynamicResource Tip.ConcaveGrating}" />
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ReflectionGrating}" AutomationProperties.Name="{DynamicResource Selection.ReflectionGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ReflectionGrating" ToolTip.Tip="{DynamicResource Tip.ReflectionGrating}">
+			  <StackPanel Orientation="Horizontal" Spacing="6">
+				<PathIcon Width="18" Height="22" VerticalAlignment="Center" Data="M 5,2 H 7 V 22 H 5 Z M 7,3 L 15,0 L 15,2 L 7,5 Z M 7,8 L 15,5 L 15,7 L 7,10 Z M 7,13 L 15,10 L 15,12 L 7,15 Z M 7,18 L 15,15 L 15,17 L 7,20 Z" />
+				<TextBlock VerticalAlignment="Center" Text="{DynamicResource Selection.ReflectionGrating}" />
+			  </StackPanel>
+			</Button>
+			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=ConcaveGrating}" AutomationProperties.Name="{DynamicResource Selection.ConcaveGrating}" Command="{Binding SelectToolCommand}" CommandParameter="ConcaveGrating" ToolTip.Tip="{DynamicResource Tip.ConcaveGrating}">
+			  <StackPanel Orientation="Horizontal" Spacing="6">
+				<PathIcon Width="18" Height="22" VerticalAlignment="Center" Data="M 17,2 C 5,5 5,19 17,22 L 14,22 C 2,18 2,6 14,2 Z M 12,4 L 7,1 L 6,3 L 11,6 Z M 8,9 L 2,7 L 1,9 L 7,11 Z M 7,14 L 1,16 L 2,18 L 8,16 Z M 11,18 L 6,21 L 7,23 L 12,20 Z" />
+				<TextBlock VerticalAlignment="Center" Text="{DynamicResource Selection.ConcaveGrating}" />
+			  </StackPanel>
+			</Button>
 			<Button Classes="toolbar" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Screen}" Content="{DynamicResource Main.Screen}" Command="{Binding SelectToolCommand}" CommandParameter="Screen" ToolTip.Tip="{DynamicResource Tip.Screen}" />
 
 			<Separator Margin="0,16,0,14" />
@@ -213,13 +233,13 @@
 	</Border>
 
 	<skia:OpticalCanvas x:Name="Canvas"
-						Grid.Row="3"
+						Grid.Row="4"
 						Grid.Column="1"
-						Scene="{Binding CurrentScene, Mode=TwoWay}"
+						Scene="{Binding Document.Scene, Mode=TwoWay}"
 						RaysPerSource="{Binding AppliedRaysPerSource}"
 						ActiveTool="{Binding ActiveTool, Mode=TwoWay}" />
 
-	<Border Grid.Row="4" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="14,7">
+	<Border Grid.Row="5" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="14,7">
 	  <Grid ColumnDefinitions="*,Auto">
 		<TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
 		<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -229,8 +249,10 @@
 		</StackPanel>
 	  </Grid>
 	</Border>
-	<Grid x:Name="AboutOverlay" Grid.RowSpan="5" Grid.ColumnSpan="2" ZIndex="10" IsVisible="False" Background="#B8000000">
+	<Grid x:Name="AboutOverlay" Grid.RowSpan="6" Grid.ColumnSpan="2" ZIndex="10" IsVisible="False" Background="#B8000000">
 	  <views:AboutView x:Name="AboutPanel" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="20" MaxWidth="580" MaxHeight="700" />
 	</Grid>
+  </Grid>
+    <document:UnsavedChangesPrompt x:Name="UnsavedPrompt" ZIndex="20" />
   </Grid>
 </UserControl>

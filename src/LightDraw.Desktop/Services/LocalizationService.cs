@@ -94,6 +94,19 @@ public sealed class LocalizationService
         Add("Common.CreateModels", "创建模型", "Create models");
         Add("Common.Noncommercial", "PolyForm Noncommercial 1.0.0 · 仅限非商业使用", "PolyForm Noncommercial 1.0.0 · Noncommercial use only");
 
+        Add("Document.Undo", "撤销", "Undo");
+        Add("Document.Redo", "重做", "Redo");
+        Add("Document.UndoTip", "撤销：Ctrl+Z / ⌘Z", "Undo: Ctrl+Z / ⌘Z");
+        Add("Document.RedoTip", "重做：Ctrl+Shift+Z / ⌘⇧Z，也支持 Ctrl+Y", "Redo: Ctrl+Shift+Z / ⌘⇧Z, or Ctrl+Y");
+        Add("Document.Unsaved", "● 未保存更改", "● Unsaved changes");
+        Add("Document.Busy", "正在处理场景…", "Working on scene…");
+        Add("Document.PromptTitle", "保存当前场景的更改？", "Save changes to this scene?");
+        Add("Document.PromptMessage", "当前场景有未保存的更改。保存后再继续，或选择不保存。", "This scene has unsaved changes. Save before continuing, or choose Don’t save.");
+        Add("Document.Save", "保存", "Save");
+        Add("Document.Discard", "不保存", "Don’t save");
+        Add("Document.Cancel", "取消", "Cancel");
+        Add("Status.DocumentFailed", "场景操作未完成：{0}", "Scene operation did not complete: {0}");
+
         Add("Main.RaysPerSource", "每个光源的光线数量", "Rays per light source");
         Add("Main.OpenScene", "打开场景…", "Open scene…");
         Add("Main.SaveScene", "保存场景…", "Save scene…");

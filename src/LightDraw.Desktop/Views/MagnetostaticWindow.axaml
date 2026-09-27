@@ -1,4 +1,5 @@
 <Window xmlns="https://github.com/avaloniaui"
+        xmlns:document="using:LightDraw.Desktop.Controls"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:skia="using:LightDraw.Rendering.Skia.Magnetostatics"
         xmlns:vm="using:LightDraw.Desktop.ViewModels"
@@ -8,7 +9,9 @@
         Icon="/Assets/Icons/LightDraw.ico"
         Width="1320" Height="780" MinWidth="900" MinHeight="580"
         Background="{DynamicResource WindowBrush}">
-  <Grid ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,*,Auto">
+  <Grid>
+  <Grid IsEnabled="{Binding Document.IsEditingEnabled}" ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+    <document:DocumentToolbar Grid.Row="1" Grid.ColumnSpan="2" DataContext="{Binding Document}" />
     <Border Grid.ColumnSpan="2" Padding="18,11" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <StackPanel Orientation="Horizontal" Spacing="10">
@@ -22,7 +25,7 @@
       </Grid>
     </Border>
 
-    <Border Grid.Row="1" Grid.ColumnSpan="2" Padding="18,9" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+    <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,9" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
       <Grid ColumnDefinitions="Auto,Auto,Auto,*">
         <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,16,2">
           <Button Classes="toolbar-inline" Classes.selected="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Pan}" Content="{DynamicResource Common.Pan}" Command="{Binding SelectToolCommand}" CommandParameter="Pan" />
@@ -37,21 +40,20 @@
             <Slider Minimum="4" Maximum="48" Value="{Binding MarkerDensity, Mode=TwoWay}" TickFrequency="1" SmallChange="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" />
             <TextBlock Grid.Column="1" Text="{Binding MarkerDensity}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{DynamicResource MagneticAccentBrush}" />
           </Grid>
-          <Button Classes="toolbar-inline" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
           <Button Classes="toolbar-inline" Content="{DynamicResource Common.FitWindow}" Command="{Binding ResetViewCommand}" />
           <Button Classes="toolbar-inline" Content="{DynamicResource Main.ExportCanvas}" Click="OnExportCanvasClick" />
         </StackPanel>
       </Grid>
     </Border>
 
-    <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="18,7" Background="{DynamicResource PropertiesBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+    <Border Grid.Row="3" Grid.ColumnSpan="2" Padding="18,7" Background="{DynamicResource PropertiesBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
       <Grid RowDefinitions="Auto,Auto,Auto">
         <WrapPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
           <TextBlock Text="{DynamicResource Common.ElementProperties}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
           <TextBlock Text="{Binding SelectedElementName}" MinWidth="130" Foreground="{DynamicResource MagneticAccentBrush}" VerticalAlignment="Center" Margin="0,2,18,2" />
           <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
             <TextBlock Text="{DynamicResource Common.Name}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
+            <TextBox Tag="SceneProperty" Width="220" MaxLength="120" PlaceholderText="{DynamicResource Common.ElementNamePlaceholder}"
                      Text="{Binding SelectedElementTitle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
           </StackPanel>
         </WrapPanel>
@@ -61,27 +63,27 @@
           <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
             <TextBlock Text="{DynamicResource Common.Center}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
             <TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay}" />
+            <TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginX, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay}" />
+            <TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedOriginY, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedSecondOrigin}" Margin="0,2,18,2">
             <TextBlock Text="{DynamicResource Common.SecondOrigin}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" ToolTip.Tip="{DynamicResource Tip.MagneticSecondOrigin}" />
             <TextBlock Text="X" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay}" />
+            <TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginX, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="Y" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay}" />
+            <TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedSecondOriginY, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="6" IsEnabled="{Binding HasSelectedRotatableElement}" Margin="0,2,18,2">
             <TextBlock Text="{DynamicResource Common.RotationStep}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-            <TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay}" />
+            <TextBox Width="58" HorizontalContentAlignment="Right" Text="{Binding RotationStep, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
             <Button Classes="setting-inline" Content="{DynamicResource Common.Counterclockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Counterclockwise" />
             <Button Classes="setting-inline" Content="{DynamicResource Common.Clockwise}" Command="{Binding RotateSelectedCommand}" CommandParameter="Clockwise" />
             <TextBlock Text="{DynamicResource Common.CurrentAngle}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" Margin="4,0,0,0" />
-            <TextBox Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedAngle, Mode=TwoWay}" />
+            <TextBox Tag="SceneProperty" Width="66" HorizontalContentAlignment="Right" Text="{Binding SelectedAngle, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
             <TextBlock Text="°" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
             <ComboBox Width="100" SelectedIndex="{Binding SelectedStandardAngleIndex, Mode=TwoWay}">
               <ComboBoxItem Content="{DynamicResource Common.Custom}" IsEnabled="False" />
@@ -98,17 +100,17 @@
             <TextBlock Text="{DynamicResource Common.ElementParameters}" FontSize="13" FontWeight="SemiBold" MinWidth="92" Margin="0,2,18,2" VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedLinearConductor}" Margin="0,2,18,2">
               <TextBlock Text="{DynamicResource Common.Length}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-              <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay}" />
+              <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedLength, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
               <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelectedLoop}" Margin="0,2,18,2">
               <TextBlock Text="{DynamicResource Common.Radius}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-              <TextBox Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedRadius, Mode=TwoWay}" />
+              <TextBox Tag="SceneProperty" Width="68" HorizontalContentAlignment="Right" Text="{Binding SelectedRadius, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
               <TextBlock Text="mm" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" Spacing="5" IsEnabled="{Binding HasSelection}" Margin="0,2,18,2">
               <TextBlock Text="{DynamicResource Magnetic.Current}" Foreground="{DynamicResource SecondaryTextBrush}" VerticalAlignment="Center" />
-              <TextBox Width="100" HorizontalContentAlignment="Right" Text="{Binding SelectedCurrent, Mode=TwoWay}" />
+              <TextBox Tag="SceneProperty" Width="100" HorizontalContentAlignment="Right" Text="{Binding SelectedCurrent, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
               <TextBlock Text="A" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
               <TextBlock Text="{DynamicResource Magnetic.SignedHint}" Foreground="{DynamicResource QuietTextBrush}" VerticalAlignment="Center" />
             </StackPanel>
@@ -117,7 +119,7 @@
       </Grid>
     </Border>
 
-    <Border Grid.Row="3" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0">
+    <Border Grid.Row="4" Background="{DynamicResource SidebarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,1,0">
       <Grid RowDefinitions="Auto,*">
         <TextBlock Text="{DynamicResource Common.CreateModels}" FontSize="14" FontWeight="SemiBold" Margin="18,16,0,14" />
         <StackPanel Grid.Row="1" Margin="16,0,16,16" Spacing="2">
@@ -132,16 +134,18 @@
       </Grid>
     </Border>
 
-    <skia:MagnetostaticCanvas x:Name="Canvas" Grid.Row="3" Grid.Column="1"
-                               Scene="{Binding CurrentScene, Mode=TwoWay}"
+    <skia:MagnetostaticCanvas x:Name="Canvas" Grid.Row="4" Grid.Column="1"
+                               Scene="{Binding Document.Scene, Mode=TwoWay}"
                                ActiveTool="{Binding ActiveTool, Mode=TwoWay}"
                                MarkerDensity="{Binding MarkerDensity}" />
 
-    <Border Grid.Row="4" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="14,7">
+    <Border Grid.Row="5" Grid.ColumnSpan="2" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="14,7">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Text="{Binding StatusText}" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12" />
         <TextBlock Grid.Column="1" Text="{DynamicResource Magnetic.Footer}" Foreground="{DynamicResource QuietTextBrush}" FontSize="12" />
       </Grid>
     </Border>
+  </Grid>
+    <document:UnsavedChangesPrompt x:Name="UnsavedPrompt" ZIndex="20" />
   </Grid>
 </Window>

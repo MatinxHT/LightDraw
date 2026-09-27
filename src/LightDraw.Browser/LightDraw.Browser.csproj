@@ -16,6 +16,10 @@
     <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="../LightDraw.Desktop/Controls/*.axaml.cs" Link="Controls/%(Filename)%(Extension)" />
+    <AvaloniaXaml Include="../LightDraw.Desktop/Controls/*.axaml" Link="Controls/%(Filename)%(Extension)" />
+    <Compile Include="../LightDraw.Desktop/Services/DocumentViewBinding.cs" Link="Services/DocumentViewBinding.cs" />
+    <Compile Include="../LightDraw.Desktop/ViewModels/SceneDocumentViewModel.cs" Link="ViewModels/SceneDocumentViewModel.cs" />
     <Compile Include="../LightDraw.Desktop/ViewModels/MainWindowViewModel.cs" Link="ViewModels/MainWindowViewModel.cs" />
     <Compile Include="../LightDraw.Desktop/Services/ISceneStorageService.cs" Link="Services/ISceneStorageService.cs" />
     <Compile Include="../LightDraw.Desktop/Services/LocalizationService.cs" Link="Services/LocalizationService.cs" />

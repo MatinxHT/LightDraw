@@ -1,3 +1,4 @@
+using LightDraw.Desktop.Services;
 using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -10,6 +11,7 @@ namespace LightDraw.Browser.Views;
 public sealed partial class MainView : UserControl
 {
     private MainWindowViewModel? _viewModel;
+    private DocumentViewBinding? _documentBinding;
 
     public MainView()
     {
@@ -30,6 +32,7 @@ public sealed partial class MainView : UserControl
         ArgumentNullException.ThrowIfNull(viewModel);
         if (_viewModel is not null)
         {
+            _viewModel.Document.PropertyChanged -= OnDocumentChanged;
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
@@ -54,8 +57,19 @@ public sealed partial class MainView : UserControl
             _viewModel.SetPrimaryElementRequested -= OnSetPrimaryElementRequested;
         }
 
+        _documentBinding?.Dispose();
+        if (_viewModel is not null)
+        {
+            Canvas.SimulationCompleted -= OnSimulationCompleted;
+            Canvas.ToolStateChanged -= OnToolStateChanged;
+            Canvas.SceneChanged -= OnSceneChanged;
+            Canvas.SelectionChanged -= OnSelectionChanged;
+        }
         _viewModel = viewModel;
         DataContext = viewModel;
+        _documentBinding = new(this, Canvas, viewModel.Document, UnsavedPrompt, Canvas.FinishInteraction);
+        viewModel.Document.PropertyChanged += OnDocumentChanged;
+        BrowserFileInterop.SetUnsavedChanges(viewModel.Document.HasUnsavedChanges);
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.AboutRequested += OnAboutRequested;
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
@@ -84,6 +98,12 @@ public sealed partial class MainView : UserControl
         Canvas.SelectionChanged += OnSelectionChanged;
         viewModel.UpdateSimulation(Canvas.SimulationResult);
         viewModel.UpdateSelection(Canvas.Selection);
+    }
+
+    private void OnDocumentChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SceneDocumentViewModel.HasUnsavedChanges) && _viewModel is not null)
+            BrowserFileInterop.SetUnsavedChanges(_viewModel.Document.HasUnsavedChanges);
     }
 
     private void OnResetViewRequested(object? sender, EventArgs e) => Canvas.ResetView();
@@ -183,7 +203,7 @@ public sealed partial class MainView : UserControl
     {
         if (_viewModel is not null)
         {
-            _viewModel.CurrentScene = Canvas.Scene;
+            _viewModel.Document.Commit(Canvas.Scene);
         }
     }
 }

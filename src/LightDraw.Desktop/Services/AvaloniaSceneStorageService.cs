@@ -1,13 +1,12 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using LightDraw.Core.Persistence;
-using LightDraw.Core.Scene;
 
 namespace LightDraw.Desktop.Services;
 
-public sealed class AvaloniaSceneStorageService(Window owner) : ISceneStorageService
+public sealed class AvaloniaSceneStorageService<T>(Window owner, ISceneCodec<T> codec) : ISceneStorageService<T> where T : class
 {
-    public async Task<OpenedScene?> OpenAsync(CancellationToken cancellationToken = default)
+    public async Task<OpenedScene<T>?> OpenAsync(CancellationToken cancellationToken = default)
     {
         var files = await owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -15,42 +14,42 @@ public sealed class AvaloniaSceneStorageService(Window owner) : ISceneStorageSer
             AllowMultiple = false,
             FileTypeFilter = [CreateSceneFileType()]
         });
-
-        if (files.Count == 0)
-        {
-            return null;
-        }
-
+        if (files.Count == 0) return null;
         cancellationToken.ThrowIfCancellationRequested();
         await using var stream = await files[0].OpenReadAsync();
-        var scene = await SceneSerializer.LoadAsync(stream, cancellationToken);
-        return new OpenedScene(scene, files[0].Name);
+        return new(await codec.LoadAsync(stream, cancellationToken), files[0].Name);
     }
 
-    public async Task<string?> SaveAsync(OpticalScene scene, CancellationToken cancellationToken = default)
+    public async Task<string?> SaveAsync(T scene, CancellationToken cancellationToken = default)
     {
+        // Finish validation/serialization before touching an existing file.
+        using var buffer = new MemoryStream();
+        await codec.SaveAsync(scene, buffer, cancellationToken);
         var file = await owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = LocalizationService.Instance.Get("Storage.SaveTitle"),
-            SuggestedFileName = "lightdraw-scene",
+            SuggestedFileName = codec.FileStem,
             DefaultExtension = "lightdraw.json",
             FileTypeChoices = [CreateSceneFileType()]
         });
-
-        if (file is null)
-        {
-            return null;
-        }
-
+        if (file is null) return null;
         cancellationToken.ThrowIfCancellationRequested();
-        await using var stream = await file.OpenWriteAsync();
-        stream.SetLength(0);
-        await SceneSerializer.SaveAsync(scene, stream, cancellationToken);
+        if (file.TryGetLocalPath() is { } path)
+        {
+            await AtomicSceneFile.WriteAsync(path, buffer.ToArray(), cancellationToken);
+        }
+        else
+        {
+            await using var stream = await file.OpenWriteAsync();
+            buffer.Position = 0;
+            stream.SetLength(0);
+            await buffer.CopyToAsync(stream, cancellationToken);
+            await stream.FlushAsync(cancellationToken);
+        }
         return file.Name;
     }
 
-    private static FilePickerFileType CreateSceneFileType() => new(
-        LocalizationService.Instance.Get("Storage.SceneType"))
+    private static FilePickerFileType CreateSceneFileType() => new(LocalizationService.Instance.Get("Storage.SceneType"))
     {
         Patterns = ["*.lightdraw.json", "*.json"],
         AppleUniformTypeIdentifiers = ["public.json"],

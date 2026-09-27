@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:LightDraw.Desktop.ViewModels"
+             x:Class="LightDraw.Desktop.Controls.DocumentToolbar"
+             x:DataType="vm:SceneDocumentViewModel">
+  <Border Padding="18,6" Background="{DynamicResource ToolbarBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+    <WrapPanel Orientation="Horizontal">
+      <Button Classes="toolbar-inline" Margin="0,2,6,2" Content="{DynamicResource Document.Undo}" Command="{Binding UndoCommand}" ToolTip.Tip="{DynamicResource Document.UndoTip}" />
+      <Button Classes="toolbar-inline" Margin="0,2,16,2" Content="{DynamicResource Document.Redo}" Command="{Binding RedoCommand}" ToolTip.Tip="{DynamicResource Document.RedoTip}" />
+      <Button Classes="toolbar-inline" Margin="0,2,6,2" Content="{DynamicResource Common.ResetScene}" Command="{Binding ResetSceneCommand}" />
+      <Button Classes="toolbar-inline" Margin="0,2,6,2" Content="{DynamicResource Main.OpenScene}" Command="{Binding OpenSceneCommand}" />
+      <Button Classes="toolbar-inline" Margin="0,2,16,2" Content="{DynamicResource Main.SaveScene}" Command="{Binding SaveSceneCommand}" />
+      <TextBlock Text="{DynamicResource Document.Unsaved}" IsVisible="{Binding HasUnsavedChanges}" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" Margin="0,2,12,2" />
+      <TextBlock Text="{DynamicResource Document.Busy}" IsVisible="{Binding IsBusy}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
+    </WrapPanel>
+  </Border>
+</UserControl>

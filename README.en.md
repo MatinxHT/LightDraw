@@ -76,6 +76,33 @@ The browser edition contains only the geometric optics canvas. Calculations run 
 | Open scene / Save scene | Read/write `.lightdraw.json` scene files |
 | Export canvas | Export the current optical canvas as a PNG; choose a save location on desktop or download it directly in the browser |
 
+## Edit protection and scene documents
+
+Optics (desktop and browser), electrostatics and magnetostatics share a document toolbar:
+
+- Undo/redo retains the last 100 completed edits. A drag is one edit; text properties commit on Enter or focus loss. Creating, deleting, grouping, renaming and hiding elements can all be undone. A new edit clears the redo branch.
+- The unsaved marker compares scene content with the last successful save. Returning to saved content clears it. Pan, zoom and display density are not document edits.
+- Opening, resetting and closing offer Save, Don’t save and Cancel when needed. Cancelled or failed saves preserve the current scene. Reset is undoable; opening another scene starts fresh history.
+- Closing the main window or quitting reviews every simulation window before any closes. Cancelling any review keeps all windows open.
+- Use Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y, Ctrl+S and Ctrl+O; use ⌘ on macOS. Text fields retain their own text undo/redo.
+- Local files are fully serialized and written to a temporary file before replacement. Other storage providers may not support atomic replacement.
+
+The browser registers a native page-leave warning while dirty. The browser controls when it appears. Saving initiates a download; the application cannot confirm that it ultimately reaches disk. History lasts for the current session; automatic saving and crash recovery are not included.
+
+Electrostatic and magnetostatic `.lightdraw.json` files use `sceneType` values `electrostatic` and `magnetostatic`, respectively, with independent `dataVersion: 1` formats. Open each in its corresponding window. All source geometry, physical parameters and names are preserved. Optical files retain version 14 and support valid versions 1–13.
+
+Imports are limited to 16 MiB and 10,000 elements per collection. Invalid entries, duplicate optical IDs, non-finite numbers, numbers with magnitude above 10⁹ and zero-length elements are rejected before replacing a scene.
+
+The optical editor is split into partial files for placement, selection, groups, properties, transforms, dragging, deletion and geometry. Normalization and history are independent Core components, and all three document workflows share `SceneDocumentViewModel<T>`.
+
+Run the regression checks, including Avalonia Headless window integration tests:
+
+```bash
+dotnet run --project tests/LightDraw.Tests
+```
+
+See [tests/README.md](tests/README.md) for coverage and manual checks.
+
 ## Scene File Format
 
 Scenes are UTF-8 JSON and use `dataVersion` for schema versioning. The current version is `14`, and versions `1` through `13` are still readable. All world coordinates, lengths, openings, radii, and focal lengths use millimeters (`mm`):

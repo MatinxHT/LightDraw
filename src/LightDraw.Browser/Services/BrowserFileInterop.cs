@@ -19,6 +19,9 @@ public static partial class BrowserFileInterop
     public static void Download(string fileName, string mimeType, byte[] bytes) =>
         DownloadFile(fileName, mimeType, Convert.ToBase64String(bytes));
 
+    [JSImport("setUnsavedChanges", "LightDrawFileInterop")]
+    public static partial void SetUnsavedChanges(bool hasChanges);
+
     [JSImport("pickSceneFile", "LightDrawFileInterop")]
     private static partial Task<string?> PickSceneFile();
 

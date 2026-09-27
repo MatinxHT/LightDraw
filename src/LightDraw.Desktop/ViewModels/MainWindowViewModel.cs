@@ -1,3 +1,4 @@
+using LightDraw.Core.Persistence;
 using Avalonia;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -9,8 +10,29 @@ using LightDraw.Rendering.Skia.Optics;
 
 namespace LightDraw.Desktop.ViewModels;
 
-public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorage) : ObservableObject
+public sealed partial class MainWindowViewModel : ObservableObject
 {
+    public SceneDocumentViewModel<OpticalScene> Document { get; }
+    public OpticalScene CurrentScene => Document.Scene;
+
+    public MainWindowViewModel(ISceneStorageService<OpticalScene> sceneStorage)
+    {
+        Document = new(sceneStorage, OpticalSceneCodec.Instance);
+        Document.StatusChanged += text => StatusText = text;
+        Document.SceneReset += (_, _) =>
+        {
+            CancelRayDensityUpdate();
+            RayDensity = 160;
+            AppliedRaysPerSource = 160;
+            ResetViewRequested?.Invoke(this, EventArgs.Empty);
+        };
+        Document.SceneReplaced += (_, _) =>
+        {
+            ActiveTool = CanvasTool.Pan;
+            UpdateSelection(null);
+        };
+    }
+
     private CancellationTokenSource? _rayDensityUpdate;
     private bool _updatingSelection;
     private CanvasSelection? _selection;
@@ -29,8 +51,7 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
             app.RequestedThemeVariant = value == 1 ? ThemeVariant.Light : ThemeVariant.Dark;
     }
 
-    [ObservableProperty]
-    private OpticalScene _currentScene = OpticalScene.CreateEmpty();
+
 
     [ObservableProperty]
     private int _rayDensity = 160;
@@ -484,66 +505,10 @@ public sealed partial class MainWindowViewModel(ISceneStorageService sceneStorag
         OpenMagnetostaticSimulationRequested?.Invoke(this, EventArgs.Empty);
 
     [RelayCommand]
-    private void ResetScene()
-    {
-        CancelRayDensityUpdate();
-        RayDensity = 160;
-        AppliedRaysPerSource = 160;
-        CurrentScene = OpticalScene.CreateEmpty();
-        ActiveTool = CanvasTool.Pan;
-        ResetViewRequested?.Invoke(this, EventArgs.Empty);
-        StatusText = T("Status.SceneReset");
-    }
-
-    [RelayCommand]
     private void ResetView()
     {
         ResetViewRequested?.Invoke(this, EventArgs.Empty);
         StatusText = T("Status.ViewReset");
-    }
-
-    [RelayCommand]
-    private async Task OpenSceneAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var opened = await sceneStorage.OpenAsync(cancellationToken);
-            if (opened is null)
-            {
-                return;
-            }
-
-            CurrentScene = opened.Scene;
-            ActiveTool = CanvasTool.Pan;
-            StatusText = F("Status.Opened", opened.FileName);
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception exception)
-        {
-            StatusText = F("Status.OpenFailed", exception.Message);
-        }
-    }
-
-    [RelayCommand]
-    private async Task SaveSceneAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            var fileName = await sceneStorage.SaveAsync(CurrentScene, cancellationToken);
-            if (fileName is not null)
-            {
-                StatusText = F("Status.Saved", fileName);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-        catch (Exception exception)
-        {
-            StatusText = F("Status.SaveFailed", exception.Message);
-        }
     }
 
     public void UpdateSimulation(SimulationResult result) =>

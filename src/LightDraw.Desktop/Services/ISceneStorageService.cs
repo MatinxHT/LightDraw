@@ -1,12 +1,9 @@
-using LightDraw.Core.Scene;
-
 namespace LightDraw.Desktop.Services;
 
-public interface ISceneStorageService
+public interface ISceneStorageService<T> where T : class
 {
-    Task<OpenedScene?> OpenAsync(CancellationToken cancellationToken = default);
-
-    Task<string?> SaveAsync(OpticalScene scene, CancellationToken cancellationToken = default);
+    Task<OpenedScene<T>?> OpenAsync(CancellationToken cancellationToken = default);
+    Task<string?> SaveAsync(T scene, CancellationToken cancellationToken = default);
 }
 
-public sealed record OpenedScene(OpticalScene Scene, string FileName);
+public sealed record OpenedScene<T>(T Scene, string FileName) where T : class;

@@ -4,16 +4,16 @@ using LightDraw.Desktop.Services;
 
 namespace LightDraw.Browser.Services;
 
-public sealed class BrowserSceneStorageService : ISceneStorageService
+public sealed class BrowserSceneStorageService : ISceneStorageService<OpticalScene>
 {
-    public async Task<OpenedScene?> OpenAsync(CancellationToken cancellationToken = default)
+    public async Task<OpenedScene<OpticalScene>?> OpenAsync(CancellationToken cancellationToken = default)
     {
         var data = await BrowserFileInterop.PickSceneAsync();
         if (data is null) return null;
         cancellationToken.ThrowIfCancellationRequested();
         await using var stream = new MemoryStream(data.Value.Bytes);
         var scene = await SceneSerializer.LoadAsync(stream, cancellationToken);
-        return new OpenedScene(scene, data.Value.FileName);
+        return new OpenedScene<OpticalScene>(scene, data.Value.FileName);
     }
 
     public async Task<string?> SaveAsync(OpticalScene scene, CancellationToken cancellationToken = default)

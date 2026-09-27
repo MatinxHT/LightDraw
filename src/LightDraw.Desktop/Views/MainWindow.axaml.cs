@@ -1,3 +1,4 @@
+using LightDraw.Desktop.Services;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -9,6 +10,8 @@ namespace LightDraw.Desktop.Views;
 public sealed partial class MainWindow : Window
 {
     private MainWindowViewModel? _viewModel;
+    private DocumentViewBinding? _documentBinding;
+    private DocumentWindowCloseGuard? _closeGuard;
 
     public MainWindow()
     {
@@ -46,8 +49,19 @@ public sealed partial class MainWindow : Window
             _viewModel.SetPrimaryElementRequested -= OnSetPrimaryElementRequested;
         }
 
+        _documentBinding?.Dispose();
+        if (_viewModel is not null)
+        {
+            Canvas.SimulationCompleted -= OnSimulationCompleted;
+            Canvas.ToolStateChanged -= OnToolStateChanged;
+            Canvas.SceneChanged -= OnSceneChanged;
+            Canvas.SelectionChanged -= OnSelectionChanged;
+        }
         _viewModel = viewModel;
         DataContext = viewModel;
+        _documentBinding = new(this, Canvas, viewModel.Document, UnsavedPrompt, Canvas.FinishInteraction);
+        _closeGuard?.Dispose();
+        _closeGuard = new(this, viewModel.Document, includeAllWindows: true);
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.AboutRequested += OnAboutRequested;
         _viewModel.OpenElectrostaticSimulationRequested += OnOpenElectrostaticSimulationRequested;
@@ -114,6 +128,8 @@ public sealed partial class MainWindow : Window
         Canvas.ToolStateChanged -= OnToolStateChanged;
         Canvas.SceneChanged -= OnSceneChanged;
         Canvas.SelectionChanged -= OnSelectionChanged;
+        _documentBinding?.Dispose();
+        _closeGuard?.Dispose();
         base.OnClosed(e);
     }
 
@@ -217,7 +233,7 @@ public sealed partial class MainWindow : Window
     {
         if (_viewModel is not null)
         {
-            _viewModel.CurrentScene = Canvas.Scene;
+            _viewModel.Document.Commit(Canvas.Scene);
         }
     }
 }

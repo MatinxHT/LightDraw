@@ -1,3 +1,5 @@
+using LightDraw.Core.Persistence;
+using LightDraw.Core.Scene;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -18,8 +20,9 @@ public sealed partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainWindow = new MainWindow();
-            mainWindow.AttachViewModel(new MainWindowViewModel(new AvaloniaSceneStorageService(mainWindow)));
+            mainWindow.AttachViewModel(new MainWindowViewModel(new AvaloniaSceneStorageService<OpticalScene>(mainWindow, OpticalSceneCodec.Instance)));
             desktop.MainWindow = mainWindow;
+            DocumentWindowCloseGuard.AttachLifetime(desktop);
         }
 
         base.OnFrameworkInitializationCompleted();

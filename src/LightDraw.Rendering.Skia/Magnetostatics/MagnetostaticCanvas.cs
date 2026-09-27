@@ -180,7 +180,9 @@ public sealed class MagnetostaticCanvas : ThemedCanvas
     {
         ArgumentNullException.ThrowIfNull(scene);
         if (ReferenceEquals(scene, _scene)) return;
-        SetAndRaise(SceneProperty, ref _scene, NormalizeNames(scene)); SetSelection(null, -1); Recalculate();
+        _isMoving = _isPanning = _moveChanged = _moveSimulationDirty = false;
+        _conductorStart = null; _loopCenter = null;
+        SetAndRaise(SceneProperty, ref _scene, LightDraw.Core.Scene.ElectromagneticSceneNormalizer.Normalize(scene)); SetSelection(null, -1); Recalculate();
     }
     public void SelectTool(MagnetostaticTool tool)
     {
@@ -196,6 +198,32 @@ public sealed class MagnetostaticCanvas : ThemedCanvas
         value = Math.Clamp(value, 4, 48); if (value == _markerDensity) return;
         SetAndRaise(MarkerDensityProperty, ref _markerDensity, value); Recalculate();
     }
+    public void FinishInteraction()
+    {
+        EndDrag();
+        _conductorStart = null; _loopCenter = null;
+        InvalidateVisual();
+    }
+
+    private void EndDrag()
+    {
+        _isPanning = false;
+        if (!_isMoving) return;
+        _isMoving = false;
+        if (_moveChanged)
+        {
+            if (_moveSimulationDirty) Recalculate();
+            SceneChanged?.Invoke(this, EventArgs.Empty);
+        }
+        _moveChanged = _moveSimulationDirty = false;
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        EndDrag();
+    }
+
     public void ResetView()
     {
         _zoom = 1; _pan = new(Math.Max(420, Bounds.Width * .5), Math.Max(300, Bounds.Height * .52)); InvalidateVisual();
@@ -795,25 +823,6 @@ public sealed class MagnetostaticCanvas : ThemedCanvas
         SetAndRaise(SceneProperty, ref _scene, scene); Recalculate();
         SceneChanged?.Invoke(this, EventArgs.Empty); SelectionChanged?.Invoke(this, EventArgs.Empty);
     }
-    private static MagnetostaticScene NormalizeNames(MagnetostaticScene scene) => scene with
-    {
-        Conductors = (scene.Conductors ?? []).Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Planar Conductor {index + 1}" : item.Name.Trim()
-        }).ToArray(),
-        VerticalConductors = scene.VerticalConductorElements.Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Vertical Conductor {index + 1}" : item.Name.Trim()
-        }).ToArray(),
-        PlanarLoops = scene.PlanarLoopElements.Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Planar Current Loop {index + 1}" : item.Name.Trim()
-        }).ToArray(),
-        VerticalLoops = scene.VerticalLoopElements.Select((item, index) => item with
-        {
-            Name = string.IsNullOrWhiteSpace(item.Name) ? $"Vertical Current Loop {index + 1}" : item.Name.Trim()
-        }).ToArray()
-    };
     private string NextName(string baseName)
     {
         var names = _scene.Conductors.Select(item => item.Name)

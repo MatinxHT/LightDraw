@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using LightDraw.Core.Geometry;
 
 namespace LightDraw.Core.Electromagnetics;
@@ -41,8 +42,11 @@ public sealed record MagnetostaticScene(
     PlanarCircularCurrentLoop[]? PlanarLoops = null,
     VerticalCircularCurrentLoop[]? VerticalLoops = null)
 {
+    [JsonIgnore]
     public VerticalInfiniteCurrentConductor[] VerticalConductorElements => VerticalConductors ?? [];
+    [JsonIgnore]
     public PlanarCircularCurrentLoop[] PlanarLoopElements => PlanarLoops ?? [];
+    [JsonIgnore]
     public VerticalCircularCurrentLoop[] VerticalLoopElements => VerticalLoops ?? [];
 
     public static MagnetostaticScene CreateEmpty() => new("空白静磁场", [], [], [], []);

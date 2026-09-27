@@ -10,44 +10,6 @@ using SkiaSharp;
 
 namespace LightDraw.Rendering.Skia.Optics;
 
-public enum CanvasTool
-{
-    Pan, Move, Delete, PointLight, ParallelLight, CompositePointLight, CompositeParallelLight, Mirror,
-    ConcaveSphericalMirror, ConvexSphericalMirror, BeamSplitter,
-    Screen, Aperture, ReflectionGrating, ConcaveGrating, ConvexLens, ConcaveLens
-}
-
-public enum CanvasSelectionKind
-{
-    PointLight, ParallelLight, Mirror, ConcaveSphericalMirror,
-    ConvexSphericalMirror, BeamSplitter, Screen, Aperture,
-    ReflectionGrating, ConcaveGrating, ConvexLens, ConcaveLens, Group, Multiple
-}
-
-public sealed record CanvasSelection(
-    CanvasSelectionKind Kind, string DisplayName, bool CanRotate,
-    double OriginX, double OriginY, double AngleDegrees,
-    double? FocalLength, double? Length,
-    double? ApertureOpening = null, double? GrooveDensity = null,
-    double? Radius = null, double? ArcAngleDegrees = null, double? SecondOriginX = null,
-    double? SecondOriginY = null, double? EmissionAngleDegrees = null,
-    double? WavelengthNanometers = null, LensDispersionMode? DispersionMode = null,
-    int? DispersionLevel = null,
-    int MemberCount = 1, bool CanGroup = false, bool CanUngroup = false,
-    bool CanSetPrimary = false, string? ElementName = null, bool CanRename = false,
-    bool CanTemporarilyHide = false, bool IsTemporarilyHidden = false);
-
-internal enum SceneItemKind
-{
-    None, LightSource, Mirror, ConcaveSphericalMirror, ConvexSphericalMirror,
-    BeamSplitter, Screen, Aperture, ReflectionGrating, ConcaveGrating, Lens
-}
-
-internal enum MoveDragMode
-{
-    None, Translate, DirectionHandle, RotationHandle
-}
-
 public sealed class OpticalCanvas : ThemedCanvas
 {
     public static readonly DirectProperty<OpticalCanvas, OpticalScene> SceneProperty =
@@ -148,6 +110,24 @@ public sealed class OpticalCanvas : ThemedCanvas
         _placementPreview = null;
         if (notify) ToolStateChanged?.Invoke(this, EventArgs.Empty);
         InvalidateVisual();
+    }
+
+    public void FinishInteraction()
+    {
+        _isPanning = false;
+        _editor.EndMove();
+        _marqueePointerStart = null;
+        _marqueeStart = null;
+        _marqueeCurrent = null;
+        CancelPlacement();
+    }
+
+    protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
+    {
+        base.OnPointerCaptureLost(e);
+        // Capture is also released after the first click of a two-click placement.
+        _isPanning = false;
+        _editor.EndMove();
     }
 
     public void ResetView()

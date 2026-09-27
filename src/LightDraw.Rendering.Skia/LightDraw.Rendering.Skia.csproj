@@ -4,4 +4,7 @@
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Skia" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="LightDraw.Tests" />
+  </ItemGroup>
 </Project>
