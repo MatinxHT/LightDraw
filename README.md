@@ -48,6 +48,18 @@
 - 桌面版运行环境：Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
 - 本地构建浏览器版时还需要 `wasm-tools` 工作负载。
 
+### Microsoft Store 混合架构安装包
+
+在安装了 Windows SDK 10.0.26100.0 打包工具的 Windows 上，从仓库根目录运行：
+
+```powershell
+.\scripts\Package-MsixBundle.ps1
+```
+
+脚本默认读取项目版本（`Directory.Build.props`），以 Release 配置分别发布包含 .NET 运行时的 x64 和 ARM64 程序，再合并为 `artifacts/msix/<版本>/MartinHungChiho.LightDraw-<版本>.msixbundle`。也可通过 `-Version 0.7.3` 显式指定版本；应用与安装包版本会同步设置。每次构建使用独立的 staging 目录，避免混入历史发布文件。
+
+将生成的 `.msixbundle` 手动上传至 Partner Center 的程序包页面。包沿用本项目的商店标识和发布者，不包含本地测试签名，由 Microsoft Store 签名分发。
+
 ## 使用说明
 
 | 操作 | 效果 |

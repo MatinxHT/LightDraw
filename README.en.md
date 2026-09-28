@@ -48,6 +48,18 @@ The browser edition contains only the geometric optics canvas. Calculations run 
 - Desktop runtime: Windows 10/11, macOS, or Linux with X11/Wayland support
 - The `wasm-tools` workload is also required to build the browser edition locally.
 
+### Microsoft Store bundle
+
+On Windows with the Windows SDK 10.0.26100.0 packaging tools installed, run from the repository root:
+
+```powershell
+.\scripts\Package-MsixBundle.ps1
+```
+
+The script reads the project version from `Directory.Build.props`, publishes self-contained Release builds for x64 and ARM64, and combines them into `artifacts/msix/<version>/MartinHungChiho.LightDraw-<version>.msixbundle`. Use `-Version 0.7.3` to override both the application and package version. Each build uses a fresh staging directory to exclude obsolete published files.
+
+Manually upload the `.msixbundle` on the Partner Center Packages page. The bundle retains the project's Store identity and publisher and has no local test signature; Microsoft Store signs it for distribution.
+
 ## Usage
 
 | Action | Effect |

@@ -1,20 +1,30 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "0.6.2",
+    [string]$Version,
     [string]$Publisher = "CN=B535E105-079B-46A7-8878-0A2D1347C541"
 )
 
 $ErrorActionPreference = "Stop"
 
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+$projectPath = Join-Path $repositoryRoot "src\LightDraw.Desktop\LightDraw.Desktop.csproj"
+if (-not $PSBoundParameters.ContainsKey("Version")) {
+    $Version = dotnet msbuild $projectPath -getProperty:Version -nologo
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not read the project version."
+    }
+    $Version = "$Version".Trim()
+}
+
 if ($Version -notmatch '^\d+\.\d+\.\d+$') {
-    throw "Version must use major.minor.patch format, for example 0.6.1."
+    throw "Version must use major.minor.patch format, for example 0.7.3."
 }
 
 $packageVersion = "$Version.0"
-$repositoryRoot = Split-Path -Parent $PSScriptRoot
-$projectPath = Join-Path $repositoryRoot "src\LightDraw.Desktop\LightDraw.Desktop.csproj"
 $outputRoot = Join-Path $repositoryRoot "artifacts\msix\$Version"
-$bundleInputRoot = Join-Path $outputRoot "bundle-input"
+# Use fresh inputs for each build to avoid packaging obsolete published files.
+$stagingRoot = Join-Path $outputRoot ("staging-" + [guid]::NewGuid().ToString("N"))
+$bundleInputRoot = Join-Path $stagingRoot "bundle-input"
 $makeAppx = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\makeappx.exe"
 
 if (-not (Test-Path -LiteralPath $makeAppx)) {
@@ -30,11 +40,11 @@ $architectures = @(
 
 foreach ($architecture in $architectures) {
     $runtimeIdentifier = $architecture.RuntimeIdentifier
-    $layoutDirectory = Join-Path $outputRoot "$runtimeIdentifier\layout"
+    $layoutDirectory = Join-Path $stagingRoot "$runtimeIdentifier\layout"
     $packageName = "MartinHungChiho.LightDraw-$Version-$runtimeIdentifier.msix"
     $packagePath = Join-Path $bundleInputRoot $packageName
 
-    dotnet publish $projectPath --configuration Release --runtime $runtimeIdentifier --self-contained true --output $layoutDirectory
+    dotnet publish $projectPath --configuration Release --runtime $runtimeIdentifier --self-contained true --output $layoutDirectory -p:Version=$Version
     if ($LASTEXITCODE -ne 0) {
         throw "Publish failed for $runtimeIdentifier."
     }
