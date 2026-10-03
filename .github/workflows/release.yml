@@ -1,0 +1,160 @@
+name: Release desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing version tag (for example v0.7.3)'
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      sha: ${{ steps.version.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
+      - name: Validate version tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os, re, subprocess, xml.etree.ElementTree as ET
+          tag = os.environ['RELEASE_TAG']
+          number = r'(?:0|[1-9][0-9]*)'
+          if not re.fullmatch(rf'v{number}\.{number}\.{number}', tag):
+              raise SystemExit('Use a stable version tag such as v0.7.3.')
+          version = tag[1:]
+          project_version = ET.parse('Directory.Build.props').findtext('.//Version')
+          if version != project_version:
+              raise SystemExit(f'Tag version {version} differs from project version {project_version}.')
+          sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'tag={tag}\nversion={version}\nsha={sha}\n')
+          PY
+      - name: Create or resume draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft > release.json; then
+            if ! jq -e '.isDraft == true' release.json > /dev/null; then
+              echo 'This version is already published. Create a new version tag.' >&2
+              exit 1
+            fi
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft \
+              --title "$RELEASE_VERSION" --generate-notes
+          fi
+
+  build:
+    needs: prepare
+    name: Build ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            os: windows-2022
+          - rid: win-arm64
+            os: windows-2022
+          - rid: osx-arm64
+            os: macos-14
+          - rid: linux-x64
+            os: ubuntu-22.04
+          - rid: linux-arm64
+            os: ubuntu-22.04-arm
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+      RUNTIME_ID: ${{ matrix.rid }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          # Leave the cache input unset: no Actions dependency cache is created.
+      - name: Publish self-contained desktop app
+        run: |
+          dotnet publish src/LightDraw.Desktop/LightDraw.Desktop.csproj \
+            --configuration Release --runtime "$RUNTIME_ID" \
+            --self-contained true --output publish \
+            -p:Version="$RELEASE_VERSION" -p:PublishTrimmed=false
+      - name: Package app and checksum
+        run: python scripts/package-release.py "$RUNTIME_ID" "$RELEASE_VERSION"
+      # Upload directly from this runner to Releases. Do not add artifact or cache actions.
+      - name: Upload release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if [[ "$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft')" != true ]]; then
+            echo 'Refusing to replace assets on a published release.' >&2
+            exit 1
+          fi
+          gh release upload "$RELEASE_TAG" dist/* --clobber
+
+  publish:
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+    steps:
+      - name: Check all assets and publish release
+        run: |
+          gh release view "$RELEASE_TAG" --json isDraft,assets > release.json
+          jq -e '.isDraft == true' release.json > /dev/null
+          for rid in win-x64 win-arm64 osx-arm64 linux-x64 linux-arm64; do
+            extension=tar.gz
+            if [[ "$rid" == win-* ]]; then extension=zip; fi
+            archive="LightDraw-${RELEASE_VERSION}-${rid}.${extension}"
+            for asset in "$archive" "$archive.sha256"; do
+              jq -e --arg name "$asset" \
+                'any(.assets[]; .name == $name and .size > 0 and .state == "uploaded")' \
+                release.json > /dev/null
+            done
+          done
+          gh release edit "$RELEASE_TAG" --title "$RELEASE_VERSION" --draft=false

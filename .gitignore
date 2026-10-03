@@ -6,4 +6,5 @@
 *.suo
 artifacts/
 publish/
+dist/
 .vscode/.browser-profile/

@@ -21,7 +21,7 @@
 
 光绘课堂仓库包含可运行的桌面版和浏览器版，当前功能范围如下：
 
-- **桌面版**：在 Windows、macOS 和 Linux 上运行，提供几何光学、静电场和静磁场模拟；其中Windows版本在Microsoft Store中提供了安装包，macOS 和 Linux包敬请自行打包编译，因为目前项目的支持度还不足以用GitHub Action自动打包、也不足用缴纳Apple开发者年费。
+- **桌面版**：在 Windows、macOS 和 Linux 上运行，提供几何光学、静电场和静磁场模拟。Windows 安装包可从 Microsoft Store 获取；跨平台便携包通过 [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases) 发布。
 - **浏览器版**：提供几何光学画布，支持与桌面版互通的场景文件、PNG 画布导出，以及中英文界面和明暗主题；基于性能原因不提供静电场和静磁场仿真场景。
 - **共享代码**：两个前端共用纯 .NET 场景与模拟核心、SkiaSharp 光学画布，以及主要的界面状态与命令逻辑。
 
@@ -47,6 +47,27 @@
 - .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；
 - 桌面版运行环境：Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
 - 本地构建浏览器版时还需要 `wasm-tools` 工作负载。
+
+### GitHub Release 自动发布
+
+工作流 `.github/workflows/release.yml` 在推送 `v主版本.次版本.修订版本` 标签时运行。先更新 `Directory.Build.props` 中的 `<Version>` 并提交，再为该提交创建同版本标签，例如：
+
+```bash
+git tag v0.7.3
+git push origin v0.7.3
+```
+
+标签版本必须与项目版本一致。Release 名称为不带 `v` 的版本号（例如 `0.7.3`），应用中的版本号也保持一致。也可在 Actions → Release desktop → Run workflow 中填写已存在的标签；首次手动运行前，工作流需已合入默认分支。
+
+| 平台 | Release 附件 |
+| --- | --- |
+| Windows x64 / ARM64 | `LightDraw-<版本>-win-x64.zip` / `LightDraw-<版本>-win-arm64.zip` |
+| macOS Apple Silicon | `LightDraw-<版本>-osx-arm64.tar.gz`（含 `LightDraw.app`） |
+| Linux x64 / ARM64 | `LightDraw-<版本>-linux-x64.tar.gz` / `LightDraw-<版本>-linux-arm64.tar.gz` |
+
+每个压缩包包含 .NET 运行时、许可证和说明文件，并附带独立的 `.sha256` 校验文件。Windows 解压后运行 `LightDraw.exe`，macOS 解压后打开 `LightDraw.app`，Linux 解压后运行 `./LightDraw`；Linux 仍需桌面环境及 Avalonia/Skia 的系统依赖。macOS 包使用临时签名，未经过 Apple 公证，首次打开可能需要在系统设置中允许运行。
+
+构建产物在各 runner 的临时磁盘打包后直接上传到 Release 草稿，五个平台全部成功且附件齐全后才公开发布。失败时保留草稿，可在 Actions 中重新运行失败任务；已公开的版本不会被工作流覆盖，后续发布请使用新版本号。工作流不使用 Actions artifacts 或依赖缓存，不占用它们的存储额度；Actions 执行时间仍遵循仓库的 GitHub 计费规则。
 
 ### Microsoft Store 混合架构安装包
 

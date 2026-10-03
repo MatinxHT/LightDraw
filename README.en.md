@@ -21,7 +21,7 @@ The project is developed with public source code, community collaboration, and l
 
 The LightDraw repository contains runnable desktop and browser editions. Their current scope is:
 
-- **Desktop edition**: Runs on Windows, macOS, and Linux, with geometric optics, electrostatics, and magnetostatics simulations. A Windows installer is available through the Microsoft Store. macOS and Linux users currently need to build and package the app themselves: automated packaging with GitHub Actions is not yet supported, and the project cannot currently cover Apple's annual developer fee.
+- **Desktop edition**: Runs on Windows, macOS, and Linux, with geometric optics, electrostatics, and magnetostatics simulations. A Windows installer is available through the Microsoft Store; portable cross-platform packages are published through [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases).
 - **Browser edition**: Provides the geometric optics canvas, scene files compatible with the desktop edition, PNG canvas export, Chinese and English interfaces, and light and dark themes. Electrostatics and magnetostatics scenes are omitted for performance reasons.
 - **Shared code**: Both editions use the same pure .NET scene and simulation core, SkiaSharp optics canvas, and most main interface state and command logic.
 
@@ -47,6 +47,27 @@ The browser edition contains only the geometric optics canvas. Calculations run 
 - .NET SDK 10.0.400, or a compatible .NET 10 SDK as specified by `global.json`
 - Desktop runtime: Windows 10/11, macOS, or Linux with X11/Wayland support
 - The `wasm-tools` workload is also required to build the browser edition locally.
+
+### Automated GitHub Releases
+
+The `.github/workflows/release.yml` workflow runs when a `vMAJOR.MINOR.PATCH` tag is pushed. Update `<Version>` in `Directory.Build.props`, commit the change, and tag that commit with the matching version, for example:
+
+```bash
+git tag v0.7.3
+git push origin v0.7.3
+```
+
+The tag must match the project version. The release title is the version without `v` (for example, `0.7.3`), and the application uses the same version. You can also enter an existing tag under Actions → Release desktop → Run workflow; the workflow must be on the default branch before its first manual run.
+
+| Platform | Release assets |
+| --- | --- |
+| Windows x64 / ARM64 | `LightDraw-<version>-win-x64.zip` / `LightDraw-<version>-win-arm64.zip` |
+| macOS Apple Silicon | `LightDraw-<version>-osx-arm64.tar.gz` (contains `LightDraw.app`) |
+| Linux x64 / ARM64 | `LightDraw-<version>-linux-x64.tar.gz` / `LightDraw-<version>-linux-arm64.tar.gz` |
+
+Each archive includes the .NET runtime, license, and documentation, with a separate `.sha256` checksum file. Extract and run `LightDraw.exe` on Windows, open `LightDraw.app` on macOS, or run `./LightDraw` on Linux. Linux still requires a desktop environment and Avalonia/Skia system dependencies. The macOS app is ad-hoc signed and is not Apple-notarized; its first launch may require permission in System Settings.
+
+Each runner packages files on its temporary disk and uploads directly to a draft Release. The release becomes public only after all five builds succeed and all assets are present. Failures leave the draft available for retrying failed jobs in Actions. Published versions cannot be overwritten by the workflow; use a new version for subsequent releases. No Actions artifacts or dependency caches are used, so these storage quotas are not consumed. Actions execution time remains subject to the repository's GitHub billing rules.
 
 ### Microsoft Store bundle
 
