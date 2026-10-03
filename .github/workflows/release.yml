@@ -2,17 +2,11 @@ name: Release desktop
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches: [master]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Existing version tag (for example v0.7.3)'
-        required: true
-        type: string
 
 concurrency:
-  group: release-${{ inputs.tag || github.ref_name }}
+  group: desktop-release
   cancel-in-progress: false
 
 permissions:
@@ -24,6 +18,7 @@ env:
 
 jobs:
   prepare:
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -31,49 +26,65 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       version: ${{ steps.version.outputs.version }}
       sha: ${{ steps.version.outputs.sha }}
+      publish: ${{ steps.release.outputs.publish }}
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: refs/tags/${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
           persist-credentials: false
-      - name: Validate version tag
+      - name: Read project version
         id: version
-        env:
-          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           python3 - <<'PY'
           import os, re, subprocess, xml.etree.ElementTree as ET
-          tag = os.environ['RELEASE_TAG']
+          version = ET.parse('Directory.Build.props').findtext('.//Version', '').strip()
           number = r'(?:0|[1-9][0-9]*)'
-          if not re.fullmatch(rf'v{number}\.{number}\.{number}', tag):
-              raise SystemExit('Use a stable version tag such as v0.7.3.')
-          version = tag[1:]
-          project_version = ET.parse('Directory.Build.props').findtext('.//Version')
-          if version != project_version:
-              raise SystemExit(f'Tag version {version} differs from project version {project_version}.')
+          if not re.fullmatch(rf'{number}\.{number}\.{number}', version):
+              raise SystemExit('Directory.Build.props must contain a stable Version such as 0.7.3.')
+          tag = f'v{version}'
           sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write(f'tag={tag}\nversion={version}\nsha={sha}\n')
           PY
       - name: Create or resume draft release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
           RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_SHA: ${{ steps.version.outputs.sha }}
         run: |
-          if gh release view "$RELEASE_TAG" --json isDraft > release.json; then
-            if ! jq -e '.isDraft == true' release.json > /dev/null; then
-              echo 'This version is already published. Create a new version tag.' >&2
+          # List releases so drafts are included; API/authentication errors must fail the job.
+          gh api --paginate --slurp "repos/$GH_REPO/releases?per_page=100" > releases.json
+          jq --arg tag "$RELEASE_TAG" \
+            'first(.[][] | select(.tag_name == $tag)) // null' releases.json > release.json
+          if jq -e '. != null and .draft == false' release.json > /dev/null; then
+            echo "Release $RELEASE_VERSION is already published; skipping publication."
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if jq -e '. != null' release.json > /dev/null; then
+            if [[ "$(jq -r '.target_commitish' release.json)" != "$RELEASE_SHA" ]]; then
+              echo '::error::This draft targets another commit. Rerun its original workflow or bump the project version.'
               exit 1
             fi
-          else
-            gh release create "$RELEASE_TAG" --verify-tag --draft \
+          fi
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            if [[ "$(git rev-parse "$RELEASE_TAG^{commit}")" != "$RELEASE_SHA" ]]; then
+              echo '::error::This version tag points to another commit. Bump the project version.'
+              exit 1
+            fi
+          fi
+          if ! jq -e '. != null' release.json > /dev/null; then
+            gh release create "$RELEASE_TAG" --target "$RELEASE_SHA" --draft \
               --title "$RELEASE_VERSION" --generate-notes
           fi
+          echo 'publish=true' >> "$GITHUB_OUTPUT"
 
   build:
     needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
     name: Build ${{ matrix.rid }}
     runs-on: ${{ matrix.os }}
     permissions:

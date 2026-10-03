@@ -50,14 +50,9 @@ The browser edition contains only the geometric optics canvas. Calculations run 
 
 ### Automated GitHub Releases
 
-The `.github/workflows/release.yml` workflow runs when a `vMAJOR.MINOR.PATCH` tag is pushed. Update `<Version>` in `Directory.Build.props`, commit the change, and tag that commit with the matching version, for example:
+The `.github/workflows/release.yml` workflow runs on pushes to `master` and reads the `MAJOR.MINOR.PATCH` version from `<Version>` in `Directory.Build.props` (for example, `0.7.3`). If that version has not been published, it builds and creates a Release titled `0.7.3`, automatically creating the associated `v0.7.3` tag. No manual tagging is needed; the app and archives use the same version.
 
-```bash
-git tag v0.7.3
-git push origin v0.7.3
-```
-
-The tag must match the project version. The release title is the version without `v` (for example, `0.7.3`), and the application uses the same version. You can also enter an existing tag under Actions → Release desktop → Run workflow; the workflow must be on the default branch before its first manual run.
+To publish subsequent versions, update `<Version>`, commit, and push to `master`. If the version is already public, the workflow successfully skips building and publishing without replacing assets. You can also select `master` under Actions → Release desktop → Run workflow, with no version input required; the workflow must be on the default branch before its first manual run.
 
 | Platform | Release assets |
 | --- | --- |
@@ -67,7 +62,7 @@ The tag must match the project version. The release title is the version without
 
 Each archive includes the .NET runtime, license, and documentation, with a separate `.sha256` checksum file. Extract and run `LightDraw.exe` on Windows, open `LightDraw.app` on macOS, or run `./LightDraw` on Linux. Linux still requires a desktop environment and Avalonia/Skia system dependencies. The macOS app is ad-hoc signed and is not Apple-notarized; its first launch may require permission in System Settings.
 
-Each runner packages files on its temporary disk and uploads directly to a draft Release. The release becomes public only after all five builds succeed and all assets are present. Failures leave the draft available for retrying failed jobs in Actions. Published versions cannot be overwritten by the workflow; use a new version for subsequent releases. No Actions artifacts or dependency caches are used, so these storage quotas are not consumed. Actions execution time remains subject to the repository's GitHub billing rules.
+Each runner packages files on its temporary disk and uploads directly to a draft Release. The release becomes public only after all five builds succeed and all assets are present. Failures leave the draft available for retrying failed jobs in the original workflow run. If an existing draft or tag targets another commit, the workflow stops to avoid mixing builds from different commits; rerun the original workflow or bump the project version. No Actions artifacts or dependency caches are used, so these storage quotas are not consumed. Actions execution time remains subject to the repository's GitHub billing rules.
 
 ### Microsoft Store bundle
 

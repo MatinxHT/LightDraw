@@ -50,14 +50,9 @@
 
 ### GitHub Release 自动发布
 
-工作流 `.github/workflows/release.yml` 在推送 `v主版本.次版本.修订版本` 标签时运行。先更新 `Directory.Build.props` 中的 `<Version>` 并提交，再为该提交创建同版本标签，例如：
+工作流 `.github/workflows/release.yml` 在推送到 `master` 时自动运行，从 `Directory.Build.props` 的 `<Version>` 读取 `主版本.次版本.修订版本`（例如 `0.7.3`）。该版本尚未发布时，自动构建并创建 Release，名称为 `0.7.3`，关联标签 `v0.7.3` 由工作流自动创建，无需手动打标签；应用和压缩包使用相同版本号。
 
-```bash
-git tag v0.7.3
-git push origin v0.7.3
-```
-
-标签版本必须与项目版本一致。Release 名称为不带 `v` 的版本号（例如 `0.7.3`），应用中的版本号也保持一致。也可在 Actions → Release desktop → Run workflow 中填写已存在的标签；首次手动运行前，工作流需已合入默认分支。
+以后发布新版本，只需修改 `<Version>`，提交并推送到 `master`。如果该版本已经公开发布，工作流会成功跳过构建和发布，不覆盖已有附件。也可在 Actions → Release desktop → Run workflow 中选择 `master` 手动运行，无需填写版本参数；首次手动运行前，工作流需已合入默认分支。
 
 | 平台 | Release 附件 |
 | --- | --- |
@@ -67,7 +62,7 @@ git push origin v0.7.3
 
 每个压缩包包含 .NET 运行时、许可证和说明文件，并附带独立的 `.sha256` 校验文件。Windows 解压后运行 `LightDraw.exe`，macOS 解压后打开 `LightDraw.app`，Linux 解压后运行 `./LightDraw`；Linux 仍需桌面环境及 Avalonia/Skia 的系统依赖。macOS 包使用临时签名，未经过 Apple 公证，首次打开可能需要在系统设置中允许运行。
 
-构建产物在各 runner 的临时磁盘打包后直接上传到 Release 草稿，五个平台全部成功且附件齐全后才公开发布。失败时保留草稿，可在 Actions 中重新运行失败任务；已公开的版本不会被工作流覆盖，后续发布请使用新版本号。工作流不使用 Actions artifacts 或依赖缓存，不占用它们的存储额度；Actions 执行时间仍遵循仓库的 GitHub 计费规则。
+构建产物在各 runner 的临时磁盘打包后直接上传到 Release 草稿，五个平台全部成功且附件齐全后才公开发布。失败时保留草稿，可在 Actions 中重新运行原工作流的失败任务；如果已有草稿或标签指向另一个提交，工作流会停止，避免混合不同提交的产物，此时请重跑原工作流或提升项目版本号。工作流不使用 Actions artifacts 或依赖缓存，不占用它们的存储额度；Actions 执行时间仍遵循仓库的 GitHub 计费规则。
 
 ### Microsoft Store 混合架构安装包
 
