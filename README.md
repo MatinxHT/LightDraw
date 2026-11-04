@@ -1,328 +1,79 @@
-# 光绘课堂 (LightDraw)
-
-中文 | [English](README.en.md)
-
 <p align="center">
-  <img src="src/LightDraw.Desktop/Assets/Brand/LightDrawLogo.png" alt="LightDraw 标准 Logo" width="220" />
-  <br />
-  <a href="https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&amp;gl=CN&amp;ocid=pdpshare">
-    <img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="从 Microsoft Store 获取" width="142" height="52" />
-  </a>
+  <img src="assets/app-store/logo_300x300.png" alt="光绘课堂 LightDraw 图标" width="120" />
 </p>
 
-**光绘课堂 (LightDraw)** 是一款面向物理课堂和实验演示的二维绘图与模拟工具。它支持在桌面端搭建几何光学、静电场和静磁场场景；浏览器版目前提供几何光学画布。教师可以用它演示物理概念，学生也可以自行搭建场景、观察结果并验证猜想。
+<h1 align="center">光绘课堂 · LightDraw</h1>
 
-项目以公开源码、社区协作和长期维护为方向。欢迎教师、学生、开发者、设计师和光学爱好者提交问题、改进文档、补充测试或实现新功能。
+<p align="center">
+  在画布上搭建物理场景，让光路与场线直观可见。
+</p>
 
-> [!IMPORTANT]
-> 本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)，仅授权非商业用途。它是“源码可用（source-available）”项目，不是 OSI 定义下的开源软件。未经版权所有者另行书面许可，不得将本项目或其衍生版本用于商业产品、收费服务、商业交付或其他商业目的。
+<p align="center">
+  <a href="https://lightdraw.martinphysics.club/"><strong>在线体验</strong></a>
+  ·
+  <a href="https://github.com/MatinxHT/LightDraw/releases"><strong>下载桌面版</strong></a>
+  ·
+  <a href="https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&amp;gl=CN&amp;ocid=pdpshare">Microsoft Store</a>
+</p>
 
-## 项目状态
+<p align="center">简体中文 · <a href="README.en.md">English</a></p>
 
-光绘课堂仓库包含可运行的桌面版和浏览器版，当前功能范围如下：
+光绘课堂是一款面向物理课堂和实验演示的二维绘图与模拟工具。教师可以用它展示物理现象，学生也可以动手搭建场景、调整参数，观察变化并验证想法。
 
-- **桌面版**：在 Windows、macOS 和 Linux 上运行，提供几何光学、静电场和静磁场模拟。Windows 安装包可从 Microsoft Store 获取；跨平台便携包通过 [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases) 发布。
-- **浏览器版**：提供几何光学画布，支持与桌面版互通的场景文件、PNG 画布导出，以及中英文界面和明暗主题；基于性能原因不提供静电场和静磁场仿真场景。
-- **共享代码**：两个前端共用纯 .NET 场景与模拟核心、SkiaSharp 光学画布，以及主要的界面状态与命令逻辑。
+## 探索物理现象
 
-当前版本适合课堂概念演示和技术验证，不建议用于精密工程计算或对数值误差敏感的科研工作。
+### 几何光学
 
-![optics](./assets/app-store/optics.png)
-![optics2](./assets/app-store/optics2.png)
-![eletrostatic](./assets/app-store/eletrostatic.png)
-![magnetostatic](./assets/app-store/magnetostatic.png)
+放置光源、透镜、反射镜、分光镜和光栅等元件，调整位置与参数，观察光线的反射、折射、衍射和色散。光路会随场景编辑实时更新。
 
-## 快速开始
+![几何光学桌面界面：复色光经凹面镜和反射光栅形成彩色光路](assets/app-store/optics.png)
 
-### 浏览器版
+<details>
+<summary>查看更多几何光学场景</summary>
+<br />
+<img src="assets/app-store/optics2.png" alt="由光源、球面镜、光阑和光栅组成的几何光学场景" />
+</details>
 
-**在线测试：**[打开 LightDraw 浏览器版](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学画布。
+### 静电场与静磁场
 
-浏览器版只包含几何光学画布，计算在本地浏览器完成；场景文件通过浏览器的文件选择和下载功能读写，不需要将场景上传到服务器。建议使用宽度至少 920 px、高度至少 600 px 的桌面浏览器。
+在桌面版中，放置点电荷、带电平板、导线和圆形电流，观察电场线和磁场随位置、方向与参数的变化。
 
-“打开场景”选择桌面版兼容的 `.lightdraw.json`；“保存场景”下载 `lightdraw-scene.lightdraw.json`；“导出画布”下载 `lightdraw-canvas.png`。浏览器版还提供“关于程序”面板，可查看版本、仿真方法、许可与鸣谢。
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <strong>静电场</strong><br />
+      点电荷与带电平板周围的电场线<br />
+      <a href="assets/app-store/eletrostatic.png"><img src="assets/app-store/eletrostatic.png" alt="静电场界面：点电荷和带电平板周围的电场线" /></a>
+    </td>
+    <td width="50%" valign="top">
+      <strong>静磁场</strong><br />
+      导线与圆形电流产生的磁场<br />
+      <a href="assets/app-store/magnetostatic.png"><img src="assets/app-store/magnetostatic.png" alt="静磁场界面：导线和圆形电流周围的磁场" /></a>
+    </td>
+  </tr>
+</table>
 
-### 环境要求
+<sub>截图展示的是桌面版界面，实际界面可能随版本或语言设置有所不同。</sub>
 
-- .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；
-- 桌面版运行环境：Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
-- 本地构建浏览器版时还需要 `wasm-tools` 工作负载。
+## 开始使用
 
-### GitHub Release 自动发布
+- **浏览器版**：[直接打开 LightDraw](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学。计算在浏览器中完成，场景文件无需上传；建议使用桌面浏览器。
+- **桌面版**：从 [Microsoft Store](https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&gl=CN&ocid=pdpshare) 安装 Windows 版，或从 [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases) 下载便携包。便携包支持 Windows 和 Linux 的 x64 / ARM64，以及搭载 Apple 芯片的 macOS。
 
-工作流 `.github/workflows/release.yml` 在推送到 `master` 时自动运行，从 `Directory.Build.props` 的 `<Version>` 读取 `主版本.次版本.修订版本`（例如 `0.7.3`）。该版本尚未发布时，自动构建并创建 Release，名称为 `0.7.3`，关联标签 `v0.7.3` 由工作流自动创建，无需手动打标签；应用和压缩包使用相同版本号。
+选择工具并在画布上放置元件，再通过“移动/编辑”和属性栏调整场景。可以撤销和重做、保存或打开 `.lightdraw.json` 场景；几何光学画布还可以导出为 PNG。浏览器版与桌面版可以互相打开几何光学场景文件。界面支持简体中文、英语及明暗主题。
 
-以后发布新版本，只需修改 `<Version>`，提交并推送到 `master`。如果该版本已经公开发布，工作流会成功跳过构建和发布，不覆盖已有附件。也可在 Actions → Release desktop → Run workflow 中选择 `master` 手动运行，无需填写版本参数；首次手动运行前，工作流需已合入默认分支。
+模拟主要用于课堂教学与概念演示，不应作为精密工程计算或专业决策的依据。
 
-| 平台 | Release 附件 |
-| --- | --- |
-| Windows x64 / ARM64 | `LightDraw-<版本>-win-x64.zip` / `LightDraw-<版本>-win-arm64.zip` |
-| macOS Apple Silicon | `LightDraw-<版本>-osx-arm64.tar.gz`（含 `LightDraw.app`） |
-| Linux x64 / ARM64 | `LightDraw-<版本>-linux-x64.tar.gz` / `LightDraw-<版本>-linux-arm64.tar.gz` |
-
-每个压缩包包含 .NET 运行时、许可证和说明文件，并附带独立的 `.sha256` 校验文件。Windows 解压后运行 `LightDraw.exe`，macOS 解压后打开 `LightDraw.app`，Linux 解压后运行 `./LightDraw`；Linux 仍需桌面环境及 Avalonia/Skia 的系统依赖。macOS 包使用临时签名，未经过 Apple 公证，首次打开可能需要在系统设置中允许运行。
-
-构建产物在各 runner 的临时磁盘打包后直接上传到 Release 草稿，五个平台全部成功且附件齐全后才公开发布。失败时保留草稿，可在 Actions 中重新运行原工作流的失败任务；如果已有草稿或标签指向另一个提交，工作流会停止，避免混合不同提交的产物，此时请重跑原工作流或提升项目版本号。工作流不使用 Actions artifacts 或依赖缓存，不占用它们的存储额度；Actions 执行时间仍遵循仓库的 GitHub 计费规则。
-
-### Microsoft Store 混合架构安装包
-
-在安装了 Windows SDK 10.0.26100.0 打包工具的 Windows 上，从仓库根目录运行：
-
-```powershell
-.\scripts\Package-MsixBundle.ps1
-```
-
-脚本默认读取项目版本（`Directory.Build.props`），以 Release 配置分别发布包含 .NET 运行时的 x64 和 ARM64 程序，再合并为 `artifacts/msix/<版本>/MartinHungChiho.LightDraw-<版本>.msixbundle`。也可通过 `-Version 0.7.3` 显式指定版本；应用与安装包版本会同步设置。每次构建使用独立的 staging 目录，避免混入历史发布文件。
-
-将生成的 `.msixbundle` 手动上传至 Partner Center 的程序包页面。包沿用本项目的商店标识和发布者，不包含本地测试签名，由 Microsoft Store 签名分发。
-
-## 使用说明
-
-| 操作 | 效果 |
-| --- | --- |
-| 顶部语言选择左侧的主题下拉框 | 即时切换深色 / 浅色主题，所有窗口同步；默认浅色，采用纯白画布和淡蓝界面；深色采用暖石墨灰面板、炭黑画布和香槟色选中强调 |
-| 顶部语言下拉框 | 在简体中文与英语之间切换界面文字 |
-| 关于程序 | 查看版本、仿真方法、项目仓库、许可与鸣谢；桌面版以窗口显示，浏览器版以页面内面板显示 |
-| 选择平移工具并按住鼠标左键拖动 | 平移画布 |
-| 移动或调整元件 | 空白处按住左键可平移界面；先单击元件任意位置选中，再按住第一原点拖拽平移；拖动元件正交方向 100 mm 处的白点可固定元件原点旋转；所有长度只能通过属性框修改，光路在拖动时实时刷新 |
-| 选中元件后的属性栏 | 可修改元件名称、坐标和适用的光学参数；支持组合、取消组合及设置组合中的主元件 |
-| 暂时隐藏元件 | 选中光学元件后勾选“暂时隐藏”，元件仍显示在画布上，但不参与光线追迹，光线会穿过它 |
-| 删除元件 | 单击光源、镜面、分光镜、光屏、光阑、光栅或透镜即可删除，成功删除后自动返回平移工具 |
-| 使用任意绘制工具时按住右键拖动 | 临时平移画布 |
-| 滚动鼠标滚轮 | 以当前指针位置为中心缩放 |
-| 单色点光源 | 单击放置，默认波长为 580 nm 并向 360° 均匀发光；选中后可修改波长和发射圆心角，并用白色旋转点调整光束中心方向 |
-| 单色平行光源 | 两次点击确定发射线段，默认波长为 580 nm 并沿线段法线方向平行发射；选中后可修改波长 |
-| 复色点光源 | 单击放置，由 450、550、650 nm 三个等强分量混合，分光前以黄色绘制；几何编辑方式与单色点光源相同 |
-| 复色平行光源 | 两次点击确定发射线段，由 450、550、650 nm 三个等强分量混合，分光前以黄色绘制；几何编辑方式与单色平行光源相同 |
-| 平面反光镜 / 平面分光镜 / 光屏 / 光阑 / 反射光栅 / 凸透镜 / 凹透镜 | 第一次点击确定起点，第二次点击确定长度和朝向，随后自动返回平移工具；分光镜让透射光和反射光各保留入射光强的 50%；光屏命中后直接截停光线；反射光栅按波长与刻线密度生成可传播衍射级次 |
-| 理想凹球面镜 / 理想凸球面镜 | 第一次点击确定镜面中心点（第一原点），第二次点击确定球心（第二原点）、方向和初始半径；默认圆心角为 180°。编辑时画布上的第二原点只改变方向、不拉伸半径；属性栏可直接编辑两个原点坐标、圆心角、半径与焦距。修改半径或焦距时第一原点固定，第二原点沿当前轴线移动，且始终满足 `f = R/2`；凹、凸镜分别只在朝向球心和背向球心的一侧反射 |
-| 凹面光栅 | 与理想凹球面镜相同，第一次点击确定光栅顶点，第二次点击确定曲率圆心、方向和半径；默认圆心角 180°、刻线密度 600 线/mm。只接收从凹面一侧入射的光线，并在命中点的局部切面上按反射光栅方程生成衍射级次 |
-| Esc | 取消正在放置的物件 |
-| 重置场景 | 清空所有光源和光学元件，恢复空白场景 |
-| 适合窗口 | 恢复默认视图范围 |
-| 光线密度 | 实时调整每个光源生成的光线数量 |
-| 打开场景 / 保存场景 | 读写 `.lightdraw.json` 场景文件 |
-| 导出画布 | 将当前光学画布导出为 PNG；桌面版选择保存位置，浏览器版直接下载 |
-
-## 编辑保护与场景管理
-
-几何光学（桌面版与浏览器版）、静电场和静磁场窗口现在提供一致的文档工具栏：
-
-- **撤销 / 重做**：保留最近 100 次完整编辑。一次拖动计为一步；属性输入在按 Enter 或离开输入框时提交；创建、删除、组合、改名和暂时隐藏均可撤销。撤销后进行新编辑会清除重做分支。
-- **未保存标记**：比较当前场景与最近成功保存的内容。撤销或重做到已保存的状态会自动清除标记；平移、缩放和显示密度不计入场景编辑。
-- **打开 / 重置 / 关闭保护**：存在未保存更改时，可选择“保存”“不保存”或“取消”。取消文件选择、取消保存或保存失败都会保留当前场景。重置本身也可撤销；成功打开另一份场景后，历史记录重新开始。
-- **多窗口退出**：关闭主窗口或退出应用前，逐个检查光学、静电场和静磁场窗口。任一窗口取消，所有窗口均保留。
-- **快捷键**：Windows/Linux 使用 `Ctrl+Z` 撤销、`Ctrl+Shift+Z` 或 `Ctrl+Y` 重做、`Ctrl+S` 保存、`Ctrl+O` 打开；macOS 使用对应的 `⌘` 快捷键。文本框内保留文字自己的撤销/重做行为。
-- **本地保存**：先完整序列化，再将临时文件替换目标文件；使用非本地存储提供程序时，是否支持原子替换由提供程序决定。
-
-浏览器版在有未保存更改时注册页面离开提醒，由浏览器决定是否显示及其文案。保存操作发起文件下载，应用无法确认下载最终是否落盘。历史记录仅存在于当前会话中；尚未提供崩溃恢复或自动保存。
-
-静电场和静磁场均保存为 `.lightdraw.json`，分别使用 `sceneType: "electrostatic"` 和 `sceneType: "magnetostatic"`，各自的 `dataVersion` 从 `1` 开始。请在对应窗口打开文件，类型不符时会保留当前场景并提示。静电场保存电荷、极板的位置、参数与名称；静磁场保存四类导线/线圈的几何、电流与名称。光学继续使用下述第 14 版格式。
-
-导入文件上限为 16 MiB，每类元件最多 10,000 个；不接受空元件、重复光学 ID、非有限数值、绝对值超过 10⁹ 的数值或零长度元件。合法旧版光学场景会继续补齐默认名称、ID 和可选字段。
-
-## 场景文件格式
-
-场景使用 UTF-8 JSON，并通过 `dataVersion` 标记数据结构版本。当前版本为 `14`，并可继续读取版本 `1`～`13`。所有世界坐标、长度、通孔、半径和焦距均以毫米（`mm`）计：
-
-```json
-{
-  "dataVersion": 14,
-  "scene": {
-    "name": "双镜面反射演示",
-    "lightSources": [
-      {
-        "position": { "x": -300, "y": 20 },
-        "directionDegrees": -8,
-        "spreadDegrees": 38,
-        "wavelengthNanometers": 580,
-        "spectrum": "monochromatic"
-      }
-    ],
-    "mirrors": [
-      {
-        "start": { "x": 40, "y": -170 },
-        "end": { "x": 105, "y": 165 }
-      }
-    ],
-    "concaveSphericalMirrors": [
-      {
-        "vertex": { "x": 0, "y": 0 },
-        "centerOfCurvature": { "x": 100, "y": 0 },
-        "arcAngleDegrees": 180
-      }
-    ],
-    "convexSphericalMirrors": [
-      {
-        "vertex": { "x": 0, "y": 160 },
-        "centerOfCurvature": { "x": 100, "y": 160 },
-        "arcAngleDegrees": 120
-      }
-    ],
-    "beamSplitters": [
-      {
-        "start": { "x": 120, "y": -100 },
-        "end": { "x": 220, "y": 0 }
-      }
-    ],
-    "screens": [
-      {
-        "start": { "x": 300, "y": -170 },
-        "end": { "x": 300, "y": 165 }
-      }
-    ],
-    "apertures": [
-      {
-        "start": { "x": 180, "y": -170 },
-        "end": { "x": 180, "y": 165 },
-        "openingSize": 60
-      }
-    ],
-    "lenses": [
-      {
-        "start": { "x": 210, "y": -120 },
-        "end": { "x": 210, "y": 120 },
-        "kind": "convex",
-        "focalLength": 300,
-        "dispersionMode": "normal",
-        "dispersionLevel": 5
-      }
-    ],
-    "reflectionGratings": [
-      {
-        "start": { "x": 240, "y": -170 },
-        "end": { "x": 240, "y": 165 },
-        "grooveDensityLinesPerMillimeter": 600
-      }
-    ],
-    "concaveGratings": [
-      {
-        "vertex": { "x": 360, "y": 0 },
-        "centerOfCurvature": { "x": 460, "y": 0 },
-        "arcAngleDegrees": 120,
-        "grooveDensityLinesPerMillimeter": 600
-      }
-    ]
-  }
-}
-```
-
-字段说明：
-
-- `dataVersion`：场景文件格式版本，用于未来的数据迁移；
-- `scene.name`：场景显示名称；
-- `lightSources[].position`：光源在世界坐标系中的位置；
-- `directionDegrees`：中心出射方向，单位为度；移动/编辑属性栏中，点光源及线状元件的第二原点表示距第一原点 100 mm 的白色旋转点，凹、凸球面镜的第二原点仍表示曲率圆心；
-- `spreadDegrees`：扇形发射角度，单位为度；
-- `wavelengthNanometers`：波长，单位为纳米；单色光源默认为 580 nm，用户修改后的真实值会保存并直接参与光栅方程计算。复色光源在场景中以 550 nm 作为参考值，实际分光计算使用不可修改的 450、550、650 nm 三个等强分量；
-- `spectrum`：光谱类型，`monochromatic` 为单色光源，`composite` 为复色光源；旧场景未包含此字段时按单色光源读取；
-- `kind`：光源类型，`point` 或 `parallelLine`；线光源还会保存 `end` 端点；
-- `mirrors[].start/end`：有限线段镜面的两个端点。
-- `concaveSphericalMirrors[].vertex`：凹球面镜的镜面中心点（第一原点）；`centerOfCurvature` 为球心（第二原点），两点距离为曲率半径；`arcAngleDegrees` 为镜面圆心角，焦距由 `f = R/2` 自动确定。
-- `convexSphericalMirrors[]`：字段与凹球面镜一致，但有效反射面位于背向球心的一侧。
-- `beamSplitters[].start/end`：平面分光镜的两个端点；透射和反射分支的光强各为入射光的 50%。
-- `screens[].start/end`：有限线段光屏的两个端点；命中光屏后光线立即终止传播。
-- `apertures[].start/end`：光阑外部线段的两个端点；`openingSize` 为中央通孔大小。
-- `reflectionGratings[].start/end`：反射光栅的两个端点；`grooveDensityLinesPerMillimeter` 为刻线密度（线/mm）。
-- `concaveGratings[]`：凹面光栅；`vertex`、`centerOfCurvature` 和 `arcAngleDegrees` 的几何定义与理想凹球面镜一致，另以 `grooveDensityLinesPerMillimeter` 设置刻线密度。
-- `lenses[].start/end`：薄透镜的两个端点，另含 `kind` 与 `focalLength`；新建凸、凹透镜的默认基准焦距均为 300 mm，聚散性质由 `kind` 决定。`dispersionMode` 可取 `none`、`normal`、`anomalous`，分别表示理想无色散、正常色散和反常色散；`dispersionLevel` 范围为 0～10，默认 5，仅在色散模式下生效。旧场景缺少这两个字段时迁移为 `none` 和 `5`。
-- 光学元件可保存自定义 `name` 和 `isTemporarilyHidden`；后者为 `true` 时仍绘制元件，但追迹时忽略它。场景还可包含 `groups`，记录组合成员及主元件；这些字段缺失的旧场景仍可读取。
-
-色散透镜以 550 nm 绿光焦距为 `f₀`。令 `t = clamp((λ - 550) / 100, -1, 1)`、`s = dispersionLevel × 0.05`，正常色散使用 `f(λ) = f₀ × (1 + st)`，反常色散使用 `f(λ) = f₀ × (1 - st)`。因此正常色散下蓝光焦距较短、红光焦距较长，反常色散则相反。等级 5、基准焦距 300 mm 时，正常色散的 450/550/650 nm 焦距分别为 225/300/375 mm。复色光第一次命中色散透镜时拆分为三个等强分量，后续透镜按各分量波长继续计算，不会重复拆分。
-
-反射光栅采用切向波矢形式的光栅方程。计算时先将波长从纳米换算为毫米：`λ(mm) = λ(nm) × 10⁻⁶`，再按 `sin βₘ = sin α + mλ/d` 求可传播级次，其中 `d` 为光栅常数。凹面光栅在每个命中点以球面法线及其垂直方向建立局部法线—切线坐标系，再使用同一方程，因此 0 级光按球面镜反射并具有 `f = R/2` 的几何聚焦性质。仅追踪 0、±1、±2、±3 级。单色光始终使用用户设置的真实波长计算衍射角；绘制颜色则与参考表做绝对差最小匹配：390 nm 紫色、450 nm 蓝色、550 nm 绿色、580 nm 黄色、650 nm 红色，因此默认 580 nm 显示为黄色。若目标波长恰好位于两个参考值的中点，则以黄色 580 nm 为系统重心，选择两个候选颜色中更靠近 580 nm 的一侧。复色光在分光前以黄色绘制，其无色散的 0 级也保留为一条黄色混合光；只有 ±1、±2、±3 级会将固定的 450、550、650 nm 分量分别以蓝、绿、红色绘制，并按各自波长计算色散角。三个分量的初始强度比为 1:1:1；0 级光强为入射混合光的 90%，+1 与 -1 级的各波长分量为对应入射分量的 50%，+2 与 -2 级各为 25%，+3 与 -3 级各为 10%。另设全场景线段数量上限以控制交互性能。
-
-未来修改格式时应提升 `dataVersion` 并提供显式迁移器，不应静默改变已有字段的含义。
-
-## 技术架构
-
-```text
-LightDraw
-├─ assets
-│  └─ app-store          受版本控制的应用商店海报
-├─ src/LightDraw.Core
-│  ├─ Geometry           向量和几何基础类型
-│  ├─ Scene              平台无关的场景模型
-│  ├─ Simulation         光线生成、求交和反射
-│  ├─ Electromagnetics   静电场与磁静态模型及模拟器
-│  └─ Persistence        带版本号的 JSON 场景读写
-├─ src/LightDraw.Rendering.Skia
-│  ├─ Optics             光学画布、场景编辑和 Skia 绘制
-│  ├─ Electrostatics     静电场交互画布
-│  └─ Magnetostatics     磁静态交互画布
-├─ src/LightDraw.Desktop
-│  ├─ Views              Avalonia 桌面窗口和界面布局
-│  ├─ ViewModels         两端共用的主界面状态与命令
-│  ├─ Services           本地文件选择、场景存储与本地化服务
-│  └─ Assets             应用内使用的品牌和图标资源
-└─ src/LightDraw.Browser
-   ├─ Views              Avalonia 浏览器界面与关于面板
-   ├─ Services           浏览器文件选择、下载与场景存储
-   └─ wwwroot            WebAssembly 入口、脚本与静态资源
-```
-
-依赖方向保持为：
-
-```text
-LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop / LightDraw.Browser
-```
-
-`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，并已复用于浏览器版。浏览器版还复用光学画布、主界面 ViewModel 和本地化服务；浏览器专用代码负责文件选择与下载。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件不纳入版本控制。
-
-### 编辑器结构与测试
-
-`SceneEditor.cs` 保留编辑状态和事件，操作按职责放入 `SceneEditor.Placement`、`Selection`、`Groups`、`Properties`、`Transforms`、`Drag`、`Deletion` 和 `Geometry` 分部文件。默认值处理独立到 Core 的场景归一化器。`SceneHistory<T>` 管理内容快照；三个窗口共用 `SceneDocumentViewModel<T>` 处理保存、打开、撤销与未保存提醒。
-
-运行回归检查（控制台测试程序，失败时返回非零退出码）：
-
-```bash
-dotnet run --project tests/LightDraw.Tests
-```
-
-检查包括三类场景的文档流程、旧格式读取、编辑器操作、关键计算结果，以及 Avalonia Headless 无界面窗口集成测试。详见 [测试说明](tests/README.md)。
-
-### 模拟与绘制
-
-`RayTracer` 将场景计算为与 UI 无关的光线线段集合。`OpticalCanvas` 在 Avalonia 的自定义绘制操作中获取当前 SkiaSharp 画布，将线段合并到路径后批量绘制。模拟层和显示层之间只传递数据，以便未来加入后台计算、取消令牌、空间索引和可插拔模拟引擎。
-
-## 设计原则
-
-- **教学优先**：交互和术语应便于课堂演示，而不是堆叠工程软件式参数；
-- **计算与界面分离**：核心算法不依赖桌面框架；
-- **跨平台一致**：避免无必要的平台专属 API；
-- **性能可扩展**：大量光线优先批量计算和批量绘制；
-- **格式可迁移**：所有持久化数据都有显式版本；
-- **社区共建**：重要行为变更需要测试、文档和清晰的提交说明。
-
-## 参与贡献
-
-欢迎报告缺陷、提出课堂需求、完善中英文文档、补充测试与无障碍支持、优化性能或实现新的光学元件。开始编码前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。较大的功能建议先创建 Issue，说明使用场景、交互方案和算法依据。
-
-提交贡献即表示你有权提供相关内容，并同意将该贡献按照本仓库当前的 PolyForm Noncommercial License 1.0.0 提供。请勿直接复制许可证不兼容或来源不明的代码、图片、字体、题目和教学材料。
-
-## 许可证与使用边界
-
-项目代码采用 **PolyForm Noncommercial License 1.0.0**，完整条款见 [LICENSE](LICENSE)。简要理解如下：
-
-- 允许个人学习、研究、实验、教学和非商业爱好项目使用；
-- 允许教育机构、慈善机构、公共研究机构和政府机构等按许可证规定使用；
-- 允许在非商业目的范围内修改和分发，并须同时提供许可证及必要声明；
-- 不授权将项目或衍生版本用于商业产品、收费服务、商业交付或预期的商业应用；
-- 本摘要仅用于帮助理解，若与 `LICENSE` 正文冲突，以英文许可证正文为准；
-- 商业授权或对具体使用方式有疑问时，应先联系版权所有者并取得书面许可。
-
-由于禁止特定商业用途，本项目不符合 [Open Source Initiative 对开源软件的定义](https://opensource.org/osd)，请使用“源码可用”“公开源码”或“社区协作项目”描述本项目，避免标注为 OSI-approved open source。
-
-本项目依赖的第三方组件仍分别遵循其原有许可证，本许可证不会改变第三方组件的授权条款。若未来参考或移植其他项目（包括 `ricktu288/ray-optics`）的代码，必须先完成许可证兼容性检查、保留所需声明并明确记录来源；许可证不兼容的代码不得直接合入。
-
-## 致谢与灵感来源
-
-光绘课堂的创作灵感来自 [Ray Optics Simulation](https://github.com/ricktu288/ray-optics)。该项目提供了功能丰富的二维几何光学场景编辑、模拟与交互式演示，让我们看到了将抽象光学知识转化为直观可视化工具的可能性。
-
-在此特别感谢 `ricktu288/ray-optics` 的作者和所有贡献者长期以来的设计、开发与社区维护工作。
-
-光绘课堂是使用 .NET、Avalonia 和 SkiaSharp 探索跨平台课堂教学体验的独立项目，与 Ray Optics Simulation 不存在官方隶属、合作或背书关系。“受到启发”不代表直接复制其代码；如果未来实际引用、翻译或移植该项目的任何代码或资源，将按其 Apache License 2.0 保留版权、许可证及其他必要声明，并在仓库中明确记录来源和修改内容。
-
-## 免责声明
-
-光绘课堂按许可证规定“按原样”提供，不附带任何明示或默示保证。模拟结果主要用于教学和演示，不构成工程设计、实验安全或专业决策依据。
+## 文档与参与
+
+- [使用参考](docs/guide.md)：工具操作、场景管理与快捷键。
+- [技术参考](docs/technical.md)：构建发布、场景格式、模拟方法与项目架构。
+- [贡献指南](CONTRIBUTING.md) · [测试说明](tests/README.md)
+
+项目使用 .NET、Avalonia 和 SkiaSharp，模拟核心与界面分离。欢迎通过 Issue 或 Pull Request 分享课堂需求、反馈问题、改进文档或参与开发。
+
+## 许可与致谢
+
+本项目采用 [PolyForm Noncommercial License 1.0.0](LICENSE)，仅授权非商业用途；商业使用须另获授权。光绘课堂是源码可用项目，不属于 OSI 定义的开源软件。
+
+光绘课堂的创作灵感来自 [Ray Optics Simulation](https://github.com/ricktu288/ray-optics)，感谢该项目的作者与贡献者。LightDraw 是独立项目，与其没有官方隶属或背书关系。
