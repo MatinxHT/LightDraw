@@ -8,4 +8,5 @@ artifacts/
 publish/
 dist/
 .vscode/.browser-profile/
+/.dotnet/
 *.csproj.SdkResolver.*.proj.Backup.tmp
