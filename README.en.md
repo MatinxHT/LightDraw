@@ -36,7 +36,7 @@ Place light sources, lenses, mirrors, beam splitters, gratings, and more. Adjust
 
 ### Electrostatics and magnetostatics
 
-In the desktop app, place point charges, charged plates, conductors, and current loops to explore how electric and magnetic fields change with their positions, orientations, and parameters.
+Place point charges, charged plates, conductors, and current loops to explore how electric and magnetic fields change with their positions, orientations, and parameters.
 
 <table>
   <tr>
@@ -57,10 +57,10 @@ In the desktop app, place point charges, charged plates, conductors, and current
 
 ## Get started
 
-- **Browser:** [Open LightDraw](https://lightdraw.martinphysics.club/) to explore geometric optics without installing anything. Calculations run in your browser, and scene files do not need to be uploaded. A desktop browser is recommended.
-- **Desktop:** Install the Windows app from the [Microsoft Store](https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=en-us&ocid=pdpshare), or download a portable package from [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases). Packages are available for Windows and Linux on x64 / ARM64, and macOS on Apple silicon.
+- **Browser:** [Open LightDraw](https://lightdraw.martinphysics.club/) to explore geometric optics, electrostatics, and magnetostatics without installing anything. Calculations run in your browser, and scene files do not need to be uploaded. A desktop browser is recommended.
+- **Desktop:** Install the Windows app from the [Microsoft Store](https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=en-us&ocid=pdpshare), or download a portable package from [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases). The desktop edition will no longer receive regular updates; future development will focus on the browser edition. Packages are available for Windows and Linux on x64 / ARM64, and macOS on Apple silicon.
 
-Choose a tool and place elements on the canvas, then use **Move/Edit** and the properties panel to adjust the scene. You can undo and redo edits, save or open `.lightdraw.json` scenes, and export an optics canvas as a PNG. Geometric optics scene files work in both the browser and desktop editions. The interface supports English and Simplified Chinese, with light and dark themes.
+Choose a tool and place elements on the canvas, then use **Move/Edit** and the properties panel to adjust the scene. You can undo and redo edits, save or open `.lightdraw.json` scenes, and export any canvas as a PNG. Each scene type works in both the browser and desktop editions. The interface supports English and Simplified Chinese, with light and dark themes.
 
 The simulations are intended for teaching and conceptual demonstrations, not precision engineering or professional decisions.
 

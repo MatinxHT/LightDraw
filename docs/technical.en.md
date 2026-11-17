@@ -6,9 +6,9 @@
 
 ### Requirements
 
-- .NET SDK 10.0.400, or a compatible .NET 10 SDK as specified by `global.json`
+- The project targets .NET 11. Local builds and the release workflow use .NET SDK 11.0.100 or a stable patch in the same feature band, as specified by `global.json`.
 - Desktop runtime: Windows 10/11, macOS, or Linux with X11/Wayland support
-- The `wasm-tools` workload is also required to build the browser edition locally.
+- Before building the browser edition locally, run `dotnet workload install wasm-tools` from the repository root.
 
 ### Automated GitHub Releases
 
@@ -185,7 +185,7 @@ Dependency direction is:
 LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop / LightDraw.Browser
 ```
 
-`LightDraw.Core` does not reference Avalonia, SkiaSharp, Windows API, or macOS API, so it can be tested independently and is already reused by the browser edition. The browser edition also reuses the optical canvas, main interface ViewModel, and localization service; browser-specific code handles file selection and downloads. The root `assets/app-store` directory holds version-controlled store graphics. Build, publish, and package outputs are not version controlled.
+`LightDraw.Core` does not reference Avalonia, SkiaSharp, Windows API, or macOS API, so it can be tested independently and is already reused by the browser edition. The browser edition also reuses all three simulation canvases, scene ViewModels, and the localization service; browser-specific code handles file selection and downloads. The root `assets/app-store` directory holds version-controlled store graphics. Build, publish, and package outputs are not version controlled.
 
 ### Editor and Tests
 

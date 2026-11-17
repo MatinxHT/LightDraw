@@ -8,4 +8,10 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../src/LightDraw.Browser/Views/*.axaml.cs" Link="BrowserViews/%(Filename)%(Extension)" />
+    <AvaloniaXaml Include="../../src/LightDraw.Browser/Views/*.axaml" Link="BrowserViews/%(Filename)%(Extension)" />
+    <Compile Include="../../src/LightDraw.Browser/Services/BrowserSceneStorageService.cs" Link="BrowserServices/BrowserSceneStorageService.cs" />
+    <AvaloniaResource Include="../../src/LightDraw.Desktop/Assets/Brand/LightDrawLogo.png" Link="Assets/Brand/LightDrawLogo.png" />
+  </ItemGroup>
 </Project>

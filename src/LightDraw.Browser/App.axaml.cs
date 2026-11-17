@@ -1,10 +1,8 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using LightDraw.Browser.Services;
 using LightDraw.Browser.Views;
 using LightDraw.Desktop.Services;
-using LightDraw.Desktop.ViewModels;
 
 namespace LightDraw.Browser;
 
@@ -19,9 +17,7 @@ public sealed partial class App : Application
         LocalizationService.Instance.LanguageChanged += (_, _) => ApplyBrowserLabels();
         if (ApplicationLifetime is ISingleViewApplicationLifetime singleView)
         {
-            var mainView = new MainView();
-            mainView.AttachViewModel(new MainWindowViewModel(new BrowserSceneStorageService()));
-            singleView.MainView = mainView;
+            singleView.MainView = new WorkspaceView();
         }
         base.OnFrameworkInitializationCompleted();
     }
@@ -32,12 +28,18 @@ public sealed partial class App : Application
         foreach (var key in new[]
         {
             "Common.Pan", "Common.Move", "Common.ResetScene", "Common.FitWindow",
-            "Common.Counterclockwise", "Common.Clockwise"
+            "Common.Counterclockwise", "Common.Clockwise",
+            "Electro.PointCharge", "Electro.ChargedPlate",
+            "Magnetic.PlanarConductor", "Magnetic.VerticalConductor",
+            "Magnetic.PlanarLoop", "Magnetic.VerticalLoop"
         })
         {
             var label = LocalizationService.Instance.Get(key);
             var separator = label.IndexOf(' ');
             resources[key] = separator >= 0 ? label[(separator + 1)..] : label;
         }
+        // The bundled browser font does not contain Unicode subscripts.
+        foreach (var key in new[] { "Electro.Law", "Magnetic.Law" })
+            resources[key] = LocalizationService.Instance.Get(key).Replace("₀", "0");
     }
 }

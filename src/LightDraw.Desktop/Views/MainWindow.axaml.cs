@@ -18,6 +18,40 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
     }
 
+    public void ShowDesktopNotice()
+    {
+        _viewModel?.Document.SetCloseReview(true);
+        DesktopContent.IsEnabled = false;
+        DesktopNotice.IsVisible = true;
+        Opened += OnNoticeWindowOpened;
+    }
+
+    private void OnNoticeWindowOpened(object? sender, EventArgs e)
+    {
+        Opened -= OnNoticeWindowOpened;
+        NoticeContinueButton.Focus();
+    }
+
+    private void OnDismissDesktopNoticeClick(object? sender, RoutedEventArgs e)
+    {
+        DesktopNotice.IsVisible = false;
+        DesktopContent.IsEnabled = true;
+        _viewModel?.Document.SetCloseReview(false);
+        Canvas.Focus();
+    }
+
+    private async void OnOpenBrowserVersionClick(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            NoticeLinkError.IsVisible = !await Launcher.LaunchUriAsync(new Uri("https://lightdraw.martinphysics.club/"));
+        }
+        catch (Exception)
+        {
+            NoticeLinkError.IsVisible = true;
+        }
+    }
+
     public void AttachViewModel(MainWindowViewModel viewModel)
     {
         ArgumentNullException.ThrowIfNull(viewModel);

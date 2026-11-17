@@ -6,7 +6,7 @@
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build LightDraw Desktop",
-      "program": "${workspaceFolder}/src/LightDraw.Desktop/bin/Debug/net10.0/LightDraw.dll",
+      "program": "${workspaceFolder}/src/LightDraw.Desktop/bin/Debug/net11.0/LightDraw.dll",
       "args": [],
       "cwd": "${workspaceFolder}/src/LightDraw.Desktop",
       "stopAtEntry": false
@@ -19,15 +19,11 @@
       "projectPath": "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
       "cwd": "${workspaceFolder}/src/LightDraw.Browser",
       "url": "http://127.0.0.1:8765/",
-      "preLaunchTask": "run LightDraw Browser",
+      "preLaunchTask": "prepare LightDraw Browser",
       "postDebugTask": "stop LightDraw Browser",
       "browserConfig": {
-        "runtimeArgs": [
-          "http://127.0.0.1:8765/"
-        ],
         "userDataDir": "${workspaceFolder}/.vscode/.browser-profile",
-        "cleanUp": "wholeBrowser",
-        "postDebugTask": "stop LightDraw Browser"
+        "cleanUp": "wholeBrowser"
       }
     }
   ]

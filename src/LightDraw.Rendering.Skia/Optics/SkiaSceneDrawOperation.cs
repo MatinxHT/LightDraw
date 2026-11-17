@@ -247,12 +247,13 @@ internal sealed class SkiaSceneDrawOperation(
                 StrokeCap = SKStrokeCap.Round,
                 BlendMode = SKBlendMode.SrcOver
             };
-            using var path = new SKPath();
+            using var pathBuilder = new SKPathBuilder();
             foreach (var segment in rayGroup)
             {
-                path.MoveTo(ToScreen(segment.Start));
-                path.LineTo(ToScreen(segment.End));
+                pathBuilder.MoveTo(ToScreen(segment.Start));
+                pathBuilder.LineTo(ToScreen(segment.End));
             }
+            using var path = pathBuilder.Detach();
             if (segmentCount <= 1200)
             {
                 using var glow = new SKPaint

@@ -32,7 +32,6 @@ public sealed partial class MainView : UserControl
         ArgumentNullException.ThrowIfNull(viewModel);
         if (_viewModel is not null)
         {
-            _viewModel.Document.PropertyChanged -= OnDocumentChanged;
             _viewModel.ResetViewRequested -= OnResetViewRequested;
             _viewModel.AboutRequested -= OnAboutRequested;
             _viewModel.RotateSelectedRequested -= OnRotateSelectedRequested;
@@ -68,8 +67,6 @@ public sealed partial class MainView : UserControl
         _viewModel = viewModel;
         DataContext = viewModel;
         _documentBinding = new(this, Canvas, viewModel.Document, UnsavedPrompt, Canvas.FinishInteraction);
-        viewModel.Document.PropertyChanged += OnDocumentChanged;
-        BrowserFileInterop.SetUnsavedChanges(viewModel.Document.HasUnsavedChanges);
         _viewModel.ResetViewRequested += OnResetViewRequested;
         _viewModel.AboutRequested += OnAboutRequested;
         _viewModel.RotateSelectedRequested += OnRotateSelectedRequested;
@@ -98,12 +95,6 @@ public sealed partial class MainView : UserControl
         Canvas.SelectionChanged += OnSelectionChanged;
         viewModel.UpdateSimulation(Canvas.SimulationResult);
         viewModel.UpdateSelection(Canvas.Selection);
-    }
-
-    private void OnDocumentChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(SceneDocumentViewModel.HasUnsavedChanges) && _viewModel is not null)
-            BrowserFileInterop.SetUnsavedChanges(_viewModel.Document.HasUnsavedChanges);
     }
 
     private void OnResetViewRequested(object? sender, EventArgs e) => Canvas.ResetView();

@@ -4,9 +4,9 @@
 
 ## Choose an edition
 
-The browser edition provides the geometric optics canvas. A desktop browser with a viewport of at least 920 × 600 px is recommended. Open a compatible `.lightdraw.json` file to load a scene; saving a scene or exporting the canvas downloads a scene file or a PNG image.
+The browser edition provides optics, electrostatics and magnetostatics canvases. Switch between them at the top; each scene retains its edits. A desktop browser with a viewport of at least 920 × 600 px is recommended. Open a compatible `.lightdraw.json` file to load a scene; saving a scene or exporting the canvas downloads a scene file or a PNG image.
 
-The desktop edition also provides electrostatics and magnetostatics. After extracting a portable package from GitHub Releases, run `LightDraw.exe` on Windows, open `LightDraw.app` on macOS, or run `./LightDraw` on Linux. The macOS package is not notarized by Apple, so you may need to allow it in system settings on first launch. Linux requires a desktop environment and the Avalonia/Skia system dependencies.
+The desktop edition will no longer receive regular updates; future development will focus on the browser edition. After extracting a portable package from GitHub Releases, run `LightDraw.exe` on Windows, open `LightDraw.app` on macOS, or run `./LightDraw` on Linux. The macOS package is not notarized by Apple, so you may need to allow it in system settings on first launch. Linux requires a desktop environment and the Avalonia/Skia system dependencies.
 
 ## Usage
 
@@ -34,11 +34,11 @@ The desktop edition also provides electrostatics and magnetostatics. After extra
 | Fit to window | Restore default viewport range |
 | Ray density | Adjust the number of generated rays per source in real time |
 | Open scene / Save scene | Read/write `.lightdraw.json` scene files |
-| Export canvas | Export the current optical canvas as a PNG; choose a save location on desktop or download it directly in the browser |
+| Export canvas | Export the current canvas as a PNG; choose a save location on desktop or download it directly in the browser |
 
 ## Edit protection and scene documents
 
-Optics (desktop and browser), electrostatics and magnetostatics share a document toolbar:
+All three scenes in both editions share a document toolbar:
 
 - Undo/redo retains the last 100 completed edits. A drag is one edit; text properties commit on Enter or focus loss. Creating, deleting, grouping, renaming and hiding elements can all be undone. A new edit clears the redo branch.
 - The unsaved marker compares scene content with the last successful save. Returning to saved content clears it. Pan, zoom and display density are not document edits.
@@ -47,7 +47,7 @@ Optics (desktop and browser), electrostatics and magnetostatics share a document
 - Use Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y, Ctrl+S and Ctrl+O; use ⌘ on macOS. Text fields retain their own text undo/redo.
 - Local files are fully serialized and written to a temporary file before replacement. Other storage providers may not support atomic replacement.
 
-The browser registers a native page-leave warning while dirty. The browser controls when it appears. Saving initiates a download; the application cannot confirm that it ultimately reaches disk. History lasts for the current session; automatic saving and crash recovery are not included.
+The browser registers a native page-leave warning while any scene is dirty. The browser controls when it appears. Saving initiates a download; the application cannot confirm that it ultimately reaches disk. History lasts for the current session; automatic saving and crash recovery are not included.
 
 Electrostatic and magnetostatic `.lightdraw.json` files use `sceneType` values `electrostatic` and `magnetostatic`, respectively, with independent `dataVersion: 1` formats. Open each in its corresponding window. All source geometry, physical parameters and names are preserved. Optical files retain version 14 and support valid versions 1–13.
 

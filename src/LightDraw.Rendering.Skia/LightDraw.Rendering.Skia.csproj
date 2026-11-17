@@ -3,6 +3,10 @@
     <ProjectReference Include="../LightDraw.Core/LightDraw.Core.csproj" />
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Skia" />
+    <PackageReference Include="HarfBuzzSharp" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="LightDraw.Tests" />

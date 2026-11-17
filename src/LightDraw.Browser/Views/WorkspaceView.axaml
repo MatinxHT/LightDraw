@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:LightDraw.Browser.Views"
+             xmlns:vm="using:LightDraw.Desktop.ViewModels"
+             x:Class="LightDraw.Browser.Views.WorkspaceView"
+             x:DataType="vm:MainWindowViewModel"
+             FontFamily="avares://LightDraw.Browser/Assets/Fonts#Noto Sans CJK SC"
+             Background="{DynamicResource WindowBrush}">
+  <Grid RowDefinitions="Auto,*">
+    <Border x:Name="Navigation" Padding="12,6" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+      <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <Button x:Name="OpticsButton" Classes="toolbar-inline selected" Content="{DynamicResource Browser.Optics}" Click="OnOpticsClick" Margin="2" />
+        <Button x:Name="ElectroButton" Classes="toolbar-inline" Content="{DynamicResource Browser.Electrostatics}" Click="OnElectroClick" Margin="2" />
+        <Button x:Name="MagneticButton" Classes="toolbar-inline" Content="{DynamicResource Browser.Magnetostatics}" Click="OnMagneticClick" Margin="2" />
+        <TextBlock Text="{DynamicResource Common.Theme}" VerticalAlignment="Center" Margin="16,0,6,0" />
+        <ComboBox Width="105" SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" AutomationProperties.Name="{DynamicResource Common.Theme}">
+          <ComboBoxItem Content="{DynamicResource Common.DarkTheme}" />
+          <ComboBoxItem Content="{DynamicResource Common.LightTheme}" />
+        </ComboBox>
+        <TextBlock Text="语言 / Language" VerticalAlignment="Center" Margin="16,0,6,0" />
+        <ComboBox Width="155" SelectedIndex="{Binding SelectedLanguageIndex, Mode=TwoWay}" AutomationProperties.Name="语言 / Language">
+          <ComboBoxItem Content="简体中文" />
+          <ComboBoxItem Content="English" />
+        </ComboBox>
+      </WrapPanel>
+    </Border>
+    <Grid Grid.Row="1">
+      <views:MainView x:Name="Optics" />
+      <views:ElectrostaticView x:Name="Electro" IsVisible="False" />
+      <views:MagnetostaticView x:Name="Magnetic" IsVisible="False" />
+    </Grid>
+  </Grid>
+</UserControl>

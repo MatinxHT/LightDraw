@@ -24,26 +24,6 @@
 		</WrapPanel>
 		<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
 		  <Button x:Name="AboutButton" Classes="toolbar-inline" Content="{DynamicResource Main.About}" Command="{Binding ShowAboutCommand}" />
-		  <Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
-		  <TextBlock Text="{DynamicResource Common.Theme}" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-		  <ComboBox x:Name="ThemeSelector" Width="104" SelectedIndex="{Binding SelectedThemeIndex, Mode=TwoWay}" AutomationProperties.Name="{DynamicResource Common.Theme}">
-			<ComboBox.SelectionBoxItemTemplate>
-			  <DataTemplate>
-				<Panel>
-				  <TextBlock Text="{DynamicResource Common.DarkTheme}" IsVisible="{Binding $parent[ComboBox].SelectedIndex, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=0}" />
-				  <TextBlock Text="{DynamicResource Common.LightTheme}" IsVisible="{Binding $parent[ComboBox].SelectedIndex, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=1}" />
-				</Panel>
-			  </DataTemplate>
-			</ComboBox.SelectionBoxItemTemplate>
-			<ComboBoxItem Content="{DynamicResource Common.DarkTheme}" />
-			<ComboBoxItem Content="{DynamicResource Common.LightTheme}" />
-		  </ComboBox>
-		  <Border Width="1" Height="24" Margin="4,0" Background="{DynamicResource DividerBrush}" />
-		  <TextBlock Text="语言Language：" Foreground="{DynamicResource MutedTextBrush}" VerticalAlignment="Center" />
-		  <ComboBox Width="245" SelectedIndex="{Binding SelectedLanguageIndex, Mode=TwoWay}">
-			<ComboBoxItem Content="简体中文 Simplified Chinese （zh-CN）" />
-			<ComboBoxItem Content="English(en-us)" />
-		  </ComboBox>
 		</StackPanel>
 	  </Grid>
 	</Border>

@@ -68,6 +68,9 @@ public sealed class LocalizationService
         Add("Common.DarkTheme", "深色", "Dark");
         Add("Common.LightTheme", "浅色", "Light");
         Add("Main.Subtitle", "几何光学光路绘图", "Geometric optics drawing");
+        Add("Browser.Optics", "光学", "Optics");
+        Add("Browser.Electrostatics", "静电场", "Electrostatics");
+        Add("Browser.Magnetostatics", "静磁场", "Magnetostatics");
         Add("Main.OpenElectrostatic", "↯ 打开静电场仿真", "↯ Open electrostatic simulation");
         Add("Main.OpenMagnetostatic", "⌁ 打开静磁场仿真", "⌁ Open magnetostatic simulation");
         Add("Common.Pan", "✥ 平移界面", "✥ Pan view");
@@ -215,7 +218,7 @@ public sealed class LocalizationService
         Add("About.LicenseDescription", "本软件仅授权用于非商业用途。许可条款：\nhttps://polyformproject.org/licenses/noncommercial/1.0.0", "This software is licensed for noncommercial use only. License terms:\nhttps://polyformproject.org/licenses/noncommercial/1.0.0");
         Add("About.Acknowledgements", "技术支持及鸣谢", "Technical support and acknowledgements");
         Add("About.Institutions", "佛山市南海区大沥高级中学\n佛山市南海区桂城中学\n佛山市南海区罗村高级中学物理科组\n佛山大学物理与光电工程学院光源与照明系\n佛山市升阳光学科技有限公司", "Dali Senior High School, Nanhai District, Foshan\nGuicheng High School, Nanhai District, Foshan\nPhysics Department, Luocun Senior High School, Nanhai District, Foshan\nDepartment of Light Sources and Illumination, School of Physics and Optoelectronic Engineering, Foshan University\nFoshan Shengyang Optics Technology Co., Ltd.");
-        Add("About.BuiltWith", "基于 .NET 10、Avalonia 和 SkiaSharp 构建", "Built with .NET 10, Avalonia, and SkiaSharp");
+        Add("About.BuiltWith", "基于 .NET 11、Avalonia 和 SkiaSharp 构建", "Built with .NET 11, Avalonia, and SkiaSharp");
         Add("About.Close", "关闭", "Close");
         Add("About.Version", "版本 {0}", "Version {0}");
         Add("About.Unknown", "未知", "Unknown");

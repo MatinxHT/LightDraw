@@ -21,6 +21,9 @@
       "label": "build LightDraw Browser",
       "type": "process",
       "command": "${workspaceFolder}/.vscode/dotnet-browser.sh",
+      "windows": {
+        "command": "dotnet"
+      },
       "args": [
         "build",
         "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
@@ -31,21 +34,26 @@
       "group": "build"
     },
     {
-      "label": "run LightDraw Browser",
+      "label": "prepare LightDraw Browser",
       "type": "process",
+      "dependsOn": [
+        "build LightDraw Browser"
+      ],
+      "dependsOrder": "sequence",
       "command": "${workspaceFolder}/.vscode/dotnet-browser.sh",
+      "windows": {
+        "command": "dotnet"
+      },
       "args": [
         "run",
         "--project",
         "${workspaceFolder}/src/LightDraw.Browser/LightDraw.Browser.csproj",
+        "--no-build",
         "--configuration",
-        "Debug"
+        "Debug",
+        "--launch-profile",
+        "LightDraw.Browser"
       ],
-      "options": {
-        "env": {
-          "ASPNETCORE_URLS": "http://127.0.0.1:8765"
-        }
-      },
       "isBackground": true,
       "problemMatcher": {
         "owner": "browser",
@@ -54,7 +62,8 @@
         },
         "background": {
           "activeOnStart": true,
-          "endsPattern": "^App url: http://127\\.0\\.0\\.1:8765/"
+          "beginsPattern": "^WasmAppHost\\b",
+          "endsPattern": "^Debug at url: http://127\\.0\\.0\\.1:8765/_framework/debug\\s*$"
         }
       },
       "presentation": {
@@ -66,6 +75,16 @@
       "label": "stop LightDraw Browser",
       "type": "process",
       "command": "${workspaceFolder}/.vscode/stop-browser.sh",
+      "windows": {
+        "command": "powershell.exe",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/.vscode/stop-browser.ps1"
+        ]
+      },
       "problemMatcher": []
     }
   ]

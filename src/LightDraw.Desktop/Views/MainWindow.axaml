@@ -13,6 +13,7 @@
 		MinHeight="600"
 		Background="{DynamicResource WindowBrush}">
   <Grid>
+  <Grid x:Name="DesktopContent">
   <Grid IsEnabled="{Binding Document.IsEditingEnabled}" ColumnDefinitions="238,*" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
     <document:DocumentToolbar Grid.Row="1" Grid.ColumnSpan="2" DataContext="{Binding Document}" />
 	<Border Grid.ColumnSpan="2" Padding="18,12" Background="{DynamicResource HeaderBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
@@ -240,5 +241,21 @@
 	</Border>
   </Grid>
     <document:UnsavedChangesPrompt x:Name="UnsavedPrompt" ZIndex="20" />
+  </Grid>
+    <Grid x:Name="DesktopNotice" ZIndex="30" IsVisible="False" Background="#B8000000" KeyboardNavigation.TabNavigation="Cycle">
+      <Border MaxWidth="620" Margin="20" Padding="28" CornerRadius="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+              Background="{DynamicResource WindowBrush}" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="1">
+        <StackPanel Spacing="16">
+          <TextBlock Text="感谢使用 LightDraw / Thank you for using LightDraw" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+          <TextBlock Text="桌面版今后将基本停止更新。欢迎前往浏览器版，继续体验 LightDraw 的新功能与改进。" TextWrapping="Wrap" />
+          <TextBlock Text="The desktop version will no longer receive regular updates. Please visit the browser version to enjoy future features and improvements." TextWrapping="Wrap" />
+          <WrapPanel HorizontalAlignment="Center" Orientation="Horizontal">
+            <Button x:Name="NoticeBrowserButton" Content="前往浏览器版 / Open browser version" Click="OnOpenBrowserVersionClick" Margin="4" />
+            <Button x:Name="NoticeContinueButton" Content="继续使用桌面版 / Continue with desktop" Click="OnDismissDesktopNoticeClick" Margin="4" />
+          </WrapPanel>
+          <TextBlock x:Name="NoticeLinkError" IsVisible="False" Text="无法打开浏览器，请手动访问 https://lightdraw.martinphysics.club/&#10;Unable to open the browser. Please visit the address above." TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </Grid>
   </Grid>
 </Window>

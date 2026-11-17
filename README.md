@@ -36,7 +36,7 @@
 
 ### 静电场与静磁场
 
-在桌面版中，放置点电荷、带电平板、导线和圆形电流，观察电场线和磁场随位置、方向与参数的变化。
+放置点电荷、带电平板、导线和圆形电流，观察电场线和磁场随位置、方向与参数的变化。
 
 <table>
   <tr>
@@ -57,10 +57,10 @@
 
 ## 开始使用
 
-- **浏览器版**：[直接打开 LightDraw](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学。计算在浏览器中完成，场景文件无需上传；建议使用桌面浏览器。
-- **桌面版**：从 [Microsoft Store](https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&gl=CN&ocid=pdpshare) 安装 Windows 版，或从 [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases) 下载便携包。便携包支持 Windows 和 Linux 的 x64 / ARM64，以及搭载 Apple 芯片的 macOS。
+- **浏览器版**：[直接打开 LightDraw](https://lightdraw.martinphysics.club/)，无需安装即可体验几何光学、静电场和静磁场。计算在浏览器中完成，场景文件无需上传；建议使用桌面浏览器。
+- **桌面版**：从 [Microsoft Store](https://apps.microsoft.com/detail/9P9JGS0LB77D?hl=zh-cn&gl=CN&ocid=pdpshare) 安装 Windows 版，或从 [GitHub Releases](https://github.com/MatinxHT/LightDraw/releases) 下载便携包。桌面版今后将基本停止更新，后续开发将转向浏览器版。便携包支持 Windows 和 Linux 的 x64 / ARM64，以及搭载 Apple 芯片的 macOS。
 
-选择工具并在画布上放置元件，再通过“移动/编辑”和属性栏调整场景。可以撤销和重做、保存或打开 `.lightdraw.json` 场景；几何光学画布还可以导出为 PNG。浏览器版与桌面版可以互相打开几何光学场景文件。界面支持简体中文、英语及明暗主题。
+选择工具并在画布上放置元件，再通过“移动/编辑”和属性栏调整场景。可以撤销和重做、保存或打开 `.lightdraw.json` 场景；所有画布都可以导出为 PNG。浏览器版与桌面版可以互相打开对应类型的场景文件。界面支持简体中文、英语及明暗主题。
 
 模拟主要用于课堂教学与概念演示，不应作为精密工程计算或专业决策的依据。
 

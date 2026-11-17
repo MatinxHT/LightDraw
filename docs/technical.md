@@ -6,9 +6,9 @@
 
 ### 环境要求
 
-- .NET SDK 10.0.400，或与 `global.json` 兼容的 .NET 10 SDK；
+- 项目面向 .NET 11。本地构建和发布工作流使用 `global.json` 指定的 .NET SDK 11.0.100 或同一功能带的正式补丁版；
 - 桌面版运行环境：Windows 10/11、macOS，或支持 X11/Wayland 的 Linux；
-- 本地构建浏览器版时还需要 `wasm-tools` 工作负载。
+- 本地构建浏览器版前，在仓库根目录运行 `dotnet workload install wasm-tools`。
 
 ### GitHub Release 自动发布
 
@@ -185,7 +185,7 @@ LightDraw
 LightDraw.Core ← LightDraw.Rendering.Skia ← LightDraw.Desktop / LightDraw.Browser
 ```
 
-`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，并已复用于浏览器版。浏览器版还复用光学画布、主界面 ViewModel 和本地化服务；浏览器专用代码负责文件选择与下载。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件不纳入版本控制。
+`LightDraw.Core` 不引用 Avalonia、SkiaSharp、Windows API 或 macOS API，因此可以独立测试，并已复用于浏览器版。浏览器版还复用三个仿真画布、场景 ViewModel 和本地化服务；浏览器专用代码负责文件选择与下载。仓库根部的 `assets/app-store` 保存需要纳入版本控制的商店展示海报；构建、发布和打包产生的文件不纳入版本控制。
 
 ### 编辑器结构与测试
 

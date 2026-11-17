@@ -21,6 +21,7 @@ public sealed partial class App : Application
         {
             var mainWindow = new MainWindow();
             mainWindow.AttachViewModel(new MainWindowViewModel(new AvaloniaSceneStorageService<OpticalScene>(mainWindow, OpticalSceneCodec.Instance)));
+            mainWindow.ShowDesktopNotice();
             desktop.MainWindow = mainWindow;
             DocumentWindowCloseGuard.AttachLifetime(desktop);
         }
